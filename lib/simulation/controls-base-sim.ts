@@ -1,3 +1,25 @@
+// First, let's create a proper interface for the constructor options
+export interface ControlsBaseSimOptions {
+  // Motor configuration
+  motorType?: string
+  gearing?: number
+  motorCount?: number
+
+  // PID values
+  kP?: number
+  kI?: number
+  kD?: number
+
+  // Feedforward values
+  kS?: number
+  kV?: number
+  kA?: number
+  kG?: number
+
+  // Timing
+  dt?: number
+}
+
 /**
  * Base simulation class for FRC mechanism simulations
  */
@@ -33,13 +55,13 @@ export class ControlsBaseSim {
     gearing: number
   }
 
-  constructor(canvas: HTMLCanvasElement, options: any = {}) {
+  constructor(canvas: HTMLCanvasElement, options: ControlsBaseSimOptions = {}) {
     this.canvas = canvas
     this.ctx = canvas.getContext("2d")!
     this.width = canvas.width
     this.height = canvas.height
     this.time = 0
-    this.dt = 0.02 // 20ms update rate
+    this.dt = options.dt || 0.02 // 20ms update rate
     this.target = 0
     this.targetVelocity = 0
     this.controlMode = "position" // 'position' or 'velocity'
@@ -70,7 +92,7 @@ export class ControlsBaseSim {
     this.configureMotor(options)
   }
 
-  configureMotor(options: any) {
+  configureMotor(options: ControlsBaseSimOptions): void {
     // Default motor is a NEO
     const motorType = options.motorType || "NEO"
     const gearing = options.gearing || 1.0
@@ -96,7 +118,7 @@ export class ControlsBaseSim {
     }
   }
 
-  reset() {
+  reset(): void {
     this.position = 0
     this.velocity = 0
     this.acceleration = 0
@@ -107,19 +129,19 @@ export class ControlsBaseSim {
     this.time = 0
   }
 
-  setTarget(target: number) {
+  setTarget(target: number): void {
     this.target = target
   }
 
-  setTargetVelocity(velocity: number) {
+  setTargetVelocity(velocity: number): void {
     this.targetVelocity = velocity
   }
 
-  setControlMode(mode: string) {
+  setControlMode(mode: string): void {
     this.controlMode = mode
   }
 
-  calculateFeedforward(velocity: number, acceleration: number) {
+  calculateFeedforward(velocity: number, acceleration: number): number {
     // Calculate feedforward voltage
     const gravityComponent = this.kG || 0
     const staticComponent = this.kS * Math.sign(velocity)
@@ -129,7 +151,7 @@ export class ControlsBaseSim {
     return staticComponent + velocityComponent + accelerationComponent + gravityComponent
   }
 
-  calculatePID(error: number) {
+  calculatePID(error: number): number {
     // Calculate PID output
     this.integral += error * this.dt
     const derivative = (error - this.prevError) / this.dt
@@ -138,7 +160,7 @@ export class ControlsBaseSim {
     return this.kP * error + this.kI * this.integral + this.kD * derivative
   }
 
-  update(dt?: number) {
+  update(dt?: number): void {
     this.dt = dt || this.dt
     this.time += this.dt
 
@@ -160,15 +182,29 @@ export class ControlsBaseSim {
     // Limit voltage to battery voltage
     this.voltage = Math.max(-12, Math.min(12, this.voltage))
 
-    // Calculate motor physics
+    // Calculate motor physics - this updates position, velocity, etc.
     this.updatePhysics()
+
+    // Log debug info occasionally
+    if (Math.round(this.time * 50) % 50 === 0) {
+      console.debug("Base sim update:", {
+        controlMode: this.controlMode,
+        target: this.target,
+        targetVelocity: this.targetVelocity,
+        position: this.position,
+        velocity: this.velocity,
+        voltage: this.voltage,
+        controlOutput,
+        ffOutput,
+      })
+    }
   }
 
-  updatePhysics() {
+  updatePhysics(): void {
     // Override in subclasses
   }
 
-  draw() {
+  draw(): void {
     // Override in subclasses
     this.ctx.clearRect(0, 0, this.width, this.height)
   }

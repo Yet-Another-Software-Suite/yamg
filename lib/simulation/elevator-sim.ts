@@ -1,4 +1,16 @@
-import { ControlsBaseSim } from "@/lib/simulation/controls-base-sim"
+import { ControlsBaseSim, type ControlsBaseSimOptions } from "@/lib/simulation/controls-base-sim"
+
+/**
+ * Options specific to the elevator simulation
+ */
+export interface ElevatorSimOptions extends ControlsBaseSimOptions {
+  // Elevator specific parameters
+  mass?: number
+  drumRadius?: number
+  minHeight?: number
+  maxHeight?: number
+  startingHeight?: number
+}
 
 /**
  * Elevator Simulation class for FRC elevator mechanisms
@@ -10,7 +22,7 @@ export class ElevatorSim extends ControlsBaseSim {
   maxHeight: number
   startingHeight: number
 
-  constructor(canvas: HTMLCanvasElement, options: any = {}) {
+  constructor(canvas: HTMLCanvasElement, options: ElevatorSimOptions = {}) {
     super(canvas, options)
 
     // Elevator specific parameters
@@ -28,7 +40,7 @@ export class ElevatorSim extends ControlsBaseSim {
       options.kG !== undefined ? options.kG : (this.mass * 9.81 * this.drumRadius) / (this.motor.kt / this.motor.R)
   }
 
-  updatePhysics() {
+  override updatePhysics(): void {
     // Convert linear position/velocity to rotational
     const rotPosition = this.position / this.drumRadius
     const rotVelocity = this.velocity / this.drumRadius
@@ -66,9 +78,21 @@ export class ElevatorSim extends ControlsBaseSim {
       this.position = this.maxHeight
       this.velocity = Math.min(0, this.velocity)
     }
+
+    // Debug log every 50 frames (approximately once per second)
+    if (Math.round(this.time * 50) % 50 === 0) {
+      console.debug("Elevator sim update:", {
+        position: this.position,
+        velocity: this.velocity,
+        acceleration: this.acceleration,
+        voltage: this.voltage,
+        current: this.current,
+        target: this.target,
+      })
+    }
   }
 
-  draw() {
+  override draw(): void {
     const ctx = this.ctx
     const width = this.width
     const height = this.height
@@ -118,7 +142,7 @@ export class ElevatorSim extends ControlsBaseSim {
     this.drawTelemetry(ctx)
   }
 
-  drawHeightMarkers(ctx: CanvasRenderingContext2D, x: number, baseY: number, maxHeight: number) {
+  drawHeightMarkers(ctx: CanvasRenderingContext2D, x: number, baseY: number, maxHeight: number): void {
     const markerWidth = 5
     const markerSpacing = maxHeight / 10
 
@@ -166,7 +190,7 @@ export class ElevatorSim extends ControlsBaseSim {
     ctx.stroke()
   }
 
-  drawTelemetry(ctx: CanvasRenderingContext2D) {
+  drawTelemetry(ctx: CanvasRenderingContext2D): void {
     ctx.font = "14px Arial"
     ctx.fillStyle = "#fff"
     ctx.textAlign = "left"

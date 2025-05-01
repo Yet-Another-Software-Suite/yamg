@@ -78,7 +78,11 @@ export default function SimulationTab({ formValues }: SimulationTabProps) {
         </Tabs>
 
         <SimulationErrorBoundary>
-          <SimulationComponent formValues={formValues} simType={simType} />
+          <SimulationComponent
+            formValues={formValues}
+            simType={simType}
+            key={`${formValues.mechanismType}-${formValues.motorType}-${formValues.gearRatio}-${JSON.stringify(formValues.pidValues)}-${Date.now()}`}
+          />
         </SimulationErrorBoundary>
       </CardContent>
     </Card>

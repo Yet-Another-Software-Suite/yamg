@@ -1,4 +1,17 @@
-import { ControlsBaseSim } from "@/lib/simulation/controls-base-sim"
+import { ControlsBaseSim, type ControlsBaseSimOptions } from "@/lib/simulation/controls-base-sim"
+
+/**
+ * Options specific to the arm simulation
+ */
+export interface ArmSimOptions extends ControlsBaseSimOptions {
+  // Arm specific parameters
+  length?: number
+  mass?: number
+  moi?: number
+  minAngle?: number
+  maxAngle?: number
+  startingAngle?: number
+}
 
 /**
  * Arm Simulation class for FRC arm mechanisms
@@ -11,7 +24,7 @@ export class ArmSim extends ControlsBaseSim {
   maxAngle: number
   startingAngle: number
 
-  constructor(canvas: HTMLCanvasElement, options: any = {}) {
+  constructor(canvas: HTMLCanvasElement, options: ArmSimOptions = {}) {
     super(canvas, options)
 
     // Arm specific parameters
@@ -30,7 +43,7 @@ export class ArmSim extends ControlsBaseSim {
       options.kG !== undefined ? options.kG : (this.mass * 9.81 * this.length) / 2 / (this.motor.kt / this.motor.R)
   }
 
-  updatePhysics() {
+  override updatePhysics(): void {
     // Calculate torque from voltage
     const backEmf = this.velocity * (1 / this.motor.kv) * ((2 * Math.PI) / 60) // V
     this.current = (this.voltage - backEmf) / this.motor.R // A
@@ -58,9 +71,21 @@ export class ArmSim extends ControlsBaseSim {
       this.position = this.maxAngle
       this.velocity = Math.min(0, this.velocity)
     }
+
+    // Debug log every 50 frames (approximately once per second)
+    if (Math.round(this.time * 50) % 50 === 0) {
+      console.debug("Arm sim update:", {
+        position: this.position,
+        velocity: this.velocity,
+        acceleration: this.acceleration,
+        voltage: this.voltage,
+        current: this.current,
+        target: this.target,
+      })
+    }
   }
 
-  draw() {
+  override draw(): void {
     const ctx = this.ctx
     const width = this.width
     const height = this.height
@@ -111,7 +136,7 @@ export class ArmSim extends ControlsBaseSim {
     this.drawTelemetry(ctx)
   }
 
-  drawAngleMarkers(ctx: CanvasRenderingContext2D, x: number, y: number) {
+  drawAngleMarkers(ctx: CanvasRenderingContext2D, x: number, y: number): void {
     const radius = 40
 
     // Draw angle arc
@@ -138,7 +163,7 @@ export class ArmSim extends ControlsBaseSim {
     ctx.stroke()
   }
 
-  drawTelemetry(ctx: CanvasRenderingContext2D) {
+  drawTelemetry(ctx: CanvasRenderingContext2D): void {
     ctx.font = "14px Arial"
     ctx.fillStyle = "#fff"
     ctx.textAlign = "left"

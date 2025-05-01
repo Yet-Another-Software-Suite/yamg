@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Slider } from "@/components/ui/slider"
 import { Play, Pause, RefreshCw, ChevronUp, ChevronDown } from "lucide-react"
 import type { FormValues } from "@/lib/types"
-// Fix the import path to use individual imports instead of the index file
 import type { ControlsBaseSim } from "@/lib/simulation/controls-base-sim"
 import { ArmSim } from "@/lib/simulation/arm-sim"
 import { ElevatorSim } from "@/lib/simulation/elevator-sim"
@@ -152,24 +151,39 @@ export default function SimulationComponent({ formValues, simType }: SimulationC
     }
   }, [formValues, simType])
 
+  // Fix the animation loop to ensure consistent updates
+  // Replace the entire animation loop useEffect with this improved version
   // Handle animation loop
   useEffect(() => {
     if (!simInstance) return
 
-    if (isRunning) {
-      const animate = () => {
-        if (simInstance) {
-          simInstance.update(0.02) // 20ms update
-          simInstance.draw()
-        }
+    // Animation function that gets called repeatedly
+    const animate = () => {
+      // Update simulation with fixed time step for consistent physics
+      simInstance.update(0.02) // 20ms fixed time step
+
+      // Draw the updated state
+      simInstance.draw()
+
+      // Continue the animation loop
+      if (isRunning) {
         animationRef.current = requestAnimationFrame(animate)
       }
+    }
+
+    // Start or stop the animation loop based on isRunning state
+    if (isRunning) {
+      console.log("Starting animation loop")
+      // Start the animation loop
       animationRef.current = requestAnimationFrame(animate)
     } else if (animationRef.current) {
+      console.log("Stopping animation loop")
+      // Stop the animation loop
       cancelAnimationFrame(animationRef.current)
       animationRef.current = null
     }
 
+    // Clean up when component unmounts or dependencies change
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current)
@@ -204,6 +218,30 @@ export default function SimulationComponent({ formValues, simType }: SimulationC
   }
 
   const toggleSimulation = () => {
+    // When starting the simulation, ensure we have a valid target
+    if (!isRunning && simInstance) {
+      // Set the target based on the current slider value
+      if (simType === "position") {
+        if (formValues.mechanismType === "Arm" || formValues.mechanismType === "Pivot") {
+          simInstance.setTarget((targetValue * Math.PI) / 180)
+        } else {
+          simInstance.setTarget(targetValue)
+        }
+      } else {
+        if (formValues.mechanismType === "Arm" || formValues.mechanismType === "Pivot") {
+          simInstance.setTargetVelocity((targetValue * Math.PI) / 180)
+        } else {
+          simInstance.setTargetVelocity(targetValue)
+        }
+      }
+
+      // Force an initial update to get things moving
+      simInstance.update(0.02)
+      simInstance.draw()
+
+      console.log("Starting simulation with target:", targetValue)
+    }
+
     setIsRunning((prev) => !prev)
   }
 

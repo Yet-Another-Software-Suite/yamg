@@ -326,7 +326,7 @@ export default function CodeGenerator() {
               )}
             </TabsContent>
             <TabsContent value="simulation" className="mt-4">
-              <SimulationTab formValues={form.getValues() as FormValues} />
+              <SimulationTab formValues={form.getValues() as FormValues} key={form.formState.submitCount} />
             </TabsContent>
           </Tabs>
         ) : (
@@ -403,7 +403,7 @@ export default function CodeGenerator() {
                   )}
                 </TabsContent>
                 <TabsContent value="simulation">
-                  <SimulationTab formValues={form.getValues() as FormValues} />
+                  <SimulationTab formValues={form.getValues() as FormValues} key={form.formState.submitCount} />
                 </TabsContent>
               </Tabs>
             </div>

@@ -59,9 +59,9 @@
     "vaul": "^0.9.6",
     "zod": "latest",
     "prismjs": "latest",
+    "handlebars": "latest",
     "jszip": "latest",
-    "file-saver": "latest",
-    "handlebars": "latest"
+    "file-saver": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",
