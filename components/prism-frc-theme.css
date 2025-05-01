@@ -1,0 +1,117 @@
+/**
+ * Custom FRC theme for syntax highlighting
+ * Based on a combination of One Dark and VS Code themes
+ */
+
+.code-container {
+  background-color: #1e293b; /* Slate 800 */
+}
+
+.line-numbers {
+  background-color: #0f172a; /* Slate 900 */
+  color: #64748b; /* Slate 500 */
+}
+
+/* Remove the highlighted-line class
+.highlighted-line {
+  background-color: #334155;
+}
+*/
+
+code[class*="language-"],
+pre[class*="language-"] {
+  color: #e2e8f0; /* Slate 200 */
+  font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+  text-align: left;
+  white-space: pre;
+  word-spacing: normal;
+  word-break: normal;
+  word-wrap: normal;
+  line-height: 1.5;
+  tab-size: 4;
+  hyphens: none;
+}
+
+/* Code blocks */
+pre[class*="language-"] {
+  padding: 1em;
+  margin: 0;
+  overflow: auto;
+}
+
+/* Inline code */
+:not(pre) > code[class*="language-"] {
+  padding: .1em;
+  border-radius: .3em;
+  white-space: normal;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #8b9cb3; /* Muted blue-gray */
+}
+
+.token.punctuation {
+  color: #a3b8cc;
+}
+
+.token.namespace {
+  opacity: 0.7;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol {
+  color: #f59e0b; /* Amber 500 */
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin {
+  color: #10b981; /* Emerald 500 */
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string {
+  color: #d1d5db; /* Gray 300 */
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #3b82f6; /* Blue 500 */
+}
+
+.token.function,
+.token.class-name {
+  color: #f472b6; /* Pink 400 */
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: #fb923c; /* Orange 400 */
+}
+
+.token.important,
+.token.bold {
+  font-weight: bold;
+}
+
+.token.italic {
+  font-style: italic;
+}
+
+.token.entity {
+  cursor: help;
+}
