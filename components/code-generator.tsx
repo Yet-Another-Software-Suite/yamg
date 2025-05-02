@@ -209,9 +209,9 @@ export default function CodeGenerator() {
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 1024)
-      if (window.innerWidth < 1024) {
+      /*if (window.innerWidth < 1024) {
         setActiveTab("inputs")
-      }
+      }*/
     }
 
     checkMobile()
