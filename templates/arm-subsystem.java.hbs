@@ -1,0 +1,441 @@
+package frc.robot.subsystems;
+
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
+import edu.wpi.first.math.controller.ArmFeedforward;
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.networktables.NetworkTableInstance;
+import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj2.command.Command;
+{{#if isSparkController}}
+import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.wpilibj.Notifier;
+import java.util.function.DoubleSupplier;
+{{/if}}
+{{{motorControllerImports}}}
+
+/**
+* Arm subsystem using {{motorControllerType}} with {{motorType}} motor
+*/
+public class {{subsystemName}} extends SubsystemBase {
+ // Constants
+ private final int canID = {{canId}};
+ private final double gearRatio = {{gearRatio}};
+ private final double kP = {{kP}};
+ private final double kI = {{kI}};
+ private final double kD = {{kD}};
+ private final double maxVelocity = {{maxVelocity}}; // rad/s
+ private final double maxAcceleration = {{maxAcceleration}}; // rad/s²
+ private final boolean brakeMode = {{brakeMode}};
+ private final Double forwardSoftLimit = {{forwardSoftLimit}}; // max angle in radians
+ private final Double reverseSoftLimit = {{reverseSoftLimit}}; // min angle in radians
+ private final boolean enableSoftLimits = {{enableSoftLimits}};
+ private final double statorCurrentLimit = {{statorCurrentLimit}};
+ private final double supplyCurrentLimit = {{supplyCurrentLimit}};
+ private final boolean enableStatorLimit = {{enableStatorLimit}};
+ private final boolean enableSupplyLimit = {{enableSupplyLimit}};
+ private final double armLength = {{armLength}}; // meters
+ 
+ // Feedforward
+ private final ArmFeedforward feedforward = new ArmFeedforward(
+   {{kS}}, // kS
+   {{kG}}, // kG
+   {{kV}}, // kV
+   {{kA}}  // kA
+ );
+ 
+ // Motor controller
+ {{{motorControllerDeclaration}}}
+ 
+ {{#if isSparkController}}
+ // Control mode
+ private enum ControlMode {
+   OPEN_LOOP,
+   POSITION,
+   VELOCITY
+ }
+ private ControlMode currentControlMode = ControlMode.OPEN_LOOP;
+ private double targetPosition = 0.0;
+ private double targetVelocity = 0.0;
+ 
+ // Profiled PID Controller
+ private ProfiledPIDController profiledPIDController;
+ private TrapezoidProfile.Constraints constraints;
+ private Notifier controlLoop;
+ private final double CONTROL_LOOP_FREQUENCY = 100.0; // Hz
+ {{/if}}
+ 
+ // Telemetry
+ private final NetworkTable telemetryTable;
+ {{#if logPosition}}
+ private NetworkTableEntry positionEntry;
+ {{/if}}
+ {{#if logVelocity}}
+ private NetworkTableEntry velocityEntry;
+ {{/if}}
+ {{#if logVoltage}}
+ private NetworkTableEntry voltageEntry;
+ {{/if}}
+ {{#if logCurrent}}
+ private NetworkTableEntry currentEntry;
+ {{/if}}
+ {{#if logTemperature}}
+ private NetworkTableEntry temperatureEntry;
+ {{/if}}
+ 
+ // Simulation
+ private final SingleJointedArmSim armSim;
+ 
+ /**
+  * Creates a new Arm Subsystem.
+  */
+ public {{subsystemName}}() {
+   // Initialize motor controller
+   {{{motorControllerInitialization}}}
+   
+   // Initialize telemetry
+   telemetryTable = NetworkTableInstance.getDefault().getTable("{{ntKey}}");
+   
+   {{#if logPosition}}
+   positionEntry = telemetryTable.getEntry("Position");
+   {{/if}}
+   {{#if logVelocity}}
+   velocityEntry = telemetryTable.getEntry("Velocity");
+   {{/if}}
+   
+   {{#if logVoltage}}
+   voltageEntry = telemetryTable.getEntry("Voltage");
+   {{/if}}
+   {{#if logCurrent}}
+   currentEntry = telemetryTable.getEntry("Current");
+   {{/if}}
+   {{#if logTemperature}}
+   temperatureEntry = telemetryTable.getEntry("Temperature");
+   {{/if}}
+   
+   // Initialize simulation
+   armSim = new SingleJointedArmSim(
+     {{{dcMotorType}}}, // Motor type
+     gearRatio,
+     SingleJointedArmSim.estimateMOI(armLength, {{mass}}), // Arm moment of inertia
+     armLength, // Arm length (m)
+     Units.degreesToRadians({{hardLimitMinRad}}), // Min angle (rad)
+     Units.degreesToRadians({{hardLimitMaxRad}}), // Max angle (rad)
+     true, // Simulate gravity
+     Units.degreesToRadians({{startingPositionRad}}) // Starting position (rad)
+   );
+   
+   {{#if isSparkController}}
+   // Initialize ProfiledPIDController
+   // Convert from radians to rotations for constraints
+   double maxVelocityRotations = maxVelocity / (2.0 * Math.PI);
+   double maxAccelerationRotations = maxAcceleration / (2.0 * Math.PI);
+   
+   constraints = new TrapezoidProfile.Constraints(maxVelocityRotations, maxAccelerationRotations);
+   profiledPIDController = new ProfiledPIDController(kP, kI, kD, constraints);
+   
+   // Start control loop on a separate thread using Notifier
+   controlLoop = new Notifier(this::controlLoopFn);
+   controlLoop.startPeriodic(1.0 / CONTROL_LOOP_FREQUENCY);
+   {{/if}}
+ }
+ 
+ {{#if isSparkController}}
+ /**
+  * Control loop function that runs at a fixed frequency.
+  * This is used for SparkMAX and SparkFlex controllers to implement
+  * closed-loop control outside of the main robot loop.
+  */
+ private void controlLoopFn() {
+   switch (currentControlMode) {
+     case POSITION:
+       double currentPos = getPosition();
+       double output = profiledPIDController.calculate(currentPos, targetPosition);
+       double velocity = profiledPIDController.getSetpoint().velocity;
+       double angle = getPositionRadians();
+       double feedforwardOutput = feedforward.calculate(angle, velocity);
+       setVoltage(output + feedforwardOutput);
+       break;
+       
+     case VELOCITY:
+       double currentVel = getVelocity();
+       double velOutput = profiledPIDController.calculate(currentVel, targetVelocity);
+       double accel = profiledPIDController.getSetpoint().velocity - currentVel;
+       double armAngle = getPositionRadians();
+       double velFeedforwardOutput = feedforward.calculate(armAngle, targetVelocity, accel);
+       
+       // Apply the combined PID output and feedforward to the motor
+       double velocityVoltage = velOutput + velFeedforwardOutput;
+       motor.setVoltage(velocityVoltage);
+       break;
+       
+     case OPEN_LOOP:
+     default:
+       // Do nothing, voltage is set directly
+       break;
+   }
+ }
+ 
+ /**
+  * Clean up resources when the subsystem is destroyed.
+  */
+ @Override
+ public void close() {
+   if (controlLoop != null) {
+     controlLoop.close();
+   }
+   super.close();
+ }
+ {{/if}}
+ 
+ /**
+  * Update simulation and telemetry.
+  */
+ @Override
+ public void periodic() {
+   updateTelemetry();
+ }
+ 
+ /**
+  * Update simulation.
+  */
+ @Override
+ public void simulationPeriodic() {
+   // Set input voltage from motor controller to simulation
+   armSim.setInput(getVoltage());
+   
+   // Update simulation by 20ms
+   armSim.update(0.020);
+ }
+ 
+ /**
+  * Update telemetry values.
+  */
+ private void updateTelemetry() {
+   {{#if logPosition}}
+   // Convert based on selected position unit
+   switch ("{{positionUnit}}") {
+     case "Degrees":
+       positionEntry.setDouble(Units.radiansToDegrees(getPositionRadians()));
+       break;
+     case "Radians":
+       positionEntry.setDouble(getPositionRadians());
+       break;
+     case "Rotations":
+     default:
+       positionEntry.setDouble(getPosition());
+       break;
+   }
+   {{/if}}
+   
+   {{#if logVelocity}}
+   velocityEntry.setDouble(getVelocity());
+   {{/if}}
+   
+   {{#if logVoltage}}
+   voltageEntry.setDouble(getVoltage());
+   {{/if}}
+   
+   {{#if logCurrent}}
+   currentEntry.setDouble(getCurrent());
+   {{/if}}
+   
+   {{#if logTemperature}}
+   temperatureEntry.setDouble(getTemperature());
+   {{/if}}
+ }
+ 
+ /**
+  * Get the current position in rotations.
+  * @return Position in rotations
+  */
+ public double getPosition() {
+   {{{getPositionMethod}}}
+ }
+ 
+ /**
+  * Get the current position in radians.
+  * @return Position in radians
+  */
+ public double getPositionRadians() {
+   double rotations = getPosition();
+   return rotations * 2.0 * Math.PI;
+ }
+ 
+ /**
+  * Get the current velocity in rotations per second.
+  * @return Velocity in rotations per second
+  */
+ public double getVelocity() {
+   {{{getVelocityMethod}}}
+ }
+ 
+ /**
+  * Get the current applied voltage.
+  * @return Applied voltage
+  */
+ public double getVoltage() {
+   {{{getVoltageMethod}}}
+ }
+ 
+ /**
+  * Get the current motor current.
+  * @return Motor current in amps
+  */
+ public double getCurrent() {
+   {{{getCurrentMethod}}}
+ }
+ 
+ /**
+  * Get the current motor temperature.
+  * @return Motor temperature in Celsius
+  */
+ public double getTemperature() {
+   {{{getTemperatureMethod}}}
+ }
+ 
+ /**
+  * Set arm angle.
+  * @param angleDegrees The target angle in degrees
+  */
+ public void setAngle(double angleDegrees) {
+   setAngle(angleDegrees, 0);
+ }
+ 
+ /**
+  * Set arm angle with acceleration.
+  * @param angleDegrees The target angle in degrees
+  * @param acceleration The acceleration in rad/s²
+  */
+ public void setAngle(double angleDegrees, double acceleration) {
+   // Convert degrees to rotations
+   double angleRadians = Units.degreesToRadians(angleDegrees);
+   double positionRotations = angleRadians / (2.0 * Math.PI);
+   
+   {{#if isSparkController}}
+   // Use the ProfiledPIDController
+   targetPosition = positionRotations;
+   currentControlMode = ControlMode.POSITION;
+   
+   // If acceleration is specified, update constraints
+   if (acceleration > 0) {
+     double maxAccelRotations = acceleration / (2.0 * Math.PI);
+     constraints = new TrapezoidProfile.Constraints(constraints.maxVelocity, maxAccelRotations);
+     profiledPIDController.setConstraints(constraints);
+   }
+   {{else}}
+   {{{setPositionMethod}}}
+   {{/if}}
+ }
+ 
+ /**
+  * Set arm angular velocity.
+  * @param velocityDegPerSec The target velocity in degrees per second
+  */
+ public void setVelocity(double velocityDegPerSec) {
+   setVelocity(velocityDegPerSec, 0);
+ }
+ 
+ /**
+  * Set arm angular velocity with acceleration.
+  * @param velocityDegPerSec The target velocity in degrees per second
+  * @param acceleration The acceleration in degrees per second squared
+  */
+ public void setVelocity(double velocityDegPerSec, double acceleration) {
+   // Convert degrees/sec to rotations/sec
+   double velocityRadPerSec = Units.degreesToRadians(velocityDegPerSec);
+   double velocityRotations = velocityRadPerSec / (2.0 * Math.PI);
+   
+   {{#if isSparkController}}
+   // Use the ProfiledPIDController
+   targetVelocity = velocityRotations;
+   currentControlMode = ControlMode.VELOCITY;
+   
+   // If acceleration is specified, update constraints
+   if (acceleration > 0) {
+     double maxAccelRotations = Units.degreesToRadians(acceleration) / (2.0 * Math.PI);
+     constraints = new TrapezoidProfile.Constraints(constraints.maxVelocity, maxAccelRotations);
+     profiledPIDController.setConstraints(constraints);
+   }
+   
+   // Apply velocity directly to the motor controller as well
+   // This ensures immediate response while the control loop refines it
+   double armAngle = getPositionRadians();
+   double ffVolts = feedforward.calculate(armAngle, velocityRotations, 0);
+   motor.setVoltage(ffVolts);
+   {{else}}
+   {{{setVelocityMethod}}}
+   {{/if}}
+ }
+ 
+ /**
+  * Set motor voltage directly.
+  * @param voltage The voltage to apply
+  */
+ public void setVoltage(double voltage) {
+   {{#if isSparkController}}
+   currentControlMode = ControlMode.OPEN_LOOP;
+   {{/if}}
+   {{{setVoltageMethod}}}
+ }
+ 
+ /**
+  * Get the arm simulation for testing.
+  * @return The arm simulation model
+  */
+ public SingleJointedArmSim getSimulation() {
+   return armSim;
+ }
+ 
+ /**
+  * Creates a command to set the arm to a specific angle.
+  * @param angleDegrees The target angle in degrees
+  * @return A command that sets the arm to the specified angle
+  */
+ public Command setAngleCommand(double angleDegrees) {
+   return runOnce(() -> setAngle(angleDegrees));
+ }
+ 
+ /**
+  * Creates a command to move the arm to a specific angle with a profile.
+  * @param angleDegrees The target angle in degrees
+  * @return A command that moves the arm to the specified angle
+  */
+ public Command moveToAngleCommand(double angleDegrees) {
+   return run(() -> {
+     {{#if isSparkController}}
+     // Just set the position and let the profiled controller handle it
+     setAngle(angleDegrees);
+     {{else}}
+     double currentAngle = Units.radiansToDegrees(getPositionRadians());
+     double error = angleDegrees - currentAngle;
+     double velocityDegPerSec = Math.signum(error) * Math.min(Math.abs(error) * 2.0, Units.radiansToDegrees(maxVelocity));
+     setVelocity(velocityDegPerSec);
+     {{/if}}
+   }).until(() -> {
+     double currentAngle = Units.radiansToDegrees(getPositionRadians());
+     return Math.abs(angleDegrees - currentAngle) < 2.0; // 2 degree tolerance
+   }).finallyDo((interrupted) -> setVelocity(0));
+ }
+ 
+ /**
+  * Creates a command to stop the arm.
+  * @return A command that stops the arm
+  */
+ public Command stopCommand() {
+   return runOnce(() -> setVelocity(0));
+ }
+ 
+ /**
+  * Creates a command to move the arm at a specific velocity.
+  * @param velocityDegPerSec The target velocity in degrees per second
+  * @return A command that moves the arm at the specified velocity
+  */
+ public Command moveAtVelocityCommand(double velocityDegPerSec) {
+   return run(() -> setVelocity(velocityDegPerSec));
+ }
+}
