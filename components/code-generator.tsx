@@ -37,9 +37,9 @@ export default function CodeGenerator() {
     motorType: z.enum(["NEO", "NEO550", "Minion", "Krakenx40", "Krakenx60"]),
     canId: z.number().int().min(0).max(62),
     pidValues: z.object({
-      kP: z.number(),
-      kI: z.number(),
-      kD: z.number(),
+      kP: z.number().min(0.0),
+      kI: z.number().min(0.0),
+      kD: z.number().min(0.0),
     }),
     maxAcceleration: z.number().optional(),
     maxVelocity: z.number().optional(),
@@ -51,7 +51,7 @@ export default function CodeGenerator() {
         kG: z.number().optional(),
       })
       .optional(),
-    gearRatio: z.number().min(0.001),
+    gearRatio: z.number().min(0.0),
     softLimits: z
       .object({
         forward: z.number().optional(),
@@ -112,7 +112,7 @@ export default function CodeGenerator() {
       motorType: "NEO",
       canId: 1,
       pidValues: {
-        kP: 0.1,
+        kP: 1.0,
         kI: 0.0,
         kD: 0.0,
       },
@@ -124,7 +124,7 @@ export default function CodeGenerator() {
         kA: 0.0,
         kG: 0.0,
       },
-      gearRatio: 1.0,
+      gearRatio: 5.0,
       softLimits: {
         forward: undefined,
         reverse: undefined,
@@ -139,7 +139,7 @@ export default function CodeGenerator() {
         closedLoop: 0.0,
       },
       telemetry: {
-        ntKey: "Subsystem",
+        ntKey: "ElevatorSubsystem",
         position: true,
         velocity: true,
         voltage: true,
