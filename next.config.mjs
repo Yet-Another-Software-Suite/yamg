@@ -9,8 +9,8 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  basePath: '/yamg',  // important if your repo is not served from root
-  trailingSlash: false,          // helps with routing in static export
+  //basePath: '/yamg',  // important if your repo is not served from root
+  //trailingSlash: false,          // helps with routing in static export
   output: 'export', // Enable static export
   distDir: 'out', // Output directory for the static build
 };
