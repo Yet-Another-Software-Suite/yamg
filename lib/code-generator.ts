@@ -15,14 +15,14 @@ initializeHandlebars()
 async function fetchTemplate(templateName: string): Promise<string> {
   try {
     // First try with .java.hbs extension
-    const response = await fetch(`/templates/${templateName}.java.hbs`)
+    const response = await fetch(`templates/${templateName}.java.hbs`)
     if (response.ok) {
       let body = await response.text()
       return body
     }
 
     // If that fails, try with .hbs extension
-    const fallbackResponse = await fetch(`/templates/${templateName}.hbs`)
+    const fallbackResponse = await fetch(`templates/${templateName}.hbs`)
     if (fallbackResponse.ok) {
       let body = await response.text()
       return body
