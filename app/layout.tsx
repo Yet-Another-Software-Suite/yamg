@@ -3,9 +3,9 @@ import "@/app/globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 
 export const metadata = {
-  title: "FRC Java Code Generator",
-  description: "Generate command-based Java code for FRC robot mechanisms",
-    generator: 'v0.dev'
+  title: "Yet Another Mechanisms Generator",
+  description: "Create a Commandsv2 Subsystem, and simulate it all in the browser!",
+  generator: 'v0.dev'
 }
 
 export default function RootLayout({
