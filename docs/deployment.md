@@ -9,18 +9,18 @@ GitHub Pages is a free hosting service that makes it easy to deploy static websi
 ### Manual Deployment
 
 1. Build the static site:
-   \`\`\`bash
+   ```bash
    pnpm build
-   \`\`\`
+   ```
 
 2. The static site will be generated in the `out` directory.
 
 3. Push the `out` directory to the `gh-pages` branch:
-   \`\`\`bash
+   ```bash
    git add out/ -f
    git commit -m "Deploy to GitHub Pages"
    git subtree push --prefix out origin gh-pages
-   \`\`\`
+   ```
 
 4. Configure GitHub Pages in your repository settings to use the `gh-pages` branch.
 
@@ -30,7 +30,7 @@ You can automate the deployment process using GitHub Actions:
 
 1. Create a file at `.github/workflows/deploy.yml` with the following content:
 
-\`\`\`yaml
+```yaml
 name: Deploy to GitHub Pages
 
 on:
@@ -68,7 +68,7 @@ jobs:
         with:
           folder: out
           branch: gh-pages
-\`\`\`
+```
 
 2. Push this file to your repository.
 
@@ -78,7 +78,7 @@ jobs:
 
 Before deploying, make sure to update the `next.config.mjs` file:
 
-\`\`\`javascript
+```javascript
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
@@ -97,7 +97,7 @@ const nextConfig = {
 };
 
 export default nextConfig;
-\`\`\`
+```
 
 ## Deploying to Other Platforms
 
