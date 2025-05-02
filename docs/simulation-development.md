@@ -6,11 +6,11 @@ This document provides detailed information about how the simulation system work
 
 The simulation system is built around a class hierarchy:
 
-\`\`\`
+```
 ControlsBaseSim (Base class)
 ├── ArmSim
 └── ElevatorSim
-\`\`\`
+```
 
 ### Core Files
 
@@ -28,7 +28,7 @@ ControlsBaseSim (Base class)
 The simulation implements a simplified physics model based on the WPILib simulation classes:
 
 1. **Motor Model**:
-   \`\`\`typescript
+   ```typescript
    // Motor constants based on type
    const motorConstants = {
      NEO: { kv: 473, kt: 0.025, R: 0.116 / motorCount, m: 0.425 * motorCount },
@@ -37,10 +37,10 @@ The simulation implements a simplified physics model based on the WPILib simulat
      KrakenX60: { kv: 590, kt: 0.021, R: 0.1 / motorCount, m: 0.39 * motorCount },
      KrakenX40: { kv: 590, kt: 0.014, R: 0.15 / motorCount, m: 0.26 * motorCount },
    }
-   \`\`\`
+   ```
 
 2. **Control System**:
-   \`\`\`typescript
+   ```typescript
    // PID Control
    calculatePID(error: number): number {
      this.integral += error * this.dt;
@@ -57,21 +57,21 @@ The simulation implements a simplified physics model based on the WPILib simulat
      const accelerationComponent = this.kA * acceleration;
      return staticComponent + velocityComponent + accelerationComponent + gravityComponent;
    }
-   \`\`\`
+   ```
 
 3. **Mechanism-Specific Physics**:
    - **Arm**: Rotational dynamics with gravity torque
-     \`\`\`typescript
+     ```typescript
      // Calculate gravity torque
      const gravityTorque = this.mass * 9.81 * (this.length / 2) * Math.sin(this.position);
      // Calculate net torque
      const netTorque = motorTorque - gravityTorque;
      // Calculate acceleration
      this.acceleration = netTorque / this.moi;
-     \`\`\`
+     ```
 
    - **Elevator**: Linear dynamics with gravity force
-     \`\`\`typescript
+     ```typescript
      // Calculate gravity torque
      const gravityTorque = this.mass * 9.81 * this.drumRadius;
      // Calculate net torque
@@ -80,13 +80,13 @@ The simulation implements a simplified physics model based on the WPILib simulat
      const rotAcceleration = netTorque / rotInertia;
      // Convert to linear acceleration
      this.acceleration = rotAcceleration * this.drumRadius;
-     \`\`\`
+     ```
 
 ### Animation Loop
 
 The animation loop is managed in `simulation-component.tsx`:
 
-\`\`\`typescript
+```typescript
 // Animation function that gets called repeatedly
 const animate = () => {
   // Update simulation with fixed time step for consistent physics
@@ -100,7 +100,7 @@ const animate = () => {
     animationRef.current = requestAnimationFrame(animate);
   }
 };
-\`\`\`
+```
 
 ## Extending the Simulation
 
@@ -110,7 +110,7 @@ To add a new mechanism type (e.g., a differential drive):
 
 1. Create a new class that extends `ControlsBaseSim`:
 
-\`\`\`typescript
+```typescript
 // lib/simulation/differential-drive-sim.ts
 import { ControlsBaseSim, type ControlsBaseSimOptions } from "@/lib/simulation/controls-base-sim";
 
@@ -140,17 +140,17 @@ export class DifferentialDriveSim extends ControlsBaseSim {
     // Implement differential drive visualization
   }
 }
-\`\`\`
+```
 
 2. Export the new class in `lib/simulation/index.ts`:
 
-\`\`\`typescript
+```typescript
 export { DifferentialDriveSim, type DifferentialDriveSimOptions } from "@/lib/simulation/differential-drive-sim";
-\`\`\`
+```
 
 3. Update `simulation-component.tsx` to handle the new mechanism type:
 
-\`\`\`typescript
+```typescript
 // In the useEffect that initializes the simulation
 switch (formValues.mechanismType) {
   case "Arm":
@@ -165,7 +165,7 @@ switch (formValues.mechanismType) {
     });
     break;
 }
-\`\`\`
+```
 
 ### Modifying Existing Simulations
 
@@ -175,7 +175,7 @@ To modify an existing simulation:
    - Update the `updatePhysics` method in the appropriate simulation class
    - For example, to add friction to the arm simulation:
 
-   \`\`\`typescript
+   ```typescript
    // In arm-sim.ts
    override updatePhysics(): void {
      // Existing code...
@@ -186,13 +186,13 @@ To modify an existing simulation:
      
      // Rest of the method...
    }
-   \`\`\`
+   ```
 
 2. **Changing Visualization**:
    - Update the `draw` method in the appropriate simulation class
    - For example, to change the arm color:
 
-   \`\`\`typescript
+   ```typescript
    // In arm-sim.ts
    override draw(): void {
      // Existing code...
@@ -202,7 +202,7 @@ To modify an existing simulation:
      
      // Rest of the method...
    }
-   \`\`\`
+   ```
 
 ## Debugging the Simulation
 
@@ -214,7 +214,7 @@ The simulation includes debug logging that can be enabled in the browser console
 
 Debug logs are output at regular intervals:
 
-\`\`\`typescript
+```typescript
 // Debug log every 50 frames (approximately once per second)
 if (Math.round(this.time * 50) % 50 === 0) {
   console.debug("Arm sim update:", {
@@ -226,7 +226,7 @@ if (Math.round(this.time * 50) % 50 === 0) {
     target: this.target,
   });
 }
-\`\`\`
+```
 
 ## Performance Considerations
 
