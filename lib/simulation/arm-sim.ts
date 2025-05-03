@@ -151,7 +151,7 @@ export class ArmSim extends ControlsBaseSim {
     ctx.lineWidth = 3
     ctx.beginPath()
     ctx.moveTo(x, y)
-    ctx.lineTo(x + radius * Math.sin(this.position), y - radius * Math.cos(this.position))
+    ctx.lineTo(x + radius * Math.cos(this.position), y - radius * Math.sin(this.position))
     ctx.stroke()
 
     // Draw target angle marker
@@ -159,7 +159,7 @@ export class ArmSim extends ControlsBaseSim {
     ctx.lineWidth = 2
     ctx.beginPath()
     ctx.moveTo(x, y)
-    ctx.lineTo(x + radius * Math.sin(this.target), y - radius * Math.cos(this.target))
+    ctx.lineTo(x + radius * Math.cos(this.target), y - radius * Math.sin(this.target))
     ctx.stroke()
   }
 
