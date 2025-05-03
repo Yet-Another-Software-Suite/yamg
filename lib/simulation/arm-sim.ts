@@ -143,7 +143,7 @@ export class ArmSim extends ControlsBaseSim {
     ctx.strokeStyle = "rgba(100, 100, 100, 0.5)"
     ctx.lineWidth = 2
     ctx.beginPath()
-    ctx.arc(x, y, radius, this.maxAngle, this.minAngle)
+    ctx.arc(x, y, radius, -this.maxAngle, -this.minAngle)
     ctx.stroke()
 
     // Draw current angle marker
