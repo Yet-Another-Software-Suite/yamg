@@ -100,8 +100,8 @@ export class ArmSim extends ControlsBaseSim {
     // Calculate arm endpoint
     const scale = Math.min(width, height) * 0.4 // Scale arm to fit canvas
     const armLength = this.length * scale
-    const endX = originX + armLength * Math.sin(this.position)
-    const endY = originY - armLength * Math.cos(this.position)
+    const endX = originX + armLength * Math.cos(this.position)
+    const endY = originY - armLength * Math.sin(this.position)
 
     // Draw base
     ctx.fillStyle = "#333"
