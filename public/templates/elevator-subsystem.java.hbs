@@ -66,8 +66,6 @@ public class {{subsystemName}} extends SubsystemBase {
   // Profiled PID Controller
   private ProfiledPIDController profiledPIDController;
   private TrapezoidProfile.Constraints constraints;
-  private Notifier controlLoop;
-  private final double CONTROL_LOOP_FREQUENCY = 100.0; // Hz
   {{/if}}
   
   // Telemetry
@@ -137,10 +135,6 @@ public class {{subsystemName}} extends SubsystemBase {
     
     constraints = new TrapezoidProfile.Constraints(maxVelocityRotations, maxAccelerationRotations);
     profiledPIDController = new ProfiledPIDController(kP, kI, kD, constraints);
-    
-    // Start control loop on a separate thread using Notifier
-    controlLoop = new Notifier(this::controlLoopFn);
-    controlLoop.startPeriodic(1.0 / CONTROL_LOOP_FREQUENCY);
     {{/if}}
   }
   
@@ -196,6 +190,9 @@ public class {{subsystemName}} extends SubsystemBase {
   @Override
   public void periodic() {
     updateTelemetry();
+    {{#if isSparkController}}
+    controlLoopFn();
+    {{/if}}
   }
   
   /**
