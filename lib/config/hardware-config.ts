@@ -123,7 +123,7 @@ export const MOTOR_CONTROLLERS: Record<string, MotorControllerDefinition> = {
   },
   TalonFX: {
     name: "TalonFX",
-    displayName: "TalonFX (Phoenix 6)",
+    displayName: "TalonFX",
     supportsCurrentLimit: true,
     supportsSupplyCurrentLimit: true,
     supportsBrakeMode: true,
@@ -136,7 +136,7 @@ export const MOTOR_CONTROLLERS: Record<string, MotorControllerDefinition> = {
   },
   TalonFXS: {
     name: "TalonFXS",
-    displayName: "TalonFX (Phoenix 6)",
+    displayName: "TalonFXS",
     supportsCurrentLimit: true,
     supportsSupplyCurrentLimit: true,
     supportsBrakeMode: true,
