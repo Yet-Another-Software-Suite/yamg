@@ -238,8 +238,14 @@ export function getMechanism(mechanismName: string): MechanismDefinition {
  * Check if a motor is compatible with a motor controller
  */
 export function isMotorCompatibleWithController(motorName: string, controllerName: string): boolean {
-  const motor = getMotor(motorName)
-  return motor.compatibleControllers.includes(controllerName)
+  try {
+    const motor = getMotor(motorName)
+    return motor.compatibleControllers.includes(controllerName)
+  } 
+  catch(error) {
+    return true
+  }
+  
 }
 
 /**

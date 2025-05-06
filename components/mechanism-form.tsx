@@ -15,15 +15,14 @@ import {
   MOTOR_CONTROLLERS,
   MOTORS,
   getCompatibleMotors,
+  isMotorCompatibleWithController
 } from "@/lib/config/hardware-config"
 
 export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
   const mechanismType = form.watch("mechanismType")
-  const motorControllerType = form.watch("motorControllerType")
-  const motorType = form.watch("motorType")
+  const motorControllerType = form.watch("motorControllerType", "SparkMAX")
+  const motorType = form.watch("motorType", "NEO")
 
-  // Get compatible options based on current selections
-  const isKraken = motorType === "Krakenx44" || motorType === "Krakenx60"
 
   // Get all available controllers and motors from the configuration
   const allControllers = Object.values(MOTOR_CONTROLLERS)
@@ -37,10 +36,10 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
     form.setValue("motorControllerType", value)
 
     // If changing away from TalonFX and using a Kraken motor, switch to KrakenX60
-    if (value !== "TalonFX" && (motorType === "Krakenx44" || motorType === "Krakenx60")) {
+    if (value !== "TalonFX" && !isMotorCompatibleWithController(motorType, value)) {
       form.setValue("motorType", "NEO")
     }
-    if(value === "TalonFX" && (motorType !== "Krakenx44" && motorType !== "Krakenx60")) {
+    else if(value === "TalonFX" && !isMotorCompatibleWithController(motorType, value)) {
       form.setValue("motorType", "Krakenx60")
     }
   }
@@ -160,7 +159,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                         ))}
                       </SelectContent>
                     </Select>
-                    <FormDescription>{isKraken ? "Kraken motors can only be used with TalonFX" : ""}</FormDescription>
+                    <FormDescription>{isMotorCompatibleWithController(motorType, motorControllerType) ? "Kraken motors can only be used with TalonFX" : ""}</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
