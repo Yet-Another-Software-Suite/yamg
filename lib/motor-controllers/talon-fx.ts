@@ -31,14 +31,14 @@ slot0.kI = kI;
 slot0.kD = kD;
 
 // Set ramp rates
-if (enableOpenLoopRamp) {
+{{#if enableOpenLoopRamp}}
   OpenLoopRampsConfigs openLoopRamps = config.OpenLoopRamps;
   openLoopRamps.DutyCycleOpenLoopRampPeriod = openLoopRampRate;
-}
-if (enableClosedLoopRamp) {
+{{/if}}
+{{#if enableClosedLoopRamp}}
   ClosedLoopRampsConfigs closedLoopRamps = config.ClosedLoopRamps;
   closedLoopRamps.VoltageClosedLoopRampPeriod = closedLoopRampRate;
-}
+{{/if}}
 
 // Set current limits
 CurrentLimitsConfigs currentLimits = config.CurrentLimits;
@@ -46,18 +46,14 @@ currentLimits.StatorCurrentLimit = statorCurrentLimit;
 currentLimits.StatorCurrentLimitEnable = enableStatorLimit;
 currentLimits.SupplyCurrentLimit = supplyCurrentLimit;
 currentLimits.SupplyCurrentLimitEnable = enableSupplyLimit;
-
+{{#if enableSoftLimits}}
 // Set soft limits
 SoftwareLimitSwitchConfigs softLimits = config.SoftwareLimitSwitch;
-if (enableSoftLimits && forwardSoftLimit != null) {
   softLimits.ForwardSoftLimitThreshold = forwardSoftLimit;
   softLimits.ForwardSoftLimitEnable = true;
-}
-  
-if (enableSoftLimits && reverseSoftLimit != null) {
   softLimits.ReverseSoftLimitThreshold = reverseSoftLimit;
   softLimits.ReverseSoftLimitEnable = true;
-}
+{{/if}}
 
 // Apply configuration
 motor.getConfigurator().apply(config);

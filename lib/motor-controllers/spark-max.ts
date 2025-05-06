@@ -23,17 +23,17 @@ pidController.setI(kI);
 pidController.setD(kD);
 
 // Set ramp rates
-if (enableOpenLoopRamp) {
+{{#if enableOpenLoopRamp}}
   motor.setOpenLoopRampRate(openLoopRampRate);
-}
-if (enableClosedLoopRamp) {
+{{/if}}
+{{#if enableClosedLoopRamp}}
   motor.setClosedLoopRampRate(closedLoopRampRate);
-}
+{{/if}}
 
 // Set current limits
-if (enableStatorLimit) {
+{{#if enableStatorLimit}}
   motor.setSmartCurrentLimit((int)statorCurrentLimit);
-}
+{{/if}}
 
 // Set soft limits
 {{#if enableSoftLimits}}

@@ -22,34 +22,31 @@ motor.config_kI(0, kI);
 motor.config_kD(0, kD);
 
 // Set ramp rates
-if (enableOpenLoopRamp) {
+{{#if enableOpenLoopRamp}}
   motor.configOpenloopRamp(openLoopRampRate);
-}
-if (enableClosedLoopRamp) {
+{{/if}}
+{{#if enableClosedLoopRamp}}
   motor.configClosedloopRamp(closedLoopRampRate);
-}
+{{/if}}
 
 // Set current limits
-if (enableStatorLimit) {
+{{#if enableStatorLimit}}
   motor.configStatorCurrentLimit(new StatorCurrentLimitConfiguration(
       true, statorCurrentLimit, statorCurrentLimit + 5, 0.5));
-}
+{{/if}}
 
-if (enableSupplyLimit) {
+{{#if enableSupplyLimit}}
   motor.configSupplyCurrentLimit(new SupplyCurrentLimitConfiguration(
       true, supplyCurrentLimit, supplyCurrentLimit + 5, 0.5));
-}
-
+{{/if}}
+{{#if enableSoftLimits}}
 // Set soft limits
-if (enableSoftLimits && forwardSoftLimit != null) {
   motor.configForwardSoftLimitThreshold(forwardSoftLimit * 2048.0 / (2.0 * Math.PI));
   motor.configForwardSoftLimitEnable(true);
-}
   
-if (enableSoftLimits && reverseSoftLimit != null) {
   motor.configReverseSoftLimitThreshold(reverseSoftLimit * 2048.0 / (2.0 * Math.PI));
   motor.configReverseSoftLimitEnable(true);
-}
+{{/if}}
 
 // Set brake mode
 motor.setNeutralMode(brakeMode ? NeutralMode.Brake : NeutralMode.Coast);

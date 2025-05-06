@@ -23,28 +23,24 @@ pidController.setI(kI);
 pidController.setD(kD);
 
 // Set ramp rates
-if (enableOpenLoopRamp) {
+{{#if enableOpenLoopRamp}}
   motor.setOpenLoopRampRate(openLoopRampRate);
-}
-if (enableClosedLoopRamp) {
+{{/if}}
+{{#if enableClosedLoopRamp}}
   motor.setClosedLoopRampRate(closedLoopRampRate);
-}
+{{/if}}
 
 // Set current limits
-if (enableStatorLimit) {
+{{#if enableStatorLimit}}
   motor.setSmartCurrentLimit((int)statorCurrentLimit);
-}
-
+{{/if}}
+{{#if enableSoftLimits}}
 // Set soft limits
-if (enableSoftLimits && forwardSoftLimit != null) {
   motor.setSoftLimit(CANSparkFlex.SoftLimitDirection.kForward, forwardSoftLimit.floatValue());
   motor.enableSoftLimit(CANSparkFlex.SoftLimitDirection.kForward, true);
-}
-  
-if (enableSoftLimits && reverseSoftLimit != null) {
   motor.setSoftLimit(CANSparkFlex.SoftLimitDirection.kReverse, reverseSoftLimit.floatValue());
   motor.enableSoftLimit(CANSparkFlex.SoftLimitDirection.kReverse, true);
-}
+{{/if}}
 
 // Save configuration
 motor.burnFlash();`

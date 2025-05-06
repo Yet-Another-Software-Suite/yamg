@@ -24,28 +24,23 @@ pidController.setI(kI);
 pidController.setD(kD);
 
 // Set ramp rates
-if (enableOpenLoopRamp) {
+{{#if enableOpenLoopRamp}}
   motor.setOpenLoopRampRate(openLoopRampRate);
-}
-if (enableClosedLoopRamp) {
+{{/if}}
+{{#if enableClosedLoopRamp}}
   motor.setClosedLoopRampRate(closedLoopRampRate);
-}
+{{/if}}
 
 // Set current limits
-if (enableStatorLimit) {
+{{#if enableStatorLimit}}
   motor.setCurrentLimit(statorCurrentLimit);
-}
-
-// Set soft limits
-if (enableSoftLimits && forwardSoftLimit != null) {
+{{/if}}
+{{#if enableSoftLimits}}
   motor.configForwardSoftLimit(forwardSoftLimit);
   motor.enableForwardSoftLimit(true);
-}
-  
-if (enableSoftLimits && reverseSoftLimit != null) {
   motor.configReverseSoftLimit(reverseSoftLimit);
   motor.enableReverseSoftLimit(true);
-}`
+{{/if}}`
 
 export const getMethods = () => ({
   getPositionMethod: `return encoder.getPosition() / gearRatio;`,
