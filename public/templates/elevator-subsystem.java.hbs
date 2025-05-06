@@ -32,13 +32,17 @@ public class {{subsystemName}} extends SubsystemBase {
   private final double maxVelocity = {{maxVelocity}}; // meters per second
   private final double maxAcceleration = {{maxAcceleration}}; // meters per second squared
   private final boolean brakeMode = {{brakeMode}};
-  private final Double forwardSoftLimit = {{forwardSoftLimit}}; // max height in meters
-  private final Double reverseSoftLimit = {{reverseSoftLimit}}; // min height in meters
-  private final boolean enableSoftLimits = {{enableSoftLimits}};
+  
+ {{#if enableSoftLimits}}
+  private final double forwardSoftLimit = {{forwardSoftLimit}}; // max angle in meters
+  private final double reverseSoftLimit = {{reverseSoftLimit}}; // min angle in meters
+ {{/if}}
+ {{#if enableStatorLimit}}
   private final double statorCurrentLimit = {{statorCurrentLimit}};
+ {{/if}}
+ {{#if enableSupplyLimit}}
   private final double supplyCurrentLimit = {{supplyCurrentLimit}};
-  private final boolean enableStatorLimit = {{enableStatorLimit}};
-  private final boolean enableSupplyLimit = {{enableSupplyLimit}};
+ {{/if}}
   private final double drumRadius = {{drumRadius}}; // meters
   
   // Feedforward
@@ -354,11 +358,6 @@ public class {{subsystemName}} extends SubsystemBase {
       constraints = new TrapezoidProfile.Constraints(constraints.maxVelocity, maxAccelRotations);
       profiledPIDController.setConstraints(constraints);
     }
-    
-    // Apply velocity directly to the motor controller as well
-    // This ensures immediate response while the control loop refines it
-    double ffVolts = feedforward.calculate(velocityRotations);
-    motor.setVoltage(ffVolts);
     {{else}}
     {{{setVelocityMethod}}}
     {{/if}}
@@ -411,7 +410,7 @@ public class {{subsystemName}} extends SubsystemBase {
     }).until(() -> {
       double currentHeight = getPosition() * (2.0 * Math.PI * drumRadius);
       return Math.abs(heightMeters - currentHeight) < 0.02; // 2cm tolerance
-    }).finallyDo((interrupted) -> setVelocity(0));
+    });
   }
   
   /**

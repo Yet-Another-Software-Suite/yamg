@@ -31,13 +31,16 @@ public class {{subsystemName}} extends SubsystemBase {
  private final double maxVelocity = {{maxVelocity}}; // rad/s
  private final double maxAcceleration = {{maxAcceleration}}; // rad/s²
  private final boolean brakeMode = {{brakeMode}};
- private final Double forwardSoftLimit = {{forwardSoftLimit}}; // max angle in radians
- private final Double reverseSoftLimit = {{reverseSoftLimit}}; // min angle in radians
- private final boolean enableSoftLimits = {{enableSoftLimits}};
+ {{#if enableSoftLimits}}
+ private final double forwardSoftLimit = {{forwardSoftLimit}}; // max angle in radians
+ private final double reverseSoftLimit = {{reverseSoftLimit}}; // min angle in radians
+ {{/if}}
+ {{#if enableStatorLimit}}
  private final double statorCurrentLimit = {{statorCurrentLimit}};
+ {{/if}}
+ {{#if enableSupplyLimit}}
  private final double supplyCurrentLimit = {{supplyCurrentLimit}};
- private final boolean enableStatorLimit = {{enableStatorLimit}};
- private final boolean enableSupplyLimit = {{enableSupplyLimit}};
+ {{/if}}
  private final double armLength = {{armLength}}; // meters
  
  // Feedforward
@@ -65,8 +68,6 @@ public class {{subsystemName}} extends SubsystemBase {
  // Profiled PID Controller
  private ProfiledPIDController profiledPIDController;
  private TrapezoidProfile.Constraints constraints;
- private Notifier controlLoop;
- private final double CONTROL_LOOP_FREQUENCY = 100.0; // Hz
  {{/if}}
  
  // Telemetry
@@ -137,10 +138,6 @@ public class {{subsystemName}} extends SubsystemBase {
    
    constraints = new TrapezoidProfile.Constraints(maxVelocityRotations, maxAccelerationRotations);
    profiledPIDController = new ProfiledPIDController(kP, kI, kD, constraints);
-   
-   // Start control loop on a separate thread using Notifier
-   controlLoop = new Notifier(this::controlLoopFn);
-   controlLoop.startPeriodic(1.0 / CONTROL_LOOP_FREQUENCY);
    {{/if}}
  }
  
@@ -198,6 +195,9 @@ public class {{subsystemName}} extends SubsystemBase {
  @Override
  public void periodic() {
    updateTelemetry();
+{{#if isSparkController}}
+   controlLoopFn();
+{{/if}}
  }
  
  /**

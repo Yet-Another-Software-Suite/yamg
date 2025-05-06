@@ -32,13 +32,16 @@ private final double kD = {{kD}};
 private final double maxVelocity = {{maxVelocity}}; // rad/s
 private final double maxAcceleration = {{maxAcceleration}}; // rad/s²
 private final boolean brakeMode = {{brakeMode}};
-private final Double forwardSoftLimit = {{forwardSoftLimit}}; // max angle in radians
-private final Double reverseSoftLimit = {{reverseSoftLimit}}; // min angle in radians
-private final boolean enableSoftLimits = {{enableSoftLimits}};
-private final double statorCurrentLimit = {{statorCurrentLimit}};
-private final double supplyCurrentLimit = {{supplyCurrentLimit}};
-private final boolean enableStatorLimit = {{enableStatorLimit}};
-private final boolean enableSupplyLimit = {{enableSupplyLimit}};
+ {{#if enableSoftLimits}}
+ private final double forwardSoftLimit = {{forwardSoftLimit}}; // max angle in radians
+ private final double reverseSoftLimit = {{reverseSoftLimit}}; // min angle in radians
+ {{/if}}
+ {{#if enableStatorLimit}}
+ private final double statorCurrentLimit = {{statorCurrentLimit}};
+ {{/if}}
+ {{#if enableSupplyLimit}}
+ private final double supplyCurrentLimit = {{supplyCurrentLimit}};
+ {{/if}}
 
 // Feedforward
 private final ArmFeedforward feedforward = new ArmFeedforward(
