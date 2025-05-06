@@ -131,8 +131,14 @@ async function processTemplate(templateName: string, data: FormValues): Promise<
     const actualTemplateName = templateName === "mechanism-subsystem" ? mechanism.templateName : templateName
 
     const template = await fetchTemplate(actualTemplateName)
-    const compiledTemplate = Handlebars.compile(template)
-    const result = compiledTemplate(templateData)
+    let compiledTemplate = Handlebars.compile(template)
+    let result = compiledTemplate(templateData)
+    while(result.includes("{{#if"))
+    {
+      compiledTemplate = Handlebars.compile(result)
+      result = compiledTemplate(templateData)
+    }
+    
     return result
   } catch (error) {
     console.error("Error processing template:", error)
