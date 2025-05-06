@@ -1,4 +1,6 @@
 // First, let's create a proper interface for the constructor options
+import { getMotor } from "@/lib/config/hardware-config"
+
 export interface ControlsBaseSimOptions {
   // Motor configuration
   motorType?: string
@@ -89,31 +91,26 @@ export class ControlsBaseSim {
     this.prevError = 0
 
     // Motor configuration
-    this.configureMotor(options)
-  }
-
-  configureMotor(options: ControlsBaseSimOptions): void {
     // Default motor is a NEO
     const motorType = options.motorType || "NEO"
     const gearing = options.gearing || 1.0
     const motorCount = options.motorCount || 1
 
-    // Motor constants based on type
-    const motorConstants: Record<string, { kv: number; kt: number; R: number; m: number }> = {
-      NEO: { kv: 473, kt: 0.025, R: 0.116 / motorCount, m: 0.425 * motorCount },
-      NEO550: { kv: 774, kt: 0.015, R: 0.08 / motorCount, m: 0.235 * motorCount },
-      Falcon500: { kv: 577, kt: 0.019, R: 0.115 / motorCount, m: 0.31 * motorCount },
-      KrakenX60: { kv: 590, kt: 0.021, R: 0.1 / motorCount, m: 0.39 * motorCount },
-      KrakenX40: { kv: 590, kt: 0.014, R: 0.15 / motorCount, m: 0.26 * motorCount },
+    let motorDef = getMotor("NEO")
+    try {
+      const motorDef = getMotor(motorType)
+    }
+    catch(error) {
+      // Fallback to NEO if motor not found
+      console.warn(`Motor type ${motorType} not found in configuration, using NEO as fallback`)
+      motorDef = getMotor("NEO")
     }
 
-    const constants = motorConstants[motorType] || motorConstants["NEO"]
-
     this.motor = {
-      kv: constants.kv / gearing, // RPM/V
-      kt: constants.kt * gearing, // N-m/A
-      R: constants.R, // Ohms
-      m: constants.m, // kg
+      kv: motorDef.kv / gearing, // RPM/V
+      kt: motorDef.kt * gearing, // N-m/A
+      R: motorDef.resistance / motorCount, // Ohms per motor
+      m: motorDef.mass * motorCount, // kg per motor
       gearing: gearing,
     }
   }

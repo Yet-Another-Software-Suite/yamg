@@ -12,7 +12,7 @@ This tool helps FRC teams quickly generate well-structured, command-based Java c
 - Real-time simulation of mechanism behavior
 - Generated Java code for subsystems with proper control methods
 - Support for different motor controllers (SparkMAX, SparkFlex, TalonFX, TalonFXS, ThriftyNova)
-- Support for different motor types (NEO, NEO550, Minion, Krakenx40, Krakenx60)
+- Support for different motor types (NEO, NEO550, Minion, Krakenx44, Krakenx60)
 
 ## Features
 

@@ -34,7 +34,7 @@ export default function CodeGenerator() {
     subsystemName: z.string().min(1, "Subsystem name is required"),
     mechanismType: z.enum(["Elevator", "Arm", "Pivot"]),
     motorControllerType: z.enum(["ThriftyNova", "SparkMAX", "SparkFlex", "TalonFX", "TalonFXS"]),
-    motorType: z.enum(["NEO", "NEO550", "Minion", "Krakenx40", "Krakenx60"]),
+    motorType: z.enum(["NEO", "NEO550", "Minion", "Krakenx44", "Krakenx60"]),
     canId: z.number().int().min(0).max(62),
     pidValues: z.object({
       kP: z.number().min(0.0),

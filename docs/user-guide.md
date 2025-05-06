@@ -35,7 +35,7 @@ Configure the motor and motor controller settings:
    - **NEO**: REV Robotics NEO brushless motor
    - **NEO550**: REV Robotics NEO 550 brushless motor
    - **Minion**: REV Robotics Minion motor
-   - **Krakenx40**: CTRE Kraken X40 motor (only with TalonFX)
+   - **Krakenx44**: CTRE Kraken X40 motor (only with TalonFX)
    - **Krakenx60**: CTRE Kraken X60 motor (only with TalonFX)
 
 3. **CAN ID**: Enter the CAN ID for your motor controller (typically 1-62)

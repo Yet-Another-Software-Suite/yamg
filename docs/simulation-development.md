@@ -35,7 +35,7 @@ The simulation implements a simplified physics model based on the WPILib simulat
      NEO550: { kv: 774, kt: 0.015, R: 0.08 / motorCount, m: 0.235 * motorCount },
      Falcon500: { kv: 577, kt: 0.019, R: 0.115 / motorCount, m: 0.31 * motorCount },
      KrakenX60: { kv: 590, kt: 0.021, R: 0.1 / motorCount, m: 0.39 * motorCount },
-     KrakenX40: { kv: 590, kt: 0.014, R: 0.15 / motorCount, m: 0.26 * motorCount },
+     KrakenX44: { kv: 590, kt: 0.014, R: 0.15 / motorCount, m: 0.26 * motorCount },
    }
    ```
 

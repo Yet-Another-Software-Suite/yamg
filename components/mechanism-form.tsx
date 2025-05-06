@@ -24,7 +24,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
   const motorType = form.watch("motorType")
 
   // Get compatible options based on current selections
-  const isKraken = motorType === "Krakenx40" || motorType === "Krakenx60"
+  const isKraken = motorType === "Krakenx44" || motorType === "Krakenx60"
 
   // Get all available controllers and motors from the configuration
   const allControllers = Object.values(MOTOR_CONTROLLERS)
@@ -39,7 +39,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
     form.setValue("motorControllerType", value)
 
     // If changing away from TalonFX and using a Kraken motor, switch to NEO
-    if (value !== "TalonFX" && (motorType === "Krakenx40" || motorType === "Krakenx60")) {
+    if (value !== "TalonFX" && (motorType === "Krakenx44" || motorType === "Krakenx60")) {
       form.setValue("motorType", "NEO")
     }
   }
@@ -49,7 +49,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
     form.setValue("motorType", value)
 
     // If changing to a Kraken motor and not using TalonFX, switch to TalonFX
-    if ((value === "Krakenx40" || value === "Krakenx60") && motorControllerType !== "TalonFX") {
+    if ((value === "Krakenx44" || value === "Krakenx60") && motorControllerType !== "TalonFX") {
       form.setValue("motorControllerType", "TalonFX")
     }
   }
