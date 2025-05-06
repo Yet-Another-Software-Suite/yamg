@@ -8,6 +8,7 @@ import type { FormValues } from "@/lib/types"
 import type { ControlsBaseSim } from "@/lib/simulation/controls-base-sim"
 import { ArmSim } from "@/lib/simulation/arm-sim"
 import { ElevatorSim } from "@/lib/simulation/elevator-sim"
+import { createSimulationOptions, getSliderRangeConfig, convertTargetValue } from "@/lib/simulation/simulation-config"
 
 // Add this function right after the imports but before the component definition
 function suppressResizeObserverErrors() {
@@ -55,88 +56,16 @@ export default function SimulationComponent({ formValues, simType }: SimulationC
 
     try {
       // Create simulation instance based on mechanism type
-      let sim: ControlsBaseSim | null = null
       const canvas = canvasRef.current
+      const { simType: simClassName, options } = createSimulationOptions(formValues, canvas)
 
-      switch (formValues.mechanismType) {
-        case "Arm":
-          sim = new ArmSim(canvas, {
-            length: formValues.armParams?.length || 1.0,
-            mass: formValues.armParams?.mass || 5.0,
-            motorCount: 1,
-            gearing: formValues.gearRatio,
-            motorType: getMotorType(formValues.motorType),
-            minAngle:
-              formValues.armParams?.hardLimitMin !== undefined
-                ? (Math.PI * formValues.armParams.hardLimitMin) / 180
-                : -Math.PI / 2,
-            maxAngle:
-              formValues.armParams?.hardLimitMax !== undefined
-                ? (Math.PI * formValues.armParams.hardLimitMax) / 180
-                : Math.PI / 2,
-            startingAngle:
-              formValues.armParams?.startingPosition !== undefined
-                ? (Math.PI * formValues.armParams.startingPosition) / 180
-                : 0,
-            kP: formValues.pidValues.kP,
-            kI: formValues.pidValues.kI,
-            kD: formValues.pidValues.kD,
-            kS: formValues.feedforward?.kS || 0,
-            kV: formValues.feedforward?.kV || 0,
-            kA: formValues.feedforward?.kA || 0,
-            kG: formValues.feedforward?.kG || 0,
-          })
+      let sim: ControlsBaseSim | null = null
 
-          // Set initial target value for slider
-          setTargetValue(formValues.armParams?.startingPosition || 0)
-          break
-
-        case "Elevator":
-          sim = new ElevatorSim(canvas, {
-            mass: formValues.elevatorParams?.mass || 5.0,
-            drumRadius: formValues.elevatorParams?.drumRadius || 0.0254,
-            motorCount: 1,
-            gearing: formValues.gearRatio,
-            motorType: getMotorType(formValues.motorType),
-            minHeight: formValues.elevatorParams?.hardLimitMin || 0,
-            maxHeight: formValues.elevatorParams?.hardLimitMax || 1.0,
-            startingHeight: formValues.elevatorParams?.startingHeight || 0,
-            kP: formValues.pidValues.kP,
-            kI: formValues.pidValues.kI,
-            kD: formValues.pidValues.kD,
-            kS: formValues.feedforward?.kS || 0,
-            kV: formValues.feedforward?.kV || 0,
-            kA: formValues.feedforward?.kA || 0,
-            kG: formValues.feedforward?.kG || 0,
-          })
-
-          // Set initial target value for slider
-          setTargetValue(formValues.elevatorParams?.startingHeight || 0)
-          break
-
-        case "Pivot":
-          // For pivot, we'll use the arm simulation with different parameters
-          sim = new ArmSim(canvas, {
-            length: 0.3, // Short arm for pivot visualization
-            mass: 2.0,
-            motorCount: 1,
-            gearing: formValues.gearRatio,
-            motorType: getMotorType(formValues.motorType),
-            minAngle: -Math.PI / 2,
-            maxAngle: Math.PI / 2,
-            startingAngle: 0,
-            kP: formValues.pidValues.kP,
-            kI: formValues.pidValues.kI,
-            kD: formValues.pidValues.kD,
-            kS: formValues.feedforward?.kS || 0,
-            kV: formValues.feedforward?.kV || 0,
-            kA: formValues.feedforward?.kA || 0,
-            kG: 0, // No gravity compensation for pivot
-          })
-
-          // Set initial target value for slider
-          setTargetValue(0)
-          break
+      // Create the appropriate simulation instance
+      if (simClassName === "ArmSim") {
+        sim = new ArmSim(canvas, options)
+      } else if (simClassName === "ElevatorSim") {
+        sim = new ElevatorSim(canvas, options)
       }
 
       if (sim) {
@@ -144,6 +73,10 @@ export default function SimulationComponent({ formValues, simType }: SimulationC
         sim.draw() // Initial draw
         setSimInstance(sim)
         setError(null)
+
+        // Set initial target value
+        const sliderConfig = getSliderRangeConfig(formValues, simType)
+        setTargetValue(sliderConfig.initialValue)
       }
     } catch (error) {
       console.error("Error initializing simulation:", error)
@@ -199,40 +132,14 @@ export default function SimulationComponent({ formValues, simType }: SimulationC
     }
   }, [simType, simInstance])
 
-  // Helper function to map motor types to WPILib motor types
-  const getMotorType = (motorType: string) => {
-    switch (motorType) {
-      case "NEO":
-        return "NEO"
-      case "NEO550":
-        return "NEO550"
-      case "Krakenx60":
-        return "KrakenX60"
-      case "Krakenx40":
-        return "KrakenX40"
-      case "Minion":
-        return "Falcon500" // Closest approximation
-      default:
-        return "NEO"
-    }
-  }
-
   const toggleSimulation = () => {
     // When starting the simulation, ensure we have a valid target
     if (!isRunning && simInstance) {
       // Set the target based on the current slider value
       if (simType === "position") {
-        if (formValues.mechanismType === "Arm" || formValues.mechanismType === "Pivot") {
-          simInstance.setTarget((targetValue * Math.PI) / 180)
-        } else {
-          simInstance.setTarget(targetValue)
-        }
+        simInstance.setTarget(convertTargetValue(targetValue, formValues, simType))
       } else {
-        if (formValues.mechanismType === "Arm" || formValues.mechanismType === "Pivot") {
-          simInstance.setTargetVelocity((targetValue * Math.PI) / 180)
-        } else {
-          simInstance.setTargetVelocity(targetValue)
-        }
+        simInstance.setTargetVelocity(convertTargetValue(targetValue, formValues, simType))
       }
 
       // Force an initial update to get things moving
@@ -251,13 +158,8 @@ export default function SimulationComponent({ formValues, simType }: SimulationC
       simInstance.draw()
 
       // Reset target value to initial position
-      if (formValues.mechanismType === "Arm") {
-        setTargetValue(formValues.armParams?.startingPosition || 0)
-      } else if (formValues.mechanismType === "Elevator") {
-        setTargetValue(formValues.elevatorParams?.startingHeight || 0)
-      } else {
-        setTargetValue(0)
-      }
+      const sliderConfig = getSliderRangeConfig(formValues, simType)
+      setTargetValue(sliderConfig.initialValue)
     }
   }
 
@@ -269,23 +171,9 @@ export default function SimulationComponent({ formValues, simType }: SimulationC
 
     try {
       if (simType === "position") {
-        // Set position target based on mechanism type
-        if (formValues.mechanismType === "Arm" || formValues.mechanismType === "Pivot") {
-          // Convert degrees to radians for arm/pivot
-          simInstance.setTarget((newTarget * Math.PI) / 180)
-        } else {
-          // Use meters directly for elevator
-          simInstance.setTarget(newTarget)
-        }
+        simInstance.setTarget(convertTargetValue(newTarget, formValues, simType))
       } else {
-        // Set velocity target based on mechanism type
-        if (formValues.mechanismType === "Arm" || formValues.mechanismType === "Pivot") {
-          // Convert degrees/s to radians/s for arm/pivot
-          simInstance.setTargetVelocity((newTarget * Math.PI) / 180)
-        } else {
-          // Use m/s directly for elevator
-          simInstance.setTargetVelocity(newTarget)
-        }
+        simInstance.setTargetVelocity(convertTargetValue(newTarget, formValues, simType))
       }
 
       // Redraw if not running
@@ -298,58 +186,7 @@ export default function SimulationComponent({ formValues, simType }: SimulationC
   }
 
   // Get min/max values for slider based on mechanism type
-  const getSliderRange = () => {
-    if (simType === "position") {
-      switch (formValues.mechanismType) {
-        case "Arm":
-          return {
-            min: formValues.armParams?.hardLimitMin !== undefined ? formValues.armParams.hardLimitMin : -90,
-            max: formValues.armParams?.hardLimitMax !== undefined ? formValues.armParams.hardLimitMax : 90,
-            step: 1,
-            unit: "°",
-          }
-        case "Elevator":
-          return {
-            min: formValues.elevatorParams?.hardLimitMin !== undefined ? formValues.elevatorParams.hardLimitMin : 0,
-            max: formValues.elevatorParams?.hardLimitMax !== undefined ? formValues.elevatorParams.hardLimitMax : 1.0,
-            step: 0.01,
-            unit: "m",
-          }
-        case "Pivot":
-          return {
-            min: -90,
-            max: 90,
-            step: 1,
-            unit: "°",
-          }
-        default:
-          return { min: -1, max: 1, step: 0.1, unit: "" }
-      }
-    } else {
-      // Velocity control
-      switch (formValues.mechanismType) {
-        case "Arm":
-        case "Pivot":
-          return {
-            min: -90,
-            max: 90,
-            step: 1,
-            unit: "°/s",
-          }
-        case "Elevator":
-          return {
-            min: -1,
-            max: 1,
-            step: 0.01,
-            unit: "m/s",
-          }
-        default:
-          return { min: -1, max: 1, step: 0.1, unit: "" }
-      }
-    }
-  }
-
-  const sliderRange = getSliderRange()
+  const sliderRange = getSliderRangeConfig(formValues, simType)
 
   if (error) {
     return (

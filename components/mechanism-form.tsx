@@ -10,22 +10,29 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import {
+  MECHANISMS,
+  MOTOR_CONTROLLERS,
+  MOTORS,
+  getCompatibleMotors,
+  getCompatibleControllers,
+} from "@/lib/config/hardware-config"
 
 export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
   const mechanismType = form.watch("mechanismType")
   const motorControllerType = form.watch("motorControllerType")
   const motorType = form.watch("motorType")
 
-  // Define compatible options
-  const allControllerOptions = ["ThriftyNova", "SparkMAX", "SparkFlex", "TalonFX", "TalonFXS"]
-  const krakenControllerOptions = ["TalonFX"]
-  const allMotorOptions = ["NEO", "NEO550", "Minion"]
-  const talonMotorOptions = ["NEO", "NEO550", "Minion", "Krakenx40", "Krakenx60"]
-
-  // Determine which options to show based on current selections
+  // Get compatible options based on current selections
   const isKraken = motorType === "Krakenx40" || motorType === "Krakenx60"
-  const controllerOptions = isKraken ? krakenControllerOptions : allControllerOptions
-  const motorOptions = motorControllerType === "TalonFX" ? talonMotorOptions : allMotorOptions
+
+  // Get all available controllers and motors from the configuration
+  const allControllers = Object.values(MOTOR_CONTROLLERS)
+  const allMotors = Object.values(MOTORS)
+
+  // Get compatible controllers and motors based on current selections
+  const compatibleControllers = getCompatibleControllers(motorType)
+  const compatibleMotors = getCompatibleMotors(motorControllerType)
 
   // Handle motor controller change
   const handleMotorControllerChange = (value: string) => {
@@ -92,9 +99,11 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="Elevator">Elevator</SelectItem>
-                      <SelectItem value="Arm">Arm</SelectItem>
-                      <SelectItem value="Pivot">Pivot (Turret/Wrist)</SelectItem>
+                      {Object.values(MECHANISMS).map((mechanism) => (
+                        <SelectItem key={mechanism.name} value={mechanism.name}>
+                          {mechanism.displayName}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -123,9 +132,9 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {controllerOptions.map((controller) => (
-                          <SelectItem key={controller} value={controller}>
-                            {controller}
+                        {compatibleControllers.map((controller) => (
+                          <SelectItem key={controller.name} value={controller.name}>
+                            {controller.displayName}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -148,14 +157,14 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {motorOptions.map((motor) => (
-                          <SelectItem key={motor} value={motor}>
-                            {motor}
+                        {compatibleMotors.map((motor) => (
+                          <SelectItem key={motor.name} value={motor.name}>
+                            {motor.displayName}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    <FormDescription>Note: Krakenx40/Krakenx60 can only be used with TalonFX</FormDescription>
+                    <FormDescription>{isKraken ? "Kraken motors can only be used with TalonFX" : ""}</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -283,7 +292,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                     )}
                   />
 
-                  {(motorControllerType === "TalonFX" || motorControllerType === "TalonFXS") && (
+                  {MOTOR_CONTROLLERS[motorControllerType].supportsSupplyCurrentLimit && (
                     <FormField
                       control={form.control}
                       name="currentLimits.supply"

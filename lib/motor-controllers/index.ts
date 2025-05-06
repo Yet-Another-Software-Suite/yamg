@@ -3,6 +3,7 @@ import * as SparkFlex from "./spark-flex"
 import * as TalonFX from "./talon-fx"
 import * as TalonFXS from "./talon-fxs"
 import * as ThriftyNova from "./thrifty-nova"
+import { getMotorController, getWPILibMotorType } from "@/lib/config/hardware-config"
 
 export const getMotorControllerModule = (type: string) => {
   switch (type) {
@@ -22,18 +23,16 @@ export const getMotorControllerModule = (type: string) => {
 }
 
 export const getMotorType = (type: string) => {
-  switch (type) {
-    case "NEO":
-      return "DCMotor.getNEO(1)"
-    case "NEO550":
-      return "DCMotor.getNEO550(1)"
-    case "Minion":
-      return "DCMotor.getMinion(1)"
-    case "Krakenx40":
-      return "DCMotor.getKrakenX40(1)"
-    case "Krakenx60":
-      return "DCMotor.getKrakenX60(1)"
-    default:
-      return "DCMotor.getNEO(1)"
-  }
+  return getWPILibMotorType(type)
+}
+
+// Check if a motor controller is a REV controller (SparkMAX or SparkFlex)
+export const isRevController = (type: string) => {
+  return type === "SparkMAX" || type === "SparkFlex"
+}
+
+// Check if a motor controller supports supply current limits
+export const supportsSupplyCurrentLimit = (type: string) => {
+  const controller = getMotorController(type)
+  return controller.supportsSupplyCurrentLimit
 }

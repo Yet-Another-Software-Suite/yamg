@@ -1,6 +1,7 @@
 import type { FormValues, FileOutput } from "./types"
 import Handlebars from "handlebars"
-import { getMotorControllerModule, getMotorType } from "./motor-controllers"
+import { getMotorControllerModule, isRevController } from "./motor-controllers"
+import { getMechanism, getMotorController, getWPILibMotorType } from "./config/hardware-config"
 
 // Initialize Handlebars
 function initializeHandlebars() {
@@ -15,16 +16,16 @@ initializeHandlebars()
 async function fetchTemplate(templateName: string): Promise<string> {
   try {
     // First try with .java.hbs extension
-    const response = await fetch(`templates/${templateName}.java.hbs`)
+    const response = await fetch(`/templates/${templateName}.java.hbs`)
     if (response.ok) {
-      let body = await response.text()
+      const body = await response.text()
       return body
     }
 
     // If that fails, try with .hbs extension
-    const fallbackResponse = await fetch(`templates/${templateName}.hbs`)
+    const fallbackResponse = await fetch(`/templates/${templateName}.hbs`)
     if (fallbackResponse.ok) {
-      let body = await response.text()
+      const body = await response.text()
       return body
     }
 
@@ -40,7 +41,7 @@ async function processTemplate(templateName: string, data: FormValues): Promise<
   // Add additional template data
   const templateData = {
     ...data,
-    isSparkController: data.motorControllerType === "SparkMAX" || data.motorControllerType === "SparkFlex",
+    isSparkController: isRevController(data.motorControllerType),
     logPosition: data.telemetry.position,
     logVelocity: data.telemetry.velocity,
     logVoltage: data.telemetry.voltage,
@@ -65,7 +66,7 @@ async function processTemplate(templateName: string, data: FormValues): Promise<
     enableSupplyLimit: !!(
       data.currentLimits?.supply &&
       data.currentLimits.supply > 0 &&
-      (data.motorControllerType === "TalonFX" || data.motorControllerType === "TalonFXS")
+      getMotorController(data.motorControllerType).supportsSupplyCurrentLimit
     ),
   }
 
@@ -125,7 +126,11 @@ async function processTemplate(templateName: string, data: FormValues): Promise<
 
   // Load and compile the template
   try {
-    const template = await fetchTemplate(templateName)
+    // Get the template name from the mechanism configuration
+    const mechanism = getMechanism(data.mechanismType)
+    const actualTemplateName = templateName === "mechanism-subsystem" ? mechanism.templateName : templateName
+
+    const template = await fetchTemplate(actualTemplateName)
     const compiledTemplate = Handlebars.compile(template)
     const result = compiledTemplate(templateData)
     return result
@@ -155,7 +160,7 @@ function processMotorControllerTemplate(data: FormValues): Record<string, string
 // Process motor type specific template parts
 function processMotorTypeTemplate(data: FormValues): Record<string, string> {
   return {
-    dcMotorType: getMotorType(data.motorType),
+    dcMotorType: getWPILibMotorType(data.motorType),
   }
 }
 
@@ -171,20 +176,15 @@ export async function generateFiles(formData: FormValues): Promise<FileOutput[]>
   let simContent = ""
 
   try {
-    switch (formData.mechanismType) {
-      case "Elevator":
-        subsystemContent = await processTemplate("elevator-subsystem", formData)
-        simContent = await processTemplate("elevator-sim", formData)
-        break
-      case "Arm":
-        subsystemContent = await processTemplate("arm-subsystem", formData)
-        simContent = await processTemplate("arm-sim", formData)
-        break
-      case "Pivot":
-        subsystemContent = await processTemplate("pivot-subsystem", formData)
-        simContent = await processTemplate("pivot-sim", formData)
-        break
-    }
+    // Get the mechanism definition
+    const mechanism = getMechanism(formData.mechanismType)
+
+    // Generate the main subsystem file
+    subsystemContent = await processTemplate(mechanism.templateName, formData)
+
+    // Generate the simulation file
+    const simTemplateName = `${formData.mechanismType.toLowerCase()}-sim`
+    simContent = await processTemplate(simTemplateName, formData)
 
     files.push({
       filename: subsystemFileName,
