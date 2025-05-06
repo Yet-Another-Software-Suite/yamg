@@ -143,7 +143,7 @@ export const MOTOR_CONTROLLERS: Record<string, MotorControllerDefinition> = {
     supportsRampRate: true,
     supportsSoftLimits: true,
     importPath: "com.ctre.phoenix.motorcontrol.can.TalonFXS",
-    description: "CTRE TalonFX Motor Controller (Phoenix 6)",
+    description: "CTRE TalonFXS Motor Controller (Phoenix 6)",
     maxCurrentLimit: 100,
     maxVoltage: 12,
   },
