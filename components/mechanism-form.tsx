@@ -45,6 +45,11 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
     }
   }
 
+  // Handle motor type change
+  const handleMotorTypeChange = (value: string) => {
+    form.setValue("motorType", value)
+  }
+
   // Safe number input handler
   const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>, onChange: (...event: any[]) => void) => {
     const value = e.target.value
@@ -141,7 +146,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Motor Type</FormLabel>
-                    <Select value={field.value}>
+                    <Select onValueChange={handleMotorTypeChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select motor type" />
