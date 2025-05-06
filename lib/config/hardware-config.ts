@@ -48,7 +48,7 @@ export const MOTORS: Record<string, MotorDefinition> = {
     kt: 0.025,
     resistance: 0.116,
     mass: 0.425,
-    compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFX", "TalonFXS", "ThriftyNova"],
+    compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova"],
     description: "REV Robotics NEO Brushless Motor",
   },
   NEO550: {
@@ -58,7 +58,7 @@ export const MOTORS: Record<string, MotorDefinition> = {
     kt: 0.015,
     resistance: 0.08,
     mass: 0.235,
-    compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFX", "TalonFXS", "ThriftyNova"],
+    compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova"],
     description: "REV Robotics NEO 550 Brushless Motor",
   },
   Minion: {
@@ -68,18 +68,18 @@ export const MOTORS: Record<string, MotorDefinition> = {
     kt: 0.015,
     resistance: 0.08,
     mass: 0.235,
-    compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFX", "TalonFXS", "ThriftyNova"],
+    compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova"],
     description: "REV Robotics Minion Brushless Motor",
   },
-  Krakenx40: {
-    name: "Krakenx40",
+  Krakenx44: {
+    name: "Krakenx44",
     displayName: "Kraken X40",
     kv: 590,
     kt: 0.014,
     resistance: 0.15,
     mass: 0.26,
     compatibleControllers: ["TalonFX"],
-    description: "CTRE Kraken X40 Brushless Motor",
+    description: "CTRE Kraken X44 Brushless Motor",
   },
   Krakenx60: {
     name: "Krakenx60",
@@ -268,8 +268,8 @@ export function getWPILibMotorType(motorName: string): string {
       return "DCMotor.getNEO550(1)"
     case "Minion":
       return "DCMotor.getMinion(1)"
-    case "Krakenx40":
-      return "DCMotor.getKrakenX40(1)"
+    case "Krakenx44":
+      return "DCMotor.getKrakenX44(1)"
     case "Krakenx60":
       return "DCMotor.getKrakenX60(1)"
     default:
@@ -288,8 +288,8 @@ export function getSimMotorType(motorName: string): string {
       return "NEO550"
     case "Krakenx60":
       return "KrakenX60"
-    case "Krakenx40":
-      return "KrakenX40"
+    case "Krakenx44":
+      return "KrakenX44"
     case "Minion":
       return "Falcon500" // Closest approximation
     default:
