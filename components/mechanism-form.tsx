@@ -40,7 +40,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
     if (value !== "TalonFX" && (motorType === "Krakenx44" || motorType === "Krakenx60")) {
       form.setValue("motorType", "NEO")
     }
-    if(value === "TalonFX" && (motorType !== "Krakenx44" || motorType !== "Krakenx60")) {
+    if(value === "TalonFX" && (motorType !== "Krakenx44" && motorType !== "Krakenx60")) {
       form.setValue("motorType", "Krakenx60")
     }
   }
