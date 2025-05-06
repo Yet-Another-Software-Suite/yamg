@@ -87,9 +87,7 @@ This project is configured for easy deployment to GitHub Pages:
 
 For more detailed information, see the documentation in the `/docs` directory:
 
-- [Architecture Overview](docs/architecture.md)
-- [Code Generation Process](docs/code-generation.md)
-- [Simulation System](docs/simulation.md)
+- [Hardware Configuration Guide](docs/hardware-configuration.md)
 - [Simulation Development Guide](docs/simulation-development.md)
 - [User Guide](docs/user-guide.md)
 - [Deployment Guide](docs/deployment.md)

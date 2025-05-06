@@ -15,7 +15,6 @@ import {
   MOTOR_CONTROLLERS,
   MOTORS,
   getCompatibleMotors,
-  getCompatibleControllers,
 } from "@/lib/config/hardware-config"
 
 export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
@@ -31,7 +30,6 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
   const allMotors = Object.values(MOTORS)
 
   // Get compatible controllers and motors based on current selections
-  const compatibleControllers = getCompatibleControllers(motorType)
   const compatibleMotors = getCompatibleMotors(motorControllerType)
 
   // Handle motor controller change
@@ -41,16 +39,6 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
     // If changing away from TalonFX and using a Kraken motor, switch to NEO
     if (value !== "TalonFX" && (motorType === "Krakenx44" || motorType === "Krakenx60")) {
       form.setValue("motorType", "NEO")
-    }
-  }
-
-  // Handle motor type change
-  const handleMotorTypeChange = (value: string) => {
-    form.setValue("motorType", value)
-
-    // If changing to a Kraken motor and not using TalonFX, switch to TalonFX
-    if ((value === "Krakenx44" || value === "Krakenx60") && motorControllerType !== "TalonFX") {
-      form.setValue("motorControllerType", "TalonFX")
     }
   }
 
@@ -132,7 +120,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {compatibleControllers.map((controller) => (
+                        {allControllers.map((controller) => (
                           <SelectItem key={controller.name} value={controller.name}>
                             {controller.displayName}
                           </SelectItem>
@@ -150,7 +138,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Motor Type</FormLabel>
-                    <Select onValueChange={handleMotorTypeChange} value={field.value}>
+                    <Select value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select motor type" />

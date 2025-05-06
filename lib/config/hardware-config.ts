@@ -136,14 +136,14 @@ export const MOTOR_CONTROLLERS: Record<string, MotorControllerDefinition> = {
   },
   TalonFXS: {
     name: "TalonFXS",
-    displayName: "TalonFX (Phoenix 5)",
+    displayName: "TalonFX (Phoenix 6)",
     supportsCurrentLimit: true,
     supportsSupplyCurrentLimit: true,
     supportsBrakeMode: true,
     supportsRampRate: true,
     supportsSoftLimits: true,
     importPath: "com.ctre.phoenix.motorcontrol.can.TalonFXS",
-    description: "CTRE TalonFX Motor Controller (Phoenix 5)",
+    description: "CTRE TalonFX Motor Controller (Phoenix 6)",
     maxCurrentLimit: 100,
     maxVoltage: 12,
   },
@@ -247,14 +247,6 @@ export function isMotorCompatibleWithController(motorName: string, controllerNam
  */
 export function getCompatibleMotors(controllerName: string): MotorDefinition[] {
   return Object.values(MOTORS).filter((motor) => motor.compatibleControllers.includes(controllerName))
-}
-
-/**
- * Get all controllers compatible with a specific motor
- */
-export function getCompatibleControllers(motorName: string): MotorControllerDefinition[] {
-  const motor = getMotor(motorName)
-  return Object.values(MOTOR_CONTROLLERS).filter((controller) => motor.compatibleControllers.includes(controller.name))
 }
 
 /**
