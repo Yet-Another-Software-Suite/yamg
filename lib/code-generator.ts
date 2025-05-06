@@ -2,6 +2,8 @@ import type { FormValues, FileOutput } from "./types"
 import Handlebars from "handlebars"
 import { getMotorControllerModule, isRevController } from "./motor-controllers"
 import { getMechanism, getMotorController, getWPILibMotorType } from "./config/hardware-config"
+import prettier from "prettier/standalone";
+import pluginJava from "prettier-plugin-java";
 
 // Initialize Handlebars
 function initializeHandlebars() {
@@ -138,8 +140,10 @@ async function processTemplate(templateName: string, data: FormValues): Promise<
       compiledTemplate = Handlebars.compile(result)
       result = compiledTemplate(templateData)
     }
-    
-    return result
+    return prettier.format(result, {
+      parser: "java",
+      plugins: [pluginJava],
+    })
   } catch (error) {
     console.error("Error processing template:", error)
     return "Error processing template: " + (error as Error).message

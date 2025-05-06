@@ -43,10 +43,14 @@
     "cmdk": "1.0.4",
     "date-fns": "4.1.0",
     "embla-carousel-react": "8.5.1",
+    "file-saver": "latest",
+    "handlebars": "latest",
     "input-otp": "1.4.1",
+    "jszip": "latest",
     "lucide-react": "^0.454.0",
     "next": "15.2.4",
     "next-themes": "^0.4.4",
+    "prismjs": "latest",
     "react": "^19",
     "react-day-picker": "8.10.1",
     "react-dom": "^19",
@@ -57,17 +61,15 @@
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.6",
-    "zod": "latest",
-    "prismjs": "latest",
-    "jszip": "latest",
-    "file-saver": "latest",
-    "handlebars": "latest"
+    "zod": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "postcss": "^8",
+    "prettier": "^3.5.3",
+    "prettier-plugin-java": "^2.6.7",
     "tailwindcss": "^3.4.17",
     "typescript": "^5"
   }
