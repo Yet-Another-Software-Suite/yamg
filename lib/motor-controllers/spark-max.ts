@@ -36,15 +36,13 @@ if (enableStatorLimit) {
 }
 
 // Set soft limits
-if (enableSoftLimits && forwardSoftLimit != null) {
+{{#if enableSoftLimits}}
   motor.setSoftLimit(CANSparkMax.SoftLimitDirection.kForward, forwardSoftLimit.floatValue());
   motor.enableSoftLimit(CANSparkMax.SoftLimitDirection.kForward, true);
-}
-  
-if (enableSoftLimits && reverseSoftLimit != null) {
+
   motor.setSoftLimit(CANSparkMax.SoftLimitDirection.kReverse, reverseSoftLimit.floatValue());
   motor.enableSoftLimit(CANSparkMax.SoftLimitDirection.kReverse, true);
-}
+{{/if}}
 
 // Save configuration
 motor.burnFlash();`
