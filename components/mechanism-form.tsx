@@ -36,9 +36,12 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
   const handleMotorControllerChange = (value: string) => {
     form.setValue("motorControllerType", value)
 
-    // If changing away from TalonFX and using a Kraken motor, switch to NEO
+    // If changing away from TalonFX and using a Kraken motor, switch to KrakenX60
     if (value !== "TalonFX" && (motorType === "Krakenx44" || motorType === "Krakenx60")) {
       form.setValue("motorType", "NEO")
+    }
+    if(value === "TalonFX" && (motorType !== "Krakenx44" || motorType !== "Krakenx60")) {
+      form.setValue("motorType", "Krakenx60")
     }
   }
 

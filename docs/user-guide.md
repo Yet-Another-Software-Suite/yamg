@@ -28,7 +28,7 @@ Configure the motor and motor controller settings:
    - **SparkMAX**: For REV Robotics SparkMAX controllers
    - **SparkFlex**: For REV Robotics SparkFlex controllers
    - **TalonFX**: For CTRE TalonFX controllers (Phoenix 6)
-   - **TalonFXS**: For CTRE TalonFX controllers (Phoenix 5)
+   - **TalonFXS**: For CTRE TalonFX controllers (Phoenix 6)
    - **ThriftyNova**: For ThriftyNova controllers
 
 2. **Motor Type**: Select your motor
