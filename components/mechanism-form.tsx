@@ -159,7 +159,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                         ))}
                       </SelectContent>
                     </Select>
-                    <FormDescription>{isMotorCompatibleWithController(motorType, motorControllerType) ? "Kraken motors can only be used with TalonFX" : ""}</FormDescription>
+                    <FormDescription>{!isMotorCompatibleWithController("NEO", motorControllerType) ? "Kraken motors can only be used with TalonFX" : ""}</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
