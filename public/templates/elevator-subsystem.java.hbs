@@ -32,7 +32,6 @@ public class {{subsystemName}} extends SubsystemBase {
   private final double maxVelocity = {{maxVelocity}}; // meters per second
   private final double maxAcceleration = {{maxAcceleration}}; // meters per second squared
   private final boolean brakeMode = {{brakeMode}};
-  
  {{#if enableSoftLimits}}
   private final double forwardSoftLimit = {{forwardSoftLimit}}; // max angle in meters
   private final double reverseSoftLimit = {{reverseSoftLimit}}; // min angle in meters
