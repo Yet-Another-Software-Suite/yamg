@@ -124,7 +124,7 @@ export default function CodeGenerator() {
         kA: 0.0,
         kG: 0.0,
       },
-      gearRatio: 5.0,
+      gearRatio: 15.0,
       softLimits: {
         forward: undefined,
         reverse: undefined,
