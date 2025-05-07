@@ -966,6 +966,28 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                     )}
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="armParams.centerOfMass"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Center of Mass (meters)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="1"
+                            {...field}
+                            value={field.value ?? ""}
+                            onChange={(e) => handleNumberChange(e, field.onChange)}
+                          />
+                        </FormControl>
+                        <FormDescription>Distance from fulcrum to center of Mass in meters.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
             </AccordionContent>
           </AccordionItem>

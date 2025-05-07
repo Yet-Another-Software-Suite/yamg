@@ -25,9 +25,9 @@ public class {{subsystemName}} extends SubsystemBase {
  // Constants
  private final int canID = {{canId}};
  private final double gearRatio = {{gearRatio}};
- private final double kP = {{kP}};
- private final double kI = {{kI}};
- private final double kD = {{kD}};
+  private final double kP = {{pidValues.kP}};
+  private final double kI = {{pidValues.kI}};
+  private final double kD = {{pidValues.kD}};
  private final double maxVelocity = {{maxVelocity}}; // rad/s
  private final double maxAcceleration = {{maxAcceleration}}; // rad/s²
  private final boolean brakeMode = {{brakeMode}};

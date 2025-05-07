@@ -47,6 +47,7 @@ export interface FormValues {
     startingPosition?: number
     mass?: number
     massUnit?: "kg" | "lbs"
+    centerOfMass?: number
   }
   elevatorParams?: {
     startingHeight?: number

@@ -89,6 +89,7 @@ export default function CodeGenerator() {
         startingPosition: z.number().optional(),
         mass: z.number().optional(),
         massUnit: z.enum(["kg", "lbs"]).optional(),
+        centerOfMass: z.number().optional(),
       })
       .optional(),
     elevatorParams: z
