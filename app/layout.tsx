@@ -1,11 +1,11 @@
 import type React from "react"
 import "@/app/globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Footer } from "@/components/footer"
 
 export const metadata = {
-  title: "Yet Another Mechanisms Generator",
-  description: "Create a Commandsv2 Subsystem, and simulate it all in the browser!",
-  generator: 'v0.dev'
+  title: "FRC Java Code Generator",
+  description: "Generate command-based Java code for FRC robot mechanisms",
 }
 
 export default function RootLayout({
@@ -18,6 +18,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-background">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} forcedTheme="dark">
           {children}
+          <Footer />
         </ThemeProvider>
         <script
           dangerouslySetInnerHTML={{
