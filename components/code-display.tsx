@@ -25,7 +25,6 @@ interface CodeDisplayProps {
 
 export default function CodeDisplay({ code, language }: CodeDisplayProps) {
   const codeRef = useRef<HTMLPreElement>(null)
-  const [showImports, setShowImports] = useState(false)
 
   useLayoutEffect(() => {
     suppressResizeObserverErrors()
@@ -54,7 +53,7 @@ export default function CodeDisplay({ code, language }: CodeDisplayProps) {
 
       return () => clearTimeout(timeoutId)
     }
-  }, [code, showImports])
+  }, [code])
 
   // Split code into imports and implementation
   const lines = code.split("\n")
@@ -95,31 +94,22 @@ export default function CodeDisplay({ code, language }: CodeDisplayProps) {
       {hasImports && (
         <div className="flex justify-between items-center p-2 bg-slate-700 border-b border-slate-600">
           <span className="text-sm text-slate-300">
-            {showImports
-              ? "Showing imports"
-              : `${importLines.filter((l) => l.trim().startsWith("import")).length} imports hidden`}
+            {`${importLines.filter((l) => l.trim().startsWith("import")).length} imports hidden`}
           </span>
-          <button
-            onClick={() => setShowImports(!showImports)}
-            className="text-xs px-2 py-1 bg-slate-600 hover:bg-slate-500 rounded text-white"
-          >
-            {showImports ? "Hide imports" : "Show imports"}
-          </button>
         </div>
       )}
 
       <div className="flex">
         {/* Line numbers */}
         <div className="line-numbers p-4 text-right select-none">
-          {showImports &&
-            importLines.map((_, index) => (
+          {importLines.map((_, index) => (
               <div key={`import-${index}`} className="leading-6">
                 {index + 1}
               </div>
             ))}
           {implementationLines.map((_, index) => (
             <div key={`impl-${index}`} className="leading-6">
-              {showImports ? index + importLines.length + 1 : index + 1}
+              {index + importLines.length + 1}
             </div>
           ))}
         </div>
@@ -127,8 +117,8 @@ export default function CodeDisplay({ code, language }: CodeDisplayProps) {
         {/* Code content */}
         <pre ref={codeRef} className={`language-${language} p-4 overflow-x-auto flex-1 leading-6`}>
           <code className={`language-${language}`}>
-            {showImports && importLines.join("\n")}
-            {showImports && importLines.length > 0 && "\n"}
+            {importLines.join("\n")}
+            {importLines.length > 0 && "\n"}
             {implementationLines.join("\n")}
           </code>
         </pre>
