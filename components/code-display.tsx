@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useLayoutEffect } from "react"
+import { useEffect, useRef, useLayoutEffect, useState } from "react"
 import Prism from "prismjs"
 import "prismjs/components/prism-java"
 import "./prism-frc-theme.css" // Custom theme
@@ -25,6 +25,7 @@ interface CodeDisplayProps {
 
 export default function CodeDisplay({ code, language }: CodeDisplayProps) {
   const codeRef = useRef<HTMLPreElement>(null)
+  const [showImports, setShowImports] = useState(false)
 
   useLayoutEffect(() => {
     suppressResizeObserverErrors()
@@ -53,26 +54,83 @@ export default function CodeDisplay({ code, language }: CodeDisplayProps) {
 
       return () => clearTimeout(timeoutId)
     }
-  }, [code])
+  }, [code, showImports])
 
-  // Split code into lines and preserve empty lines
-  const codeLines = code.split("\n")
+  // Split code into imports and implementation
+  const lines = code.split("\n")
+
+  // Find where imports end (look for the last import statement)
+  let importEndIndex = 0
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim()
+    if (line.startsWith("import ")) {
+      importEndIndex = i + 1 // Set to the line after the import
+    }
+  }
+
+  // If we have package declaration but no imports, set importEndIndex after the package
+  if (importEndIndex === 0) {
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim()
+      if (line.startsWith("package ")) {
+        importEndIndex = i + 1
+        break
+      }
+    }
+  }
+
+  // Skip any blank lines after the last import
+  while (importEndIndex < lines.length && lines[importEndIndex].trim() === "") {
+    importEndIndex++
+  }
+
+  const importLines = lines.slice(0, importEndIndex)
+  const implementationLines = lines.slice(importEndIndex)
+
+  // Determine if we have imports to show/hide
+  const hasImports = importLines.some((line) => line.trim().startsWith("import "))
 
   return (
     <div className="relative rounded-md overflow-hidden code-container">
+      {hasImports && (
+        <div className="flex justify-between items-center p-2 bg-slate-700 border-b border-slate-600">
+          <span className="text-sm text-slate-300">
+            {showImports
+              ? "Showing imports"
+              : `${importLines.filter((l) => l.trim().startsWith("import")).length} imports hidden`}
+          </span>
+          <button
+            onClick={() => setShowImports(!showImports)}
+            className="text-xs px-2 py-1 bg-slate-600 hover:bg-slate-500 rounded text-white"
+          >
+            {showImports ? "Hide imports" : "Show imports"}
+          </button>
+        </div>
+      )}
+
       <div className="flex">
         {/* Line numbers */}
         <div className="line-numbers p-4 text-right select-none">
-          {codeLines.map((_, index) => (
-            <div key={index} className="leading-6">
-              {index + 1}
+          {showImports &&
+            importLines.map((_, index) => (
+              <div key={`import-${index}`} className="leading-6">
+                {index + 1}
+              </div>
+            ))}
+          {implementationLines.map((_, index) => (
+            <div key={`impl-${index}`} className="leading-6">
+              {showImports ? index + importLines.length + 1 : index + 1}
             </div>
           ))}
         </div>
 
         {/* Code content */}
         <pre ref={codeRef} className={`language-${language} p-4 overflow-x-auto flex-1 leading-6`}>
-          <code className={`language-${language}`}>{code}</code>
+          <code className={`language-${language}`}>
+            {showImports && importLines.join("\n")}
+            {showImports && importLines.length > 0 && "\n"}
+            {implementationLines.join("\n")}
+          </code>
         </pre>
       </div>
     </div>
