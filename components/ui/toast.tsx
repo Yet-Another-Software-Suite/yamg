@@ -56,7 +56,7 @@ const Toast = React.forwardRef<
 Toast.displayName = ToastPrimitives.Root.displayName
 
 const ToastAction = React.forwardRef<
-  React.ElementRef<typeof ToastPrimitives.Action>,
+  React.ComponentRef<typeof ToastPrimitives.Action>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Action>
 >(({ className, ...props }, ref) => (
   <ToastPrimitives.Action
