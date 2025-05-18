@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useLayoutEffect } from "react"
+import { useEffect, useRef, useLayoutEffect, useState } from "react"
 import Prism from "prismjs"
 import "prismjs/components/prism-java"
 import "./prism-frc-theme.css" // Custom theme
@@ -25,6 +25,10 @@ interface CodeDisplayProps {
 
 export default function CodeDisplay({ code, language }: CodeDisplayProps) {
   const codeRef = useRef<HTMLPreElement>(null)
+  const [displayCode, setDisplayCode] = useState("")
+  const [importCount, setImportCount] = useState(0)
+  const [lineOffset, setLineOffset] = useState(0)
+  const [hasImports, setHasImports] = useState(false)
 
   useLayoutEffect(() => {
     suppressResizeObserverErrors()
@@ -35,46 +39,57 @@ export default function CodeDisplay({ code, language }: CodeDisplayProps) {
     }
   }, [])
 
-  // Split code into imports and implementation
-  const lines = code.split("\n")
+  // Process code whenever it changes
+  useEffect(() => {
+    // Split code into imports and implementation
+    const lines = code.split("\n")
 
-  // Find where imports end (look for the last import statement)
-  let importEndIndex = 0
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim()
-    if (line.startsWith("import ")) {
-      importEndIndex = i + 1 // Set to the line after the import
-    }
-  }
-
-  // If we have package declaration but no imports, set importEndIndex after the package
-  if (importEndIndex === 0) {
+    // Find where imports end (look for the last import statement)
+    let importEndIndex = 0
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim()
-      if (line.startsWith("package ")) {
-        importEndIndex = i + 1
-        break
+      if (line.startsWith("import ")) {
+        importEndIndex = i + 1 // Set to the line after the import
       }
     }
-  }
 
-  // Skip any blank lines after the last import
-  while (importEndIndex < lines.length && lines[importEndIndex].trim() === "") {
-    importEndIndex++
-  }
+    // If we have package declaration but no imports, set importEndIndex after the package
+    if (importEndIndex === 0) {
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim()
+        if (line.startsWith("package ")) {
+          importEndIndex = i + 1
+          break
+        }
+      }
+    }
 
-  const importLines = lines.slice(0, importEndIndex)
-  const implementationLines = lines.slice(importEndIndex)
+    // Skip any blank lines after the last import
+    while (importEndIndex < lines.length && lines[importEndIndex].trim() === "") {
+      importEndIndex++
+    }
 
-  // Determine if we have imports to show/hide
-  const hasImports = importLines.some((line) => line.trim().startsWith("import "))
+    const importLines = lines.slice(0, importEndIndex)
+    const implementationLines = lines.slice(importEndIndex)
 
-  // Create the display code - always hide imports
-  const displayCode = implementationLines.join("\n")
+    // Determine if we have imports to show/hide
+    const importsExist = importLines.some((line) => line.trim().startsWith("import "))
+    setHasImports(importsExist)
+
+    // Count imports for display
+    const actualImportCount = importLines.filter((l) => l.trim().startsWith("import ")).length
+    setImportCount(actualImportCount)
+
+    // Set line offset for numbering
+    setLineOffset(importLines.length)
+
+    // Create the display code - always hide imports
+    setDisplayCode(implementationLines.join("\n"))
+  }, [code])
 
   // Optimize the highlighting to prevent excessive reflows
   useEffect(() => {
-    if (typeof window !== "undefined" && codeRef.current) {
+    if (typeof window !== "undefined" && codeRef.current && displayCode) {
       // Use requestAnimationFrame to ensure DOM is ready
       const highlightCode = () => {
         try {
@@ -92,22 +107,23 @@ export default function CodeDisplay({ code, language }: CodeDisplayProps) {
     }
   }, [displayCode])
 
+  // Generate line numbers based on the current display code
+  const lineNumbers = displayCode.split("\n").map((_, index) => index + lineOffset + 1)
+
   return (
     <div className="relative rounded-md overflow-hidden code-container">
       {hasImports && (
         <div className="flex justify-between items-center p-2 bg-slate-700 border-b border-slate-600">
-          <span className="text-sm text-slate-300">
-            {`${importLines.filter((l) => l.trim().startsWith("import")).length} imports hidden`}
-          </span>
+          <span className="text-sm text-slate-300">{`${importCount} imports hidden`}</span>
         </div>
       )}
 
       <div className="flex">
         {/* Line numbers */}
         <div className="line-numbers p-4 text-right select-none">
-          {implementationLines.map((_, index) => (
+          {lineNumbers.map((num, index) => (
             <div key={`line-${index}`} className="leading-6">
-              {index + importLines.length + 1}
+              {num}
             </div>
           ))}
         </div>
