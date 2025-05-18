@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useLayoutEffect, useState } from "react"
+import { useEffect, useRef, useLayoutEffect } from "react"
 import Prism from "prismjs"
 import "prismjs/components/prism-java"
 import "./prism-frc-theme.css" // Custom theme
@@ -34,26 +34,6 @@ export default function CodeDisplay({ code, language }: CodeDisplayProps) {
       console.error = console.error
     }
   }, [])
-
-  // Optimize the highlighting to prevent excessive reflows
-  useEffect(() => {
-    if (typeof window !== "undefined" && codeRef.current) {
-      // Use requestAnimationFrame to ensure DOM is ready
-      const highlightCode = () => {
-        try {
-          Prism.highlightElement(codeRef.current)
-        } catch (e) {
-          console.warn("Prism highlighting error:", e)
-        }
-      }
-
-      const timeoutId = setTimeout(() => {
-        requestAnimationFrame(highlightCode)
-      }, 0)
-
-      return () => clearTimeout(timeoutId)
-    }
-  }, [code])
 
   // Split code into imports and implementation
   const lines = code.split("\n")
@@ -89,6 +69,29 @@ export default function CodeDisplay({ code, language }: CodeDisplayProps) {
   // Determine if we have imports to show/hide
   const hasImports = importLines.some((line) => line.trim().startsWith("import "))
 
+  // Create the display code - always hide imports
+  const displayCode = implementationLines.join("\n")
+
+  // Optimize the highlighting to prevent excessive reflows
+  useEffect(() => {
+    if (typeof window !== "undefined" && codeRef.current) {
+      // Use requestAnimationFrame to ensure DOM is ready
+      const highlightCode = () => {
+        try {
+          Prism.highlightElement(codeRef.current)
+        } catch (e) {
+          console.warn("Prism highlighting error:", e)
+        }
+      }
+
+      const timeoutId = setTimeout(() => {
+        requestAnimationFrame(highlightCode)
+      }, 0)
+
+      return () => clearTimeout(timeoutId)
+    }
+  }, [displayCode])
+
   return (
     <div className="relative rounded-md overflow-hidden code-container">
       {hasImports && (
@@ -102,13 +105,8 @@ export default function CodeDisplay({ code, language }: CodeDisplayProps) {
       <div className="flex">
         {/* Line numbers */}
         <div className="line-numbers p-4 text-right select-none">
-          {importLines.map((_, index) => (
-              <div key={`import-${index}`} className="leading-6">
-                {index + 1}
-              </div>
-            ))}
           {implementationLines.map((_, index) => (
-            <div key={`impl-${index}`} className="leading-6">
+            <div key={`line-${index}`} className="leading-6">
               {index + importLines.length + 1}
             </div>
           ))}
@@ -116,11 +114,7 @@ export default function CodeDisplay({ code, language }: CodeDisplayProps) {
 
         {/* Code content */}
         <pre ref={codeRef} className={`language-${language} p-4 overflow-x-auto flex-1 leading-6`}>
-          <code className={`language-${language}`}>
-            {importLines.join("\n")}
-            {importLines.length > 0 && "\n"}
-            {implementationLines.join("\n")}
-          </code>
+          <code className={`language-${language}`}>{displayCode}</code>
         </pre>
       </div>
     </div>
