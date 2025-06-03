@@ -159,6 +159,8 @@ function processMotorControllerTemplate(data: FormValues): Record<string, string
       motorControllerImports: motorControllerModule.getImports(),
       motorControllerDeclaration: motorControllerModule.getDeclaration(),
       motorControllerInitialization: motorControllerModule.getInitialization(),
+      motorControllerPeriodic: motorControllerModule.getPeriodic(),
+      motorControllerSimulationPeriodic: motorControllerModule.getSimulationPeriodic(),
       ...motorControllerModule.getMethods(),
     }
   } catch (error) {
