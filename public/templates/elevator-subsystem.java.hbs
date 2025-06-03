@@ -210,7 +210,7 @@ public class {{subsystemName}} extends SubsystemBase {
     // Update simulation by 20ms
     elevatorSim.update(0.020);
 
-    // Convert meters to rotations
+    // Convert meters to motor rotations
     double positionToRotations = (1 / (2.0 * Math.PI * drumRadius)) * gearRatio;
     double motorPosition = elevatorSim.getPositionMeters() * positionToRotations;
     double motorVelocity = elevatorSim.getVelocityMetersPerSecond() * positionToRotations;
