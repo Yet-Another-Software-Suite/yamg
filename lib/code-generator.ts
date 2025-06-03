@@ -1,7 +1,7 @@
 import type { FormValues, FileOutput } from "./types"
 import Handlebars from "handlebars"
 import { getMotorControllerModule, isRevController } from "./motor-controllers"
-import { getMechanism, getMotorController, getWPILibMotorType } from "./config/hardware-config"
+import { getMechanism, getMotorController, getWPILibMotorType, getCustomDCMotorMethod } from "./config/hardware-config"
 import prettier from "prettier/standalone";
 import pluginJava from "prettier-plugin-java";
 
@@ -171,9 +171,15 @@ function processMotorControllerTemplate(data: FormValues): Record<string, string
 
 // Process motor type specific template parts
 function processMotorTypeTemplate(data: FormValues): Record<string, string> {
-  return {
-    dcMotorType: getWPILibMotorType(data.motorType),
+  let motorType = getWPILibMotorType(data.motorType);
+  if (motorType !== "custom") {
+    return { dcMotorType: motorType };
   }
+
+  return {
+    dcMotorType: `get${data.motorType}(1)`,
+    customDcMotorMethod: getCustomDCMotorMethod(data.motorType)
+  };
 }
 
 // Generate files using the templates
