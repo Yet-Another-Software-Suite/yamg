@@ -267,39 +267,14 @@ export function getWPILibMotorType(motorName: string): string {
     case "Krakenx60":
       return "DCMotor.getKrakenX60(1)"
     case "Minion":
+      // From https://store.ctr-electronics.com/products/minion-brushless-motor
+      return customDCMotor(3.1, 200.46, 1.43, 7200)
     case "Krakenx44":
-      return "custom" // Does not exist in WPILib, use output of getCustomDCMotorMethod
+      // From https://wcproducts.com/blogs/wcp-blog/kraken-x44
+      return customDCMotor(4.05, 275, 1.4, 7530)
     default:
       return "DCMotor.getNEO(1)"
   }
-}
-
-export function getCustomDCMotorMethod(motorName: string): string {
-  let stallTorqueNewtonMeters;
-  let stallCurrentAmps;
-  let freeCurrentAmps;
-  let freeSpeedRPM;
-
-  if (motorName === "Minion") {
-    // From https://store.ctr-electronics.com/products/minion-brushless-motor
-    stallTorqueNewtonMeters = 3.1;
-    stallCurrentAmps = 200.46;
-    freeCurrentAmps = 1.43;
-    freeSpeedRPM = 7200;
-  } else if (motorName === "Krakenx44") {
-    // From https://wcproducts.com/blogs/wcp-blog/kraken-x44
-    stallTorqueNewtonMeters = 4.05;
-    stallCurrentAmps = 275;
-    freeCurrentAmps = 1.4;
-    freeSpeedRPM = 7530;
-  } else {
-    // Motor does not need a custom method, is already defined in DCMotor class
-    return ``;
-  }
-
-  return `private static DCMotor get${motorName}(int numMotors) {
-           return new DCMotor(12, ${stallTorqueNewtonMeters}, ${stallCurrentAmps}, ${freeCurrentAmps}, Units.rotationsPerMinuteToRadiansPerSecond(${freeSpeedRPM}), numMotors);
-         }`
 }
 
 /**
@@ -320,4 +295,11 @@ export function getSimMotorType(motorName: string): string {
     default:
       return "NEO"
   }
+}
+
+/**
+ * Helper function to create a custom DCMotor
+ */
+function customDCMotor(stallTorqueNewtonMeters: Number, stallCurrentAmps: Number, freeCurrentAmps: Number, freeSpeedRPM: Number): string {
+  return `new DCMotor(12, ${stallTorqueNewtonMeters}, ${stallCurrentAmps}, ${freeCurrentAmps}, Units.rotationsPerMinuteToRadiansPerSecond(${freeSpeedRPM}), 1)`
 }
