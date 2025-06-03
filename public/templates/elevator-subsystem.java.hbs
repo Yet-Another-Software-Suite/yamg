@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj.simulation.ElevatorSim;
 import edu.wpi.first.math.controller.ElevatorFeedforward;
@@ -22,6 +23,7 @@ import java.util.function.DoubleSupplier;
 /**
  * Elevator subsystem using {{motorControllerType}} with {{motorType}} motor
  */
+@Logged
 public class {{subsystemName}} extends SubsystemBase {
   // Constants
   private final int canID = {{canId}};
@@ -36,12 +38,10 @@ public class {{subsystemName}} extends SubsystemBase {
   private final double forwardSoftLimit = {{forwardSoftLimit}}; // max angle in meters
   private final double reverseSoftLimit = {{reverseSoftLimit}}; // min angle in meters
  {{/if}}
- {{#if enableStatorLimit}}
+  private final boolean enableStatorLimit = {{enableStatorLimit}};
   private final double statorCurrentLimit = {{statorCurrentLimit}};
- {{/if}}
- {{#if enableSupplyLimit}}
+  private final boolean enableSupplyLimit = {{enableSupplyLimit}};
   private final double supplyCurrentLimit = {{supplyCurrentLimit}};
- {{/if}}
   private final double drumRadius = {{drumRadius}}; // meters
   
   // Feedforward
@@ -192,6 +192,7 @@ public class {{subsystemName}} extends SubsystemBase {
    */
   @Override
   public void periodic() {
+    {{{motorControllerPeriodic}}}
     updateTelemetry();
     {{#if isSparkController}}
     controlLoopFn();
@@ -208,6 +209,13 @@ public class {{subsystemName}} extends SubsystemBase {
     
     // Update simulation by 20ms
     elevatorSim.update(0.020);
+
+    // Convert meters to motor rotations
+    double positionToRotations = (1 / (2.0 * Math.PI * drumRadius)) * gearRatio;
+    double motorPosition = elevatorSim.getPositionMeters() * positionToRotations;
+    double motorVelocity = elevatorSim.getVelocityMetersPerSecond() * positionToRotations;
+
+    {{{motorControllerSimulationPeriodic}}}
   }
   
   /**

@@ -45,6 +45,9 @@ pidController.setD(kD);
 // Save configuration
 motor.burnFlash();`
 
+export const getPeriodic = () => ``
+export const getSimulationPeriodic = () => ``
+
 export const getMethods = () => ({
   getPositionMethod: `return encoder.getPosition() / gearRatio;`,
 

@@ -54,6 +54,9 @@ motor.setNeutralMode(brakeMode ? NeutralMode.Brake : NeutralMode.Coast);
 // Reset encoder position
 motor.setSelectedSensorPosition(0);`
 
+export const getPeriodic = () => ``
+export const getSimulationPeriodic = () => ``
+
 export const getMethods = () => ({
   getPositionMethod: `return motor.getSelectedSensorPosition() * (2.0 * Math.PI) / 2048.0 / gearRatio;`,
 

@@ -42,6 +42,9 @@ pidController.setD(kD);
   motor.enableReverseSoftLimit(true);
 {{/if}}`
 
+export const getPeriodic = () => ``
+export const getSimulationPeriodic = () => ``
+
 export const getMethods = () => ({
   getPositionMethod: `return encoder.getPosition() / gearRatio;`,
 

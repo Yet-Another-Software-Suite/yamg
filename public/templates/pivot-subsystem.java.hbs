@@ -1,5 +1,6 @@
 package frc.robot.subsystems;
 
+import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import edu.wpi.first.math.controller.ArmFeedforward;
@@ -22,6 +23,7 @@ import java.util.function.DoubleSupplier;
 /**
 * Pivot subsystem using {{motorControllerType}} with {{motorType}} motor
 */
+@Logged
 public class {{subsystemName}} extends SubsystemBase {
 // Constants
 private final int canID = {{canId}};
@@ -36,12 +38,10 @@ private final boolean brakeMode = {{brakeMode}};
  private final double forwardSoftLimit = {{forwardSoftLimit}}; // max angle in radians
  private final double reverseSoftLimit = {{reverseSoftLimit}}; // min angle in radians
  {{/if}}
- {{#if enableStatorLimit}}
+ private final boolean enableStatorLimit = {{enableStatorLimit}};
  private final double statorCurrentLimit = {{statorCurrentLimit}};
- {{/if}}
- {{#if enableSupplyLimit}}
+ private final boolean enableSupplyLimit = {{enableSupplyLimit}};
  private final double supplyCurrentLimit = {{supplyCurrentLimit}};
- {{/if}}
 
 // Feedforward
 private final ArmFeedforward feedforward = new ArmFeedforward(
@@ -197,6 +197,7 @@ public void close() {
  */
 @Override
 public void periodic() {
+  {{{motorControllerPeriodic}}}
   updateTelemetry();
 }
 
