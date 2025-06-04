@@ -73,7 +73,7 @@ export const MOTORS: Record<string, MotorDefinition> = {
   },
   Krakenx44: {
     name: "Krakenx44",
-    displayName: "Kraken X40",
+    displayName: "Kraken X44",
     kv: 590,
     kt: 0.014,
     resistance: 0.15,
@@ -263,13 +263,15 @@ export function getWPILibMotorType(motorName: string): string {
     case "NEO":
       return "DCMotor.getNEO(1)"
     case "NEO550":
-      return "DCMotor.getNEO550(1)"
-    case "Minion":
-      return "DCMotor.getMinion(1)"
-    case "Krakenx44":
-      return "DCMotor.getKrakenX44(1)"
+      return "DCMotor.getNeo550(1)"
     case "Krakenx60":
       return "DCMotor.getKrakenX60(1)"
+    case "Minion":
+      // From https://store.ctr-electronics.com/products/minion-brushless-motor
+      return customDCMotor(3.1, 200.46, 1.43, 7200)
+    case "Krakenx44":
+      // From https://wcproducts.com/blogs/wcp-blog/kraken-x44
+      return customDCMotor(4.05, 275, 1.4, 7530)
     default:
       return "DCMotor.getNEO(1)"
   }
@@ -293,4 +295,11 @@ export function getSimMotorType(motorName: string): string {
     default:
       return "NEO"
   }
+}
+
+/**
+ * Helper function to create a custom DCMotor
+ */
+function customDCMotor(stallTorqueNewtonMeters: Number, stallCurrentAmps: Number, freeCurrentAmps: Number, freeSpeedRPM: Number): string {
+  return `new DCMotor(12, ${stallTorqueNewtonMeters}, ${stallCurrentAmps}, ${freeCurrentAmps}, Units.rotationsPerMinuteToRadiansPerSecond(${freeSpeedRPM}), 1)`
 }
