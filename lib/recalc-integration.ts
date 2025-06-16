@@ -5,7 +5,7 @@ const RECALC_MOTOR_MAPPING: Record<string, string> = {
   Krakenx44: "Kraken X44 (FOC)*",
   Krakenx60: "Kraken X60 (FOC)*",
   Vortex: "NEO Vortex",
-  Minion: "Bag Motor",
+  Minion: "Minion*",
   Cu60: "NEO", // Fallback since Cu60 might not be in ReCalc
 }
 
@@ -107,101 +107,6 @@ export function buildReCalcElevatorUrl(params: ReCalcElevatorParams): string {
   return `${baseUrl}?${Object.entries(urlParams)
     .map(([key, value]) => `${key}=${encodeURIComponent(JSON.stringify(value))}`)
     .join("&")}`
-}
-
-/**
- * Parses HTML content to extract ReCalc values
- */
-function parseReCalcHTML(html: string): ReCalcResults {
-  const results: ReCalcResults = {}
-
-  // Create a temporary DOM parser
-  const parser = new DOMParser()
-  const doc = parser.parseFromString(html, "text/html")
-
-  // Extract kG value
-  const kGElement = doc.getElementById("kG")
-  if (kGElement?.textContent) {
-    const kGText = kGElement.textContent.trim()
-    const kGMatch = kGText.match(/[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?/)
-    if (kGMatch) {
-      const kGValue = Number.parseFloat(kGMatch[0])
-      if (!isNaN(kGValue)) results.kG = kGValue
-    }
-  }
-
-  // Extract kV value
-  const kVElement = doc.getElementById("estimatedKV")
-  if (kVElement?.textContent) {
-    const kVText = kVElement.textContent.trim()
-    const kVMatch = kVText.match(/[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?/)
-    if (kVMatch) {
-      const kVValue = Number.parseFloat(kVMatch[0])
-      if (!isNaN(kVValue)) results.kV = kVValue
-    }
-  }
-
-  // Extract kA value
-  const kAElement = doc.getElementById("estimatedKA")
-  if (kAElement?.textContent) {
-    const kAText = kAElement.textContent.trim()
-    const kAMatch = kAText.match(/[-+]?[0-9]*\.?[0-9]+([eE][-+]?[0-9]+)?/)
-    if (kAMatch) {
-      const kAValue = Number.parseFloat(kAMatch[0])
-      if (!isNaN(kAValue)) results.kA = kAValue
-    }
-  }
-
-  return results
-}
-
-/**
- * Fetches ReCalc results directly using fetch API
- */
-export async function fetchReCalcResults(url: string): Promise<ReCalcResults | null> {
-  try {
-    console.log("Fetching ReCalc results from:", url)
-
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.5",
-        "Accept-Encoding": "gzip, deflate, br",
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-      },
-    })
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-
-    const html = await response.text()
-    console.log("Received HTML response, parsing...")
-
-    // Parse the HTML to extract values
-    const results = parseReCalcHTML(html)
-
-    console.log("Parsed ReCalc results:", results)
-
-    // Return results if we found at least one value
-    if (Object.keys(results).length > 0) {
-      return results
-    } else {
-      console.warn("No values found in ReCalc response")
-      return null
-    }
-  } catch (error) {
-    console.error("Error fetching ReCalc results:", error)
-
-    // If CORS fails, provide helpful error message
-    if (error instanceof TypeError && error.message.includes("fetch")) {
-      throw new Error('Unable to connect to ReCalc. Please use the "Open ReCalc" button to calculate values manually.')
-    }
-
-    throw error
-  }
 }
 
 /**

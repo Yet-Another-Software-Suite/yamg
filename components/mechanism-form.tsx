@@ -565,11 +565,6 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
 
                   <ReCalcIntegration
                     formValues={form.getValues()}
-                    onValuesCalculated={(values) => {
-                      if (values.kG !== undefined) form.setValue("feedforward.kG", values.kG)
-                      if (values.kV !== undefined) form.setValue("feedforward.kV", values.kV)
-                      if (values.kA !== undefined) form.setValue("feedforward.kA", values.kA)
-                    }}
                   />
                 </div>
               </div>
