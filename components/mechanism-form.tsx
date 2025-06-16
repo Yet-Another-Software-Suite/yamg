@@ -15,14 +15,14 @@ import {
   MOTOR_CONTROLLERS,
   MOTORS,
   getCompatibleMotors,
-  isMotorCompatibleWithController
+  isMotorCompatibleWithController,
 } from "@/lib/config/hardware-config"
+import ReCalcIntegration from "./recalc-integration"
 
 export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
   const mechanismType = form.watch("mechanismType")
   const motorControllerType = form.watch("motorControllerType", "SparkMAX")
   const motorType = form.watch("motorType", "NEO")
-
 
   // Get all available controllers and motors from the configuration
   const allControllers = Object.values(MOTOR_CONTROLLERS)
@@ -38,8 +38,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
     // If changing away from TalonFX and using a Kraken motor, switch to KrakenX60
     if (value !== "TalonFX" && !isMotorCompatibleWithController(motorType, value)) {
       form.setValue("motorType", "NEO")
-    }
-    else if(value === "TalonFX" && !isMotorCompatibleWithController(motorType, value)) {
+    } else if (value === "TalonFX" && !isMotorCompatibleWithController(motorType, value)) {
       form.setValue("motorType", "Krakenx60")
     }
   }
@@ -159,7 +158,11 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                         ))}
                       </SelectContent>
                     </Select>
-                    <FormDescription>{!isMotorCompatibleWithController("NEO", motorControllerType) ? "Kraken motors can only be used with TalonFX" : ""}</FormDescription>
+                    <FormDescription>
+                      {!isMotorCompatibleWithController("NEO", motorControllerType)
+                        ? "Kraken motors can only be used with TalonFX"
+                        : ""}
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -510,6 +513,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             onChange={(e) => handleNumberChange(e, field.onChange)}
                           />
                         </FormControl>
+                        <FormDescription>Velocity feedforward (auto-calculable with ReCalc)</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -530,9 +534,19 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             onChange={(e) => handleNumberChange(e, field.onChange)}
                           />
                         </FormControl>
+                        <FormDescription>Acceleration feedforward (auto-calculable with ReCalc)</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
+                  />
+
+                  <ReCalcIntegration
+                    formValues={form.getValues()}
+                    onValuesCalculated={(values) => {
+                      if (values.kG !== undefined) form.setValue("feedforward.kG", values.kG)
+                      if (values.kV !== undefined) form.setValue("feedforward.kV", values.kV)
+                      if (values.kA !== undefined) form.setValue("feedforward.kA", values.kA)
+                    }}
                   />
 
                   {(mechanismType === "Elevator" || mechanismType === "Arm") && (
@@ -551,7 +565,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                               onChange={(e) => handleNumberChange(e, field.onChange)}
                             />
                           </FormControl>
-                          <FormDescription>Only for elevators and arms</FormDescription>
+                          <FormDescription>Gravity compensation (auto-calculable with ReCalc)</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
