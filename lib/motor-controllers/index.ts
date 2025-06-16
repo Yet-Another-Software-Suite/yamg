@@ -3,6 +3,7 @@ import * as SparkFlex from "./spark-flex"
 import * as TalonFX from "./talon-fx"
 import * as TalonFXS from "./talon-fxs"
 import * as ThriftyNova from "./thrifty-nova"
+import * as ReduxNitrate from "./redux-nitrate"
 import { getMotorController, getWPILibMotorType } from "@/lib/config/hardware-config"
 
 export const getMotorControllerModule = (type: string) => {
@@ -17,6 +18,8 @@ export const getMotorControllerModule = (type: string) => {
       return TalonFXS
     case "ThriftyNova":
       return ThriftyNova
+    case "ReduxNitrate":
+      return ReduxNitrate
     default:
       throw new Error(`Unknown motor controller type: ${type}`)
   }

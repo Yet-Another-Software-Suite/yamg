@@ -48,7 +48,7 @@ export const MOTORS: Record<string, MotorDefinition> = {
     kt: 0.025,
     resistance: 0.116,
     mass: 0.425,
-    compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova"],
+    compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova", "ReduxNitrate"],
     description: "REV Robotics NEO Brushless Motor",
   },
   NEO550: {
@@ -58,7 +58,7 @@ export const MOTORS: Record<string, MotorDefinition> = {
     kt: 0.015,
     resistance: 0.08,
     mass: 0.235,
-    compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova"],
+    compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova", "ReduxNitrate"],
     description: "REV Robotics NEO 550 Brushless Motor",
   },
   Minion: {
@@ -68,8 +68,28 @@ export const MOTORS: Record<string, MotorDefinition> = {
     kt: 0.015,
     resistance: 0.08,
     mass: 0.235,
-    compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova"],
+    compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova", "ReduxNitrate"],
     description: "REV Robotics Minion Brushless Motor",
+  },
+  Vortex: {
+    name: "Vortex",
+    displayName: "NEO Vortex",
+    kv: 473, // Same as NEO for now - will need actual specs
+    kt: 0.025, // Same as NEO for now - will need actual specs
+    resistance: 0.116, // Same as NEO for now - will need actual specs
+    mass: 0.425, // Same as NEO for now - will need actual specs
+    compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ReduxNitrate"],
+    description: "REV Robotics NEO Vortex Brushless Motor",
+  },
+  Cu60: {
+    name: "Cu60",
+    displayName: "Redux Cu60",
+    kv: 590, // Placeholder - will need actual specs
+    kt: 0.021, // Placeholder - will need actual specs
+    resistance: 0.1, // Placeholder - will need actual specs
+    mass: 0.39, // Placeholder - will need actual specs
+    compatibleControllers: ["ReduxNitrate"],
+    description: "Redux Robotics Cu60 Brushless Motor",
   },
   Krakenx44: {
     name: "Krakenx44",
@@ -160,6 +180,19 @@ export const MOTOR_CONTROLLERS: Record<string, MotorControllerDefinition> = {
     maxCurrentLimit: 60,
     maxVoltage: 12,
   },
+  ReduxNitrate: {
+    name: "ReduxNitrate",
+    displayName: "Redux Nitrate",
+    supportsCurrentLimit: true,
+    supportsSupplyCurrentLimit: true,
+    supportsBrakeMode: true,
+    supportsRampRate: true,
+    supportsSoftLimits: true,
+    importPath: "com.reduxrobotics.nitrate.hardware.ReduxNitrate",
+    description: "Redux Robotics Nitrate Motor Controller",
+    maxCurrentLimit: 80, // Placeholder - will need actual specs
+    maxVoltage: 12,
+  },
 }
 
 // Define mechanism types
@@ -241,11 +274,9 @@ export function isMotorCompatibleWithController(motorName: string, controllerNam
   try {
     const motor = getMotor(motorName)
     return motor.compatibleControllers.includes(controllerName)
-  } 
-  catch(error) {
+  } catch (error) {
     return true
   }
-  
 }
 
 /**
@@ -272,6 +303,11 @@ export function getWPILibMotorType(motorName: string): string {
     case "Krakenx44":
       // From https://wcproducts.com/blogs/wcp-blog/kraken-x44
       return customDCMotor(4.05, 275, 1.4, 7530)
+    case "Vortex":
+      return "DCMotor.getNEOVortex(1)"
+    case "Cu60":
+      // Placeholder - will need actual DCMotor specs for Cu60
+      return customDCMotor(4.05, 275, 1.4, 7530)
     default:
       return "DCMotor.getNEO(1)"
   }
@@ -292,6 +328,10 @@ export function getSimMotorType(motorName: string): string {
       return "KrakenX44"
     case "Minion":
       return "Falcon500" // Closest approximation
+    case "Vortex":
+      return "NEOVortex"
+    case "Cu60":
+      return "Cu60"
     default:
       return "NEO"
   }
@@ -300,6 +340,11 @@ export function getSimMotorType(motorName: string): string {
 /**
  * Helper function to create a custom DCMotor
  */
-function customDCMotor(stallTorqueNewtonMeters: Number, stallCurrentAmps: Number, freeCurrentAmps: Number, freeSpeedRPM: Number): string {
+function customDCMotor(
+  stallTorqueNewtonMeters: number,
+  stallCurrentAmps: number,
+  freeCurrentAmps: number,
+  freeSpeedRPM: number,
+): string {
   return `new DCMotor(12, ${stallTorqueNewtonMeters}, ${stallCurrentAmps}, ${freeCurrentAmps}, Units.rotationsPerMinuteToRadiansPerSecond(${freeSpeedRPM}), 1)`
 }
