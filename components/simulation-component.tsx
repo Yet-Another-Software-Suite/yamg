@@ -26,19 +26,29 @@ function suppressResizeObserverErrors() {
   }
 }
 
-// Then update the type reference in the props interface
 interface SimulationComponentProps {
   formValues: FormValues
   simType: string
+  motorCount: number
 }
 
-export default function SimulationComponent({ formValues, simType }: SimulationComponentProps) {
+export default function SimulationComponent({ formValues, simType, motorCount }: SimulationComponentProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [isRunning, setIsRunning] = useState(false)
   const [simInstance, setSimInstance] = useState<ControlsBaseSim | null>(null)
   const animationRef = useRef<number | null>(null)
   const [targetValue, setTargetValue] = useState(0)
   const [error, setError] = useState<string | null>(null)
+
+  // Store the latest form values and motor count for reset functionality
+  const latestFormValuesRef = useRef(formValues)
+  const latestMotorCountRef = useRef(motorCount)
+
+  // Update refs when props change
+  useEffect(() => {
+    latestFormValuesRef.current = formValues
+    latestMotorCountRef.current = motorCount
+  }, [formValues, motorCount])
 
   // Add this hook inside the SimulationComponent function, near the top after the state declarations
   useLayoutEffect(() => {
@@ -50,14 +60,16 @@ export default function SimulationComponent({ formValues, simType }: SimulationC
     }
   }, [])
 
-  // Initialize simulation
-  useEffect(() => {
-    if (!canvasRef.current) return
+  // Function to create/recreate simulation instance
+  const createSimulationInstance = (useLatestValues = false) => {
+    if (!canvasRef.current) return null
 
     try {
-      // Create simulation instance based on mechanism type
       const canvas = canvasRef.current
-      const { simType: simClassName, options } = createSimulationOptions(formValues, canvas)
+      const currentFormValues = useLatestValues ? latestFormValuesRef.current : formValues
+      const currentMotorCount = useLatestValues ? latestMotorCountRef.current : motorCount
+
+      const { simType: simClassName, options } = createSimulationOptions(currentFormValues, canvas, currentMotorCount)
 
       let sim: ControlsBaseSim | null = null
 
@@ -71,18 +83,30 @@ export default function SimulationComponent({ formValues, simType }: SimulationC
       if (sim) {
         sim.setControlMode(simType)
         sim.draw() // Initial draw
-        setSimInstance(sim)
         setError(null)
 
         // Set initial target value
-        const sliderConfig = getSliderRangeConfig(formValues, simType)
+        const sliderConfig = getSliderRangeConfig(currentFormValues, simType)
         setTargetValue(sliderConfig.initialValue)
+
+        console.log("Created simulation instance with motor count:", currentMotorCount)
+        return sim
       }
     } catch (error) {
-      console.error("Error initializing simulation:", error)
-      setError(`Failed to initialize simulation: ${error instanceof Error ? error.message : String(error)}`)
+      console.error("Error creating simulation:", error)
+      setError(`Failed to create simulation: ${error instanceof Error ? error.message : String(error)}`)
     }
-  }, [formValues, simType])
+
+    return null
+  }
+
+  // Initialize simulation
+  useEffect(() => {
+    const sim = createSimulationInstance()
+    if (sim) {
+      setSimInstance(sim)
+    }
+  }, [formValues, simType, motorCount])
 
   // Fix the animation loop to ensure consistent updates
   // Replace the entire animation loop useEffect with this improved version
@@ -153,13 +177,19 @@ export default function SimulationComponent({ formValues, simType }: SimulationC
   }
 
   const resetSimulation = () => {
-    if (simInstance) {
-      simInstance.reset()
-      simInstance.draw()
+    // Stop the simulation if it's running
+    setIsRunning(false)
 
-      // Reset target value to initial position
-      const sliderConfig = getSliderRangeConfig(formValues, simType)
+    // Create a new simulation instance with the latest form values
+    const newSim = createSimulationInstance(true)
+    if (newSim) {
+      setSimInstance(newSim)
+
+      // Reset target value to initial position based on latest form values
+      const sliderConfig = getSliderRangeConfig(latestFormValuesRef.current, simType)
       setTargetValue(sliderConfig.initialValue)
+
+      console.log("Reset simulation with latest form values and motor count:", latestMotorCountRef.current)
     }
   }
 
@@ -254,8 +284,14 @@ export default function SimulationComponent({ formValues, simType }: SimulationC
 
       <div className="text-sm text-muted-foreground mt-4">
         <p>This simulation uses the WPILib controls simulation library to visualize mechanism behavior.</p>
-        <p>The simulation parameters are derived from your form inputs.</p>
+        <p>
+          The simulation parameters are derived from your form inputs and motor count ({motorCount} motor
+          {motorCount !== 1 ? "s" : ""}).
+        </p>
         <p>Use the slider to adjust the target {simType === "position" ? "position" : "velocity"}.</p>
+        <p>
+          <strong>Reset button</strong> applies all latest changes from the main form.
+        </p>
       </div>
     </div>
   )

@@ -11,12 +11,13 @@ import type { ControlsBaseSimOptions } from "./controls-base-sim"
 export function createSimulationOptions(
   formValues: FormValues,
   canvas: HTMLCanvasElement,
+  motorCount = 1,
 ): { simType: string; options: ControlsBaseSimOptions } {
   // Common options for all simulation types
   const commonOptions: ControlsBaseSimOptions = {
     motorType: getSimMotorType(formValues.motorType),
     gearing: formValues.gearRatio,
-    motorCount: 1,
+    motorCount: motorCount,
     kP: formValues.pidValues.kP,
     kI: formValues.pidValues.kI,
     kD: formValues.pidValues.kD,
@@ -29,10 +30,16 @@ export function createSimulationOptions(
   // Mechanism-specific options
   switch (formValues.mechanismType) {
     case "Arm": {
+      // Convert mass from lbs to kg if needed
+      let mass = formValues.armParams?.mass || 5.0
+      if (formValues.armParams?.massUnit === "lbs") {
+        mass = mass * 0.453592 // Convert lbs to kg
+      }
+
       const armOptions: ArmSimOptions = {
         ...commonOptions,
         length: formValues.armParams?.length || 1.0,
-        mass: formValues.armParams?.mass || 5.0,
+        mass: mass,
         minAngle:
           formValues.armParams?.hardLimitMin !== undefined
             ? (Math.PI * formValues.armParams.hardLimitMin) / 180
@@ -50,9 +57,15 @@ export function createSimulationOptions(
     }
 
     case "Elevator": {
+      // Convert mass from lbs to kg if needed
+      let mass = formValues.elevatorParams?.mass || 5.0
+      if (formValues.elevatorParams?.massUnit === "lbs") {
+        mass = mass * 0.453592 // Convert lbs to kg
+      }
+
       const elevatorOptions: ElevatorSimOptions = {
         ...commonOptions,
-        mass: formValues.elevatorParams?.mass || 5.0,
+        mass: mass,
         drumRadius: formValues.elevatorParams?.drumRadius || 0.0254,
         minHeight: formValues.elevatorParams?.hardLimitMin || 0,
         maxHeight: formValues.elevatorParams?.hardLimitMax || 1.0,

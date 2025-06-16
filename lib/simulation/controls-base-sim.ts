@@ -55,6 +55,7 @@ export class ControlsBaseSim {
     R: number
     m: number
     gearing: number
+    count: number
   }
 
   constructor(canvas: HTMLCanvasElement, options: ControlsBaseSimOptions = {}) {
@@ -91,27 +92,46 @@ export class ControlsBaseSim {
     this.prevError = 0
 
     // Motor configuration
+    this.configureMotor(options)
+  }
+
+  configureMotor(options: ControlsBaseSimOptions): void {
     // Default motor is a NEO
     const motorType = options.motorType || "NEO"
     const gearing = options.gearing || 1.0
     const motorCount = options.motorCount || 1
 
-    let motorDef = getMotor("NEO")
+    // Get motor constants from the centralized configuration
     try {
       const motorDef = getMotor(motorType)
-    }
-    catch(error) {
+
+      this.motor = {
+        kv: motorDef.kv / gearing, // RPM/V
+        kt: motorDef.kt * gearing * motorCount, // N-m/A (multiply by motor count for total torque)
+        R: motorDef.resistance / motorCount, // Ohms (parallel resistance decreases)
+        m: motorDef.mass * motorCount, // kg (total mass increases)
+        gearing: gearing,
+        count: motorCount,
+      }
+
+      console.log(`Configured ${motorCount} ${motorType} motor(s) with gearing ${gearing}:1`, {
+        totalTorque: this.motor.kt,
+        totalResistance: this.motor.R,
+        totalMass: this.motor.m,
+      })
+    } catch (error) {
       // Fallback to NEO if motor not found
       console.warn(`Motor type ${motorType} not found in configuration, using NEO as fallback`)
-      motorDef = getMotor("NEO")
-    }
+      const neoMotor = getMotor("NEO")
 
-    this.motor = {
-      kv: motorDef.kv / gearing, // RPM/V
-      kt: motorDef.kt * gearing, // N-m/A
-      R: motorDef.resistance / motorCount, // Ohms per motor
-      m: motorDef.mass * motorCount, // kg per motor
-      gearing: gearing,
+      this.motor = {
+        kv: neoMotor.kv / gearing,
+        kt: neoMotor.kt * gearing * motorCount,
+        R: neoMotor.resistance / motorCount,
+        m: neoMotor.mass * motorCount,
+        gearing: gearing,
+        count: motorCount,
+      }
     }
   }
 
@@ -191,6 +211,7 @@ export class ControlsBaseSim {
         position: this.position,
         velocity: this.velocity,
         voltage: this.voltage,
+        motorCount: this.motor.count,
         controlOutput,
         ffOutput,
       })
