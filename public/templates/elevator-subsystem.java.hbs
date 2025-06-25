@@ -224,7 +224,7 @@ public class {{subsystemName}} extends SubsystemBase {
   private void updateTelemetry() {
     {{#if logPosition}}
     // Convert based on selected position unit
-    switch ("{{positionUnit}}") {
+    switch ("{{Unit}}") {
       case "Degrees":
         positionEntry.setDouble(Units.radiansToDegrees(getPositionRadians()));
         break;

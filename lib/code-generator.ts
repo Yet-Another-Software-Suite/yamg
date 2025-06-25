@@ -44,6 +44,7 @@ async function processTemplate(templateName: string, data: FormValues): Promise<
   const templateData = {
     ...data,
     isSparkController: isRevController(data.motorControllerType),
+    Unit: data.telemetry.positionUnit,
     logPosition: data.telemetry.position,
     logVelocity: data.telemetry.velocity,
     logVoltage: data.telemetry.voltage,
