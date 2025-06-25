@@ -2,7 +2,6 @@ export const getImports = () => `
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.StatusSignal;
-import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -18,7 +17,6 @@ import edu.wpi.first.units.measure.*;
 export const getDeclaration = () => `private final TalonFX motor;
 private final PositionVoltage positionRequest;
 private final VelocityVoltage velocityRequest;
-private final DutyCycleOut dutyCycleRequest;
 private final StatusSignal<Angle> positionSignal;
 private final StatusSignal<AngularVelocity> velocitySignal;
 private final StatusSignal<Voltage> voltageSignal;
@@ -31,9 +29,8 @@ export const getInitialization = () => `motor = new TalonFX(canID);
 // Create control requests
 positionRequest = new PositionVoltage(0).withSlot(0);
 velocityRequest = new VelocityVoltage(0).withSlot(0);
-dutyCycleRequest = new DutyCycleOut(0);
 
-// Track status signals
+// get status signals
 positionSignal = motor.getPosition();
 velocitySignal = motor.getVelocity();
 voltageSignal = motor.getMotorVoltage();
@@ -48,11 +45,12 @@ slot0.kP = kP;
 slot0.kI = kI;
 slot0.kD = kD;
 
-// Set ramp rates
 {{#if enableOpenLoopRamp}}
+// Set ramp rates
   OpenLoopRampsConfigs openLoopRamps = config.OpenLoopRamps;
   openLoopRamps.DutyCycleOpenLoopRampPeriod = openLoopRampRate;
 {{/if}}
+
 {{#if enableClosedLoopRamp}}
   ClosedLoopRampsConfigs closedLoopRamps = config.ClosedLoopRamps;
   closedLoopRamps.VoltageClosedLoopRampPeriod = closedLoopRampRate;
@@ -64,6 +62,7 @@ currentLimits.StatorCurrentLimit = statorCurrentLimit;
 currentLimits.StatorCurrentLimitEnable = enableStatorLimit;
 currentLimits.SupplyCurrentLimit = supplyCurrentLimit;
 currentLimits.SupplyCurrentLimitEnable = enableSupplyLimit;
+
 {{#if enableSoftLimits}}
 // Set soft limits
 SoftwareLimitSwitchConfigs softLimits = config.SoftwareLimitSwitch;
@@ -75,6 +74,9 @@ SoftwareLimitSwitchConfigs softLimits = config.SoftwareLimitSwitch;
 
 // Set brake mode
 config.MotorOutput.NeutralMode = brakeMode ? NeutralModeValue.Brake : NeutralModeValue.Coast;
+
+// Apply gear ratio
+config.Feedback.SensorToMechanismRatio = gearRatio;
 
 // Apply configuration
 motor.getConfigurator().apply(config);
@@ -90,19 +92,16 @@ export const getSimulationPeriodic = () => `
 `
 
 export const getMethods = () => ({
-  getPositionMethod: `return positionSignal.getValueAsDouble() / gearRatio;`,
+  getPositionMethod: `return positionSignal.getValueAsDouble();`,
 
-  getVelocityMethod: `return velocitySignal.getValueAsDouble() / gearRatio;`,
+  getVelocityMethod: `return velocitySignal.getValueAsDouble();`,
 
-  setPositionMethod: `// Adjust for gear-ratio
-  double adjustedPosition = positionRotations * gearRatio;
+  setPositionMethod: `
 double ffVolts = feedforward.calculate(getVelocity(), acceleration);
-motor.setControl(positionRequest.withPosition(adjustedPosition).withFeedForward(ffVolts));`,
+motor.setControl(positionRequest.withPosition(positionRotations).withFeedForward(ffVolts));`,
 
-  setVelocityMethod: `// Adjust for gear-ratio
-  double adjustedVelocity = velocityRotations * gearRatio;
-double ffVolts = feedforward.calculate(getVelocity(), acceleration);
-motor.setControl(velocityRequest.withVelocity(adjustedVelocity).withFeedForward(ffVolts));`,
+  setVelocityMethod: `double ffVolts = feedforward.calculate(getVelocity(), acceleration);
+motor.setControl(velocityRequest.withVelocity(velocityRotations).withFeedForward(ffVolts));`,
 
   setVoltageMethod: `motor.setVoltage(voltage);`,
 
