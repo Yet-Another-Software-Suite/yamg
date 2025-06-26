@@ -6,9 +6,6 @@ import edu.wpi.first.wpilibj.simulation.ElevatorSim;
 import edu.wpi.first.math.controller.ElevatorFeedforward;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.math.system.plant.DCMotor;
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableEntry;
-import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
 {{#if isSparkController}}
@@ -71,24 +68,6 @@ public class {{subsystemName}} extends SubsystemBase {
   private TrapezoidProfile.Constraints constraints;
   {{/if}}
   
-  // Telemetry
-  private final NetworkTable telemetryTable;
-  {{#if logPosition}}
-  private NetworkTableEntry positionEntry;
-  {{/if}}
-  {{#if logVelocity}}
-  private NetworkTableEntry velocityEntry;
-  {{/if}}
-  {{#if logVoltage}}
-  private NetworkTableEntry voltageEntry;
-  {{/if}}
-  {{#if logCurrent}}
-  private NetworkTableEntry currentEntry;
-  {{/if}}
-  {{#if logTemperature}}
-  private NetworkTableEntry temperatureEntry;
-  {{/if}}
-  
   // Simulation
   private final ElevatorSim elevatorSim;
   
@@ -98,25 +77,6 @@ public class {{subsystemName}} extends SubsystemBase {
   public {{subsystemName}}() {
     // Initialize motor controller
     {{{motorControllerInitialization}}}
-    
-    // Initialize telemetry
-    telemetryTable = NetworkTableInstance.getDefault().getTable("{{ntKey}}");
-    
-    {{#if logPosition}}
-    positionEntry = telemetryTable.getEntry("Position");
-    {{/if}}
-    {{#if logVelocity}}
-    velocityEntry = telemetryTable.getEntry("Velocity");
-    {{/if}}
-    {{#if logVoltage}}
-    voltageEntry = telemetryTable.getEntry("Voltage");
-    {{/if}}
-    {{#if logCurrent}}
-    currentEntry = telemetryTable.getEntry("Current");
-    {{/if}}
-    {{#if logTemperature}}
-    temperatureEntry = telemetryTable.getEntry("Temperature");
-    {{/if}}
     
     // Initialize simulation
     elevatorSim = new ElevatorSim(
@@ -193,7 +153,6 @@ public class {{subsystemName}} extends SubsystemBase {
   @Override
   public void periodic() {
     {{{motorControllerPeriodic}}}
-    updateTelemetry();
     {{#if isSparkController}}
     controlLoopFn();
     {{/if}}
@@ -218,64 +177,39 @@ public class {{subsystemName}} extends SubsystemBase {
     {{{motorControllerSimulationPeriodic}}}
   }
   
-  /**
-   * Update telemetry values.
-   */
-  private void updateTelemetry() {
-    {{#if logPosition}}
-    // Convert based on selected position unit
-    switch ("{{positionUnit}}") {
-      case "Degrees":
-        positionEntry.setDouble(Units.radiansToDegrees(getPositionRadians()));
-        break;
-      case "Radians":
-        positionEntry.setDouble(getPositionRadians());
-        break;
-      case "Rotations":
-      default:
-        positionEntry.setDouble(getPosition());
-        break;
-    }
-    {{/if}}
-    
-    {{#if logVelocity}}
-    velocityEntry.setDouble(getVelocity());
-    {{/if}}
-    
-    {{#if logVoltage}}
-    voltageEntry.setDouble(getVoltage());
-    {{/if}}
-    
-    {{#if logCurrent}}
-    currentEntry.setDouble(getCurrent());
-    {{/if}}
-    
-    {{#if logTemperature}}
-    temperatureEntry.setDouble(getTemperature());
-    {{/if}}
-  }
+ 
   
   /**
-   * Get the current position in rotations.
-   * @return Position in rotations
+   * Get the current position in the selected unit.
+   * @return Position in selected unit
    */
+   {{#if logPosition}}
+   @Logged(name = "Position")
+   {{/if}}
   public double getPosition() {
-    {{{getPositionMethod}}}
+    {{#if (eq unitPosition "Rotations")}}
+    // Rotations
+      {{{getPositionMethod}}}
+    {{else if (eq unitPosition "Radians")}}
+    // Radians
+      return {{{getPositionMethod}}} * 2.0 * Math.PI;
+    {{else if (eq unitPosition "Degrees")}}
+    // Degrees
+      return {{{getPositionMethod}}} * 360.0;
+    {{else}}
+      // Default to rotations
+      {{{getPositionMethod}}}
+    {{/if}}
   }
-  
-  /**
-   * Get the current position in radians.
-   * @return Position in radians
-   */
-  public double getPositionRadians() {
-    double rotations = getPosition();
-    return rotations * 2.0 * Math.PI;
-  }
+
   
   /**
    * Get the current velocity in rotations per second.
    * @return Velocity in rotations per second
    */
+   {{#if logVelocity}}
+   @Logged(name = "Velocity")
+   {{/if}}
   public double getVelocity() {
     {{{getVelocityMethod}}}
   }
@@ -284,6 +218,9 @@ public class {{subsystemName}} extends SubsystemBase {
    * Get the current applied voltage.
    * @return Applied voltage
    */
+   {{#if logVoltage}}
+   @Logged(name = "Voltage")
+   {{/if}}
   public double getVoltage() {
     {{{getVoltageMethod}}}
   }
@@ -292,6 +229,9 @@ public class {{subsystemName}} extends SubsystemBase {
    * Get the current motor current.
    * @return Motor current in amps
    */
+   {{#if logCurrent}}
+   @Logged(name = "Current")
+   {{/if}}
   public double getCurrent() {
     {{{getCurrentMethod}}}
   }
@@ -300,6 +240,9 @@ public class {{subsystemName}} extends SubsystemBase {
    * Get the current motor temperature.
    * @return Motor temperature in Celsius
    */
+   {{#if logTemperature}}
+   @Logged(name = "Temperature")
+   {{/if}}
   public double getTemperature() {
     {{{getTemperatureMethod}}}
   }

@@ -7,9 +7,11 @@ import pluginJava from "prettier-plugin-java";
 
 // Initialize Handlebars
 function initializeHandlebars() {
-  // No need for custom helpers - Handlebars has built-in conditionals
-  // We can add any other custom helpers here if needed in the future
-}
+  // add eq helper
+  Handlebars.registerHelper("eq", function (a, b) {
+    return a === b;
+  });
+  }
 
 // Initialize Handlebars when this module is loaded
 initializeHandlebars()
@@ -44,6 +46,7 @@ async function processTemplate(templateName: string, data: FormValues): Promise<
   const templateData = {
     ...data,
     isSparkController: isRevController(data.motorControllerType),
+    positionUnit: data.telemetry.positionUnit,
     logPosition: data.telemetry.position,
     logVelocity: data.telemetry.velocity,
     logVoltage: data.telemetry.voltage,
