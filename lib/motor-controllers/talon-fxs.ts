@@ -96,12 +96,14 @@ export const getMethods = () => ({
 
   getVelocityMethod: `return velocitySignal.getValueAsDouble() / gearRatio;`,
 
-  setPositionMethod: `double adjustedPosition = position * gearRatio;
+  setPositionMethod: `// Adjust for gear-ratio
+  double adjustedPosition = positionRotations  * gearRatio;
 double ffVolts = feedforward.calculate(getVelocity(), acceleration);
 motor.setControl(positionRequest.withPosition(adjustedPosition).withFeedForward(ffVolts));`,
 
-  setVelocityMethod: `double adjustedVelocity = velocity * gearRatio;
-double ffVolts = feedforward.calculate(velocity, acceleration);
+  setVelocityMethod: `// Adjust for gear-ratio
+  double adjustedVelocity = velocityRotations * gearRatio;
+double ffVolts = feedforward.calculate(getVelocity(), acceleration);
 motor.setControl(velocityRequest.withVelocity(adjustedVelocity).withFeedForward(ffVolts));`,
 
   setVoltageMethod: `motor.setVoltage(voltage);`,
