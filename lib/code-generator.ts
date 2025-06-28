@@ -47,6 +47,7 @@ async function processTemplate(templateName: string, data: FormValues): Promise<
     ...data,
     isSparkController: isRevController(data.motorControllerType),
     positionUnit: data.telemetry.positionUnit,
+    ntKey: data.telemetry.ntKey,
     logPosition: data.telemetry.position,
     logVelocity: data.telemetry.velocity,
     logVoltage: data.telemetry.voltage,
