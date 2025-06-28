@@ -180,28 +180,44 @@ public class {{subsystemName}} extends SubsystemBase {
  
   
   /**
-   * Get the current position in the selected unit.
-   * @return Position in selected unit
+   * Get the current position in Rotations.
+   * @return Position in Rotations
    */
    {{#if logPosition}}
-   @Logged(name = "Position")
+   @Logged(name = "Position/Rotations")
    {{/if}}
   public double getPosition() {
-    {{#if (eq unitPosition "Rotations")}}
     // Rotations
       {{{getPositionMethod}}}
-    {{else if (eq unitPosition "Radians")}}
-    // Radians
-      return {{{getPositionMethod}}} * 2.0 * Math.PI;
-    {{else if (eq unitPosition "Degrees")}}
-    // Degrees
-      return {{{getPositionMethod}}} * 360.0;
-    {{else}}
-      // Rotations
-      {{{getPositionMethod}}}
-    {{/if}}
   }
 
+  {{#if (eq positionUnit "Radians")}}
+  /**
+   * Get the current position in Radians.
+   * @return Position in Radians
+   */
+   {{#if logPosition}}
+   @Logged(name = "Position/Radians")
+   {{/if}}
+  public double getPositionRadians() {
+    // Radians
+    return getPosition() * 2.0 * Math.PI;
+  }
+  {{/if}}
+
+  {{#if (eq positionUnit "Degrees")}}
+  /**
+   * Get the current position in Degrees.
+   * @return Position in Degrees
+   */
+   {{#if logPosition}}
+   @Logged(name = "Position/Degrees")
+   {{/if}}
+  public double getPositionDegrees() {
+    // Degrees
+    return getPosition() * 360.0;
+  }
+  {{/if}}
   
   /**
    * Get the current velocity in rotations per second.
