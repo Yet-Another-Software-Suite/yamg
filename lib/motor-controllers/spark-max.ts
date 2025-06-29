@@ -19,12 +19,6 @@ motorConfig.idleMode(brakeMode ? IdleMode.kBrake : IdleMode.kCoast);
 encoder = motor.getEncoder();
 encoder.setPosition(0);
 
-// Configure PID controller
-motorConfig.closedLoop 
-  .p(kP)
-  .i(kI)
-  .d(kD);
-
 // Set ramp rates
 {{#if enableOpenLoopRamp}}
   motorConfig.openLoopRampRate({{openLoopRampRate}});
@@ -60,7 +54,7 @@ export const getMethods = () => ({
   getVelocityMethod: `return encoder.getVelocity() / gearRatio / 60.0; // Convert from RPM to RPS`,
 
   setPositionMethod: `double adjustedPosition = position * gearRatio;
-ProfiledPIDController.setReference(adjustedPosition, CANSparkBase.ControlType.kPosition, 0, 
+profiledPIDController.setReference(adjustedPosition, CANSparkBase.ControlType.kPosition, 0, 
     feedforward.calculate(getVelocity(), acceleration));`,
 
   setVelocityMethod: `// This code is not used for SparkMAX as they use the control loop instead
