@@ -5,7 +5,7 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.RelativeEncoder;
-import com.revrobotics.spark.SparkClosedLoopController;`
+`
 
 export const getDeclaration = () => `private final SparkFlex motor;
 private final RelativeEncoder encoder;`
