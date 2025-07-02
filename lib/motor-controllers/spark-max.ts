@@ -19,8 +19,8 @@ motorConfig.idleMode(brakeMode ? IdleMode.kBrake : IdleMode.kCoast);
 encoder = motor.getEncoder();
 encoder.setPosition(0);
 
-// Set ramp rates
 {{#if enableOpenLoopRamp}}
+// Set ramp rates
   motorConfig.openLoopRampRate({{openLoopRampRate}});
 {{/if}}
 {{#if enableClosedLoopRamp}}
