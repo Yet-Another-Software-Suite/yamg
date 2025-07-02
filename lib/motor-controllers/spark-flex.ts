@@ -26,8 +26,8 @@ encoder.setPosition(0);
   motorConfig.closedLoopRampRate(closedLoopRampRate);
 {{/if}}
 
-// Set current limits
 {{#if enableStatorLimit}}
+//Set current limits
  motorConfig.smartCurrentLimit(statorCurrentLimit);
 {{/if}}
 
