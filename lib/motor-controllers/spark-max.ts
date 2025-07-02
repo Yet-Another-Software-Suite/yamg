@@ -32,8 +32,8 @@ encoder.setPosition(0);
  motorConfig.smartCurrentLimit(statorCurrentLimit);
 {{/if}}
 
-// Set soft limits
 {{#if enableSoftLimits}}
+// Set soft limits
   motorConfig
   .softLimit
   .forwardSoftLimit(forwardSoftLimit)
