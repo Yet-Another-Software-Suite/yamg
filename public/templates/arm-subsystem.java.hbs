@@ -181,12 +181,9 @@ public class {{subsystemName}} extends SubsystemBase {
  /**
   * Clean up resources when the subsystem is destroyed.
   */
- @Override
- public void close() {
-   if (controlLoop != null) {
-     controlLoop.close();
+  public void close() {
+     motor.close();
    }
-   super.close();
  }
  {{/if}}
  
