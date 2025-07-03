@@ -140,6 +140,7 @@ async function processTemplate(templateName: string, data: FormValues): Promise<
     let result = compiledTemplate(templateData)
     while(result.includes("{{#if"))
     {
+      console.log(result)
       compiledTemplate = Handlebars.compile(result)
       result = compiledTemplate(templateData)
     }
