@@ -174,7 +174,7 @@ public void simulationPeriodic() {
 }
 
 /**
- * Get the current position in the Rotations.
+ * Get the current position in Rotations.
  * @return Position in Rotations
  */
   {{#if logPosition}}
@@ -185,21 +185,7 @@ public double getPosition() {
   {{{getPositionMethod}}}
 }
 
-{{#if (eq positionUnit "Radians")}}
-/**
- * Get the current position in Radians.
- * @return Position in Radians
- */
-  {{#if logPosition}}
-  @Logged(name = "Position/Radians")
-  {{/if}}
-public double getPositionRadians() {
-  // Radians
-  return getPosition() * 2.0 * Math.PI;
-}
-{{/if}}
-
-{{#if (eq positionUnit "Degrees")}}
+{{#if (or (eq positionUnit 'Degrees') (eq positionUnit 'Radians'))}}
 /**
  * Get the current position in {{positionUnit}}.
  * @return Position in {{positionUnit}}.
@@ -208,15 +194,13 @@ public double getPositionRadians() {
   @Logged(name = "Position/{{positionUnit}}")
   {{/if}}
 public double getPosition{{positionUnit}}() {
-  // Degrees
-  return getPosition() * 
-{{#if eq(positionUnit "Degrees")}}
-360
-{{/if}}
-{{#if eq(positionUnit "Radians")}}
-2 * Math.PI
-{{/if}};
+  {{#if (eq positionUnit 'Degrees')}}
+  return getPosition() * 360;
+  {{else}}
+  return getPosition() * 2 * Math.PI;
+  {{/if}}
 }
+{{/if}}
 
 
 /**
@@ -228,6 +212,7 @@ public double getPosition{{positionUnit}}() {
   {{/if}}
 public double getVelocity() {
   {{{getVelocityMethod}}}
+
 }
 
 /**

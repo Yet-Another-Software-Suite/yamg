@@ -11,7 +11,13 @@ function initializeHandlebars() {
   Handlebars.registerHelper("eq", function (a, b) {
     return a === b;
   });
-  }
+  // add or helper -> stackoverflow.com/questions/13036499/handlebars-js-or-helper
+  Handlebars.registerHelper("or", function() {
+    // Remove the last argument (Handlebars options object)
+    const args = Array.prototype.slice.call(arguments, 0, -1);
+    return args.some(Boolean);
+  });
+}
 
 // Initialize Handlebars when this module is loaded
 initializeHandlebars()
