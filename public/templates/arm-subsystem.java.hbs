@@ -418,8 +418,7 @@ public class {{subsystemName}} extends SubsystemBase {
    }).until(() -> {
      double currentAngle = Units.radiansToDegrees(getPositionRadians());
      return Math.abs(angleDegrees - currentAngle) < 2.0; // 2 degree tolerance
-   }).finallyDo((interrupted) -> setVelocity(0));
- }
+   }).finallyDo((interrupted) -> setVelocity(0));}
  
  /**
   * Creates a command to stop the arm.
