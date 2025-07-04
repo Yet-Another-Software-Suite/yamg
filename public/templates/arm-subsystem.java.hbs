@@ -140,12 +140,9 @@ public class {{subsystemName}} extends SubsystemBase {
  /**
   * Clean up resources when the subsystem is destroyed.
   */
- @Override
- public void close() {
-   if (controlLoop != null) {
-     controlLoop.close();
+  public void close() {
+     motor.close();
    }
-   super.close();
  }
  {{/if}}
  
@@ -366,8 +363,7 @@ public double getTemperature() {
    }).until(() -> {
      double currentAngle = Units.radiansToDegrees(getPositionRadians());
      return Math.abs(angleDegrees - currentAngle) < 2.0; // 2 degree tolerance
-   }).finallyDo((interrupted) -> setVelocity(0));
- }
+   }).finallyDo((interrupted) -> setVelocity(0));}
  
  /**
   * Creates a command to stop the arm.

@@ -11,6 +11,7 @@ function initializeHandlebars() {
   Handlebars.registerHelper("eq", function (a, b) {
     return a === b;
   });
+
   // add or helper -> stackoverflow.com/questions/13036499/handlebars-js-or-helper
   Handlebars.registerHelper("or", function() {
     // Remove the last argument (Handlebars options object)
@@ -18,6 +19,8 @@ function initializeHandlebars() {
     return args.some(Boolean);
   });
 }
+  }
+
 
 // Initialize Handlebars when this module is loaded
 initializeHandlebars()
@@ -147,13 +150,14 @@ async function processTemplate(templateName: string, data: FormValues): Promise<
     let result = compiledTemplate(templateData)
     while(result.includes("{{#if"))
     {
+      console.log(result)
       compiledTemplate = Handlebars.compile(result)
       result = compiledTemplate(templateData)
     }
-    return prettier.format(result, {
+    return result; /*prettier.format(result, {
       parser: "java",
       plugins: [pluginJava],
-    })
+    })*/
   } catch (error) {
     console.error("Error processing template:", error)
     return "Error processing template: " + (error as Error).message

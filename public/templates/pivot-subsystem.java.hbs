@@ -145,11 +145,9 @@ private void controlLoopFn() {
  * Clean up resources when the subsystem is destroyed.
  */
 @Override
-public void close() {
-  if (controlLoop != null) {
-    controlLoop.close();
-  }
-  super.close();
+  public void close() {
+     motor.close();
+   }
 }
 {{/if}}
 
