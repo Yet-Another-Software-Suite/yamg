@@ -144,10 +144,10 @@ async function processTemplate(templateName: string, data: FormValues): Promise<
       compiledTemplate = Handlebars.compile(result)
       result = compiledTemplate(templateData)
     }
-    return prettier.format(result, {
+    return result; /*prettier.format(result, {
       parser: "java",
       plugins: [pluginJava],
-    })
+    })*/
   } catch (error) {
     console.error("Error processing template:", error)
     return "Error processing template: " + (error as Error).message
