@@ -201,18 +201,23 @@ public double getPositionRadians() {
 
 {{#if (eq positionUnit "Degrees")}}
 /**
- * Get the current position in Degrees.
- * @return Position in Degrees
+ * Get the current position in {{positionUnit}}.
+ * @return Position in {{positionUnit}}.
  */
   {{#if logPosition}}
-  @Logged(name = "Position/Degrees")
+  @Logged(name = "Position/{{positionUnit}}")
   {{/if}}
-public double getPositionDegrees() {
+public double getPosition{{positionUnit}}() {
   // Degrees
-  return getPosition() * 360.0;
+  return getPosition() * 
+{{#if eq(positionUnit "Degrees")}}
+360
+{{/if}}
+{{#if eq(positionUnit "Radians")}}
+2 * Math.PI
+{{/if}};
 }
 
-{{/if}}
 
 /**
  * Get the current velocity in rotations per second.
