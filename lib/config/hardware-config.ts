@@ -44,70 +44,70 @@ export const MOTORS: Record<string, MotorDefinition> = {
   NEO: {
     name: "NEO",
     displayName: "NEO",
-    kv: 473,
-    kt: 0.025,
-    resistance: 0.116,
-    mass: 0.425,
+    kv: 493.5,
+    kt: 0.0181,
+    resistance: 0.066,
+    mass: 0.53977492,
     compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova", "ReduxNitrate"],
     description: "REV Robotics NEO Brushless Motor",
   },
   NEO550: {
     name: "NEO550",
     displayName: "NEO 550",
-    kv: 774,
-    kt: 0.015,
-    resistance: 0.08,
-    mass: 0.235,
+    kv: 985.6,
+    kt: 0.0097,
+    resistance: 0.108,
+    mass: 0.2540117,
     compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova", "ReduxNitrate"],
     description: "REV Robotics NEO 550 Brushless Motor",
   },
   Minion: {
     name: "Minion",
     displayName: "Minion",
-    kv: 774,
-    kt: 0.015,
-    resistance: 0.08,
-    mass: 0.235,
+    kv: 627.6,
+    kt: 0.0155,
+    resistance: 0.060,
+    mass: 0.4399846,
     compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova", "ReduxNitrate"],
     description: "REV Robotics Minion Brushless Motor",
   },
   Vortex: {
     name: "Vortex",
     displayName: "NEO Vortex",
-    kv: 473, // Same as NEO for now - will need actual specs
-    kt: 0.025, // Same as NEO for now - will need actual specs
-    resistance: 0.116, // Same as NEO for now - will need actual specs
-    mass: 0.425, // Same as NEO for now - will need actual specs
+    kv: 575.1, // Same as NEO for now - will need actual specs
+    kt: 0.0171, // Same as NEO for now - will need actual specs
+    resistance: 0.057, // Same as NEO for now - will need actual specs
+    mass: 0.5805982, // Same as NEO for now - will need actual specs
     compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ReduxNitrate"],
     description: "REV Robotics NEO Vortex Brushless Motor",
   },
   Cu60: {
     name: "Cu60",
     displayName: "Redux Cu60",
-    kv: 590, // Placeholder - will need actual specs
-    kt: 0.021, // Placeholder - will need actual specs
-    resistance: 0.1, // Placeholder - will need actual specs
-    mass: 0.39, // Placeholder - will need actual specs
+    kv: 567.6, // Placeholder - will need actual specs
+    kt: 0.0166, // Placeholder - will need actual specs
+    resistance: 0.027, // Placeholder - will need actual specs
+    mass: 0.635029, // Placeholder - will need actual specs
     compatibleControllers: ["ReduxNitrate"],
     description: "Redux Robotics Cu60 Brushless Motor",
   },
   Krakenx44: {
     name: "Krakenx44",
     displayName: "Kraken X44",
-    kv: 590,
-    kt: 0.014,
-    resistance: 0.15,
-    mass: 0.26,
+    kv: 630.7,
+    kt: 0.0147,
+    resistance: 0.044,
+    mass: 0.3401943,
     compatibleControllers: ["TalonFX"],
     description: "CTRE Kraken X44 Brushless Motor",
   },
   Krakenx60: {
     name: "Krakenx60",
     displayName: "Kraken X60",
-    kv: 590,
-    kt: 0.021,
-    resistance: 0.1,
-    mass: 0.39,
+    kv: 484.8,
+    kt: 0.0194,
+    resistance: 0.025,
+    mass: 0.544311,
     compatibleControllers: ["TalonFX"],
     description: "CTRE Kraken X60 Brushless Motor",
   },
