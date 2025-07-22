@@ -493,7 +493,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             onChange={(e) => handleNumberChange(e, field.onChange)}
                           />
                         </FormControl>
-                        <FormDescription>Static feedforward kS * sin({mechanismType == "Elevator" ? "Meters per Second" : "Rotations per Second"})</FormDescription>
+                        <FormDescription>Static feedforward as kS * sin({mechanismType == "Elevator" ? "Meters per Second" : "Rotations per Second"})</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -514,7 +514,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             onChange={(e) => handleNumberChange(e, field.onChange)}
                           />
                         </FormControl>
-                        <FormDescription>Velocity feedforward {mechanismType == "Elevator" ? "Meters per Second" : "Rotations per Second"} (auto-calculable with ReCalc)</FormDescription>
+                        <FormDescription>Velocity feedforward in {mechanismType == "Elevator" ? "Meters per Second" : "Rotations per Second"} (auto-calculable with ReCalc)</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -535,7 +535,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             onChange={(e) => handleNumberChange(e, field.onChange)}
                           />
                         </FormControl>
-                        <FormDescription>Acceleration feedforward {mechanismType == "Elevator" ? "Meters per Second²" : "Rotations per Second²"} (auto-calculable with ReCalc)</FormDescription>
+                        <FormDescription>Acceleration feedforward in {mechanismType == "Elevator" ? "Meters per Second²" : "Rotations per Second²"} (auto-calculable with ReCalc)</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
