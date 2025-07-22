@@ -323,7 +323,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
           <AccordionContent>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>PID Values</Label>
+                <Label>PID Values ({mechanismType == "Elevator" ? "Meters" : "Rotations"})</Label>
                 <div className="grid grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
