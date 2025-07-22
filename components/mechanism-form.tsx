@@ -196,7 +196,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                         onChange={(e) => handleNumberChange(e, field.onChange)}
                       />
                     </FormControl>
-                    <FormDescription>Motor rotations per mechanism rotation</FormDescription>
+                    <FormDescription>Motor rotations per mechanism rotation. (eg 9:1 is 9/1)</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
