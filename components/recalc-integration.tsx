@@ -4,12 +4,12 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ExternalLink, Calculator, Loader2 } from "lucide-react"
-import { fetchReCalcResults, getReCalcUrl, isReCalcSupported, type ReCalcResults } from "@/lib/recalc-integration"
+import { getReCalcUrl, isReCalcSupported, type ReCalcResults } from "@/lib/recalc-integration"
 
 interface ReCalcIntegrationProps {
   formValues: any
   motorCount?: number
-  onValuesCalculated: (values: ReCalcResults) => void
+  onValuesCalculated?: (values: ReCalcResults) => void
 }
 
 export default function ReCalcIntegration({ formValues, motorCount = 1}: ReCalcIntegrationProps) {
