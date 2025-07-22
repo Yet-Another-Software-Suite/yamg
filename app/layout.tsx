@@ -4,8 +4,8 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { Footer } from "@/components/footer"
 
 export const metadata = {
-  title: "FRC Java Code Generator",
-  description: "Generate command-based Java code for FRC robot mechanisms",
+  title: "Yet Another Mechanisms Generator (YAMG)",
+  description: "Generat code for FRC mechanisms, and simulate them in the browser!",
 }
 
 export default function RootLayout({

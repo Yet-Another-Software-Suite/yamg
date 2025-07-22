@@ -49,7 +49,7 @@ export class ControlsBaseSim {
   current: number
   integral: number
   prevError: number
-  motor: {
+  motor!: {
     kv: number
     kt: number
     R: number
