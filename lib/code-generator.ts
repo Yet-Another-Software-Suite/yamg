@@ -19,7 +19,7 @@ function initializeHandlebars() {
     return args.some(Boolean);
   });
 }
-  }
+  
 
 
 // Initialize Handlebars when this module is loaded
