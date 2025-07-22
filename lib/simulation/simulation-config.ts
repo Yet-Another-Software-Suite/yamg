@@ -159,7 +159,7 @@ export function convertTargetValue(value: number, formValues: FormValues, simTyp
   if (simType === "position") {
     if (formValues.mechanismType === "Arm" || formValues.mechanismType === "Pivot") {
       // Convert degrees to radians for arm/pivot
-      return value / 360.0;//(value * Math.PI) / 180
+      return (value * Math.PI) / 180
     } else {
       // Use meters directly for elevator
       return value
@@ -168,7 +168,7 @@ export function convertTargetValue(value: number, formValues: FormValues, simTyp
     // Velocity control
     if (formValues.mechanismType === "Arm" || formValues.mechanismType === "Pivot") {
       // Convert degrees/s to radians/s for arm/pivot
-      return value / 360; //(value * Math.PI) / 180
+      return (value * Math.PI) / 180
     } else {
       // Use m/s directly for elevator
       return value

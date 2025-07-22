@@ -323,7 +323,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
           <AccordionContent>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>PID Values ({mechanismType == "Elevator" ? "Meters" : "Rotations"})</Label>
+                <Label>PID Values ({mechanismType == "Elevator" ? "Meters" : "Radians"})</Label>
                 <div className="grid grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
@@ -400,7 +400,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                           onChange={(e) => handleNumberChange(e, field.onChange)}
                         />
                       </FormControl>
-                      <FormDescription>Maximum velocity in {mechanismType == "Elevator" ? "Meters" : "rotations"} per second</FormDescription>
+                      <FormDescription>Maximum velocity in {mechanismType == "Elevator" ? "meters" : "radians"} per second</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -421,7 +421,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                           onChange={(e) => handleNumberChange(e, field.onChange)}
                         />
                       </FormControl>
-                      <FormDescription>Maximum acceleration in {mechanismType == "Elevator" ? "Meters" : "rotations"} per second²</FormDescription>
+                      <FormDescription>Maximum acceleration in {mechanismType == "Elevator" ? "meters" : "radians"} per second²</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -493,7 +493,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             onChange={(e) => handleNumberChange(e, field.onChange)}
                           />
                         </FormControl>
-                        <FormDescription>Static feedforward as kS * sin({mechanismType == "Elevator" ? "Meters per Second" : "Rotations per Second"})</FormDescription>
+                        <FormDescription>Static feedforward as kS * sin({mechanismType == "Elevator" ? "Meters per Second" : "Radians per Second"})</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -514,7 +514,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             onChange={(e) => handleNumberChange(e, field.onChange)}
                           />
                         </FormControl>
-                        <FormDescription>Velocity feedforward in {mechanismType == "Elevator" ? "Meters per Second" : "Rotations per Second"} (auto-calculable with ReCalc)</FormDescription>
+                        <FormDescription>Velocity feedforward in {mechanismType == "Elevator" ? "Meters per Second" : "Radians per Second"} (auto-calculable with ReCalc)</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -535,7 +535,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             onChange={(e) => handleNumberChange(e, field.onChange)}
                           />
                         </FormControl>
-                        <FormDescription>Acceleration feedforward in {mechanismType == "Elevator" ? "Meters per Second²" : "Rotations per Second²"} (auto-calculable with ReCalc)</FormDescription>
+                        <FormDescription>Acceleration feedforward in {mechanismType == "Elevator" ? "Meters per Second²" : "Radians per Second²"} (auto-calculable with ReCalc)</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
