@@ -400,7 +400,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                           onChange={(e) => handleNumberChange(e, field.onChange)}
                         />
                       </FormControl>
-                      <FormDescription>Maximum velocity in rotations per second</FormDescription>
+                      <FormDescription>Maximum velocity in {mechanismType == "Elevator" ? "Meters" : "rotations"} per second</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -421,7 +421,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                           onChange={(e) => handleNumberChange(e, field.onChange)}
                         />
                       </FormControl>
-                      <FormDescription>Maximum acceleration in rotations per second²</FormDescription>
+                      <FormDescription>Maximum acceleration in {mechanismType == "Elevator" ? "Meters" : "rotations"} per second²</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -493,7 +493,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             onChange={(e) => handleNumberChange(e, field.onChange)}
                           />
                         </FormControl>
-                        <FormDescription>Static feedforward kS * sin({mechanismType == "Elevator" ? "Meters/Second" : "Rotations/Second"})</FormDescription>
+                        <FormDescription>Static feedforward kS * sin({mechanismType == "Elevator" ? "Meters per Second" : "Rotations per Second"})</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -514,7 +514,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             onChange={(e) => handleNumberChange(e, field.onChange)}
                           />
                         </FormControl>
-                        <FormDescription>Velocity feedforward {mechanismType == "Elevator" ? "Meters/Second" : "Rotations/Second"} (auto-calculable with ReCalc)</FormDescription>
+                        <FormDescription>Velocity feedforward {mechanismType == "Elevator" ? "Meters per Second" : "Rotations per Second"} (auto-calculable with ReCalc)</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -535,7 +535,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             onChange={(e) => handleNumberChange(e, field.onChange)}
                           />
                         </FormControl>
-                        <FormDescription>Acceleration feedforward {mechanismType == "Elevator" ? "Meters/Second^2" : "Rotations/Second^2"} (auto-calculable with ReCalc)</FormDescription>
+                        <FormDescription>Acceleration feedforward {mechanismType == "Elevator" ? "Meters per Second²" : "Rotations per Second²"} (auto-calculable with ReCalc)</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
