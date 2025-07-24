@@ -5,7 +5,7 @@ import { Footer } from "@/components/footer"
 
 export const metadata = {
   title: "Yet Another Mechanisms Generator (YAMG)",
-  description: "Generat code for FRC mechanisms, and simulate them in the browser!",
+  description: "Generate code for FRC mechanisms, and simulate them in the browser!",
 }
 
 export default function RootLayout({
