@@ -1,0 +1,395 @@
+package frc.robot.subsystems;
+
+import edu.wpi.first.epilogue.Logged;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj.simulation.ElevatorSim;
+import edu.wpi.first.math.controller.ElevatorFeedforward;
+import edu.wpi.first.math.util.Units;
+import edu.wpi.first.math.system.plant.DCMotor;
+import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj2.command.Command;
+{{#if isSparkController}}
+import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.wpilibj.Notifier;
+import java.util.function.DoubleSupplier;
+{{/if}}
+
+{{{motorControllerImports}}}
+
+/**
+ * Elevator subsystem using {{motorControllerType}} with {{motorType}} motor
+ */
+@Logged(name = "{{ntKey}}")
+public class {{subsystemName}} extends SubsystemBase {
+  // Constants
+  private final int canID = {{canId}};
+  private final double gearRatio = {{gearRatio}};
+  private final double kP = {{pidValues.kP}};
+  private final double kI = {{pidValues.kI}};
+  private final double kD = {{pidValues.kD}};
+  private final double maxVelocity = {{maxVelocity}}; // meters per second
+  private final double maxAcceleration = {{maxAcceleration}}; // meters per second squared
+  private final boolean brakeMode = {{brakeMode}};
+ {{#if enableSoftLimits}}
+  private final double forwardSoftLimit = {{forwardSoftLimit}}; // max angle in meters
+  private final double reverseSoftLimit = {{reverseSoftLimit}}; // min angle in meters
+ {{/if}}
+  private final boolean enableStatorLimit = {{enableStatorLimit}};
+  private final int statorCurrentLimit = {{statorCurrentLimit}};
+  private final boolean enableSupplyLimit = {{enableSupplyLimit}};
+  private final double supplyCurrentLimit = {{supplyCurrentLimit}};
+  private final double drumRadius = {{drumRadius}}; // meters
+  private final double minheight = 0;
+  private final double maxheight = 1;
+  
+  // Feedforward
+  private final ElevatorFeedforward feedforward = new ElevatorFeedforward(
+    {{kS}}, // kS
+    {{kG}}, // kG
+    {{kV}}, // kV
+    {{kA}}  // kA
+  );
+  
+  // Motor controller
+  {{{motorControllerDeclaration}}}
+  
+  {{#if isSparkController}}
+  // Control mode
+  public enum ControlMode {
+    OPEN_LOOP,
+    POSITION,
+    VELOCITY
+  }
+  private ControlMode currentControlMode = ControlMode.OPEN_LOOP;
+  private double targetPosition = 0.0;
+  private double targetVelocity = 0.0;
+  
+  // Profiled PID Controller
+  private ProfiledPIDController profiledPIDController;
+  private TrapezoidProfile.Constraints constraints;
+  {{/if}}
+  
+  // Simulation
+  private final ElevatorSim elevatorSim;
+  
+  /**
+   * Creates a new Elevator Subsystem.
+   */
+  public {{subsystemName}}() {
+    // Initialize motor controller
+    {{{motorControllerInitialization}}}
+    
+    // Initialize simulation
+    elevatorSim = new ElevatorSim(
+      {{{dcMotorType}}}, // Motor type
+      gearRatio,
+      {{mass}}, // Carriage mass (kg)
+      drumRadius, // Drum radius (m)
+      {{hardLimitMin}}, // Min height (m)
+      {{hardLimitMax}}, // Max height (m)
+      true, // Simulate gravity
+      {{startingHeight}} // Starting height (m)
+    );
+    
+    {{#if isSparkController}}
+    // Initialize ProfiledPIDController
+    // Convert from meters to rotations for constraints
+    double maxVelocityRotations = maxVelocity / (2.0 * Math.PI * drumRadius);
+    double maxAccelerationRotations = maxAcceleration / (2.0 * Math.PI * drumRadius);
+    
+    constraints = new TrapezoidProfile.Constraints(maxVelocityRotations, maxAccelerationRotations);
+    profiledPIDController = new ProfiledPIDController(kP, kI, kD, constraints);
+    {{/if}}
+  }
+  
+  {{#if isSparkController}}
+  /**
+   * Control loop function that runs at a fixed frequency.
+   * This is used for SparkMAX and SparkFlex controllers to implement
+   * closed-loop control outside of the main robot loop.
+   */
+  private void controlLoopFn() {
+    switch (currentControlMode) {
+      case POSITION:
+        double currentPos = getPosition();
+        double output = profiledPIDController.calculate(currentPos, targetPosition);
+        double velocity = profiledPIDController.getSetpoint().velocity;
+        double feedforwardOutput = feedforward.calculate(velocity);
+        setVoltage(output + feedforwardOutput);
+        break;
+        
+      case VELOCITY:
+        double currentVel = getVelocity();
+        double velOutput = profiledPIDController.calculate(currentVel, targetVelocity);
+        double accel = profiledPIDController.getSetpoint().velocity - currentVel;
+        double velFeedforwardOutput = feedforward.calculate(targetVelocity, accel);
+        
+        // Apply the combined PID output and feedforward to the motor
+        double velocityVoltage = velOutput + velFeedforwardOutput;
+        motor.setVoltage(velocityVoltage);
+        break;
+        
+      case OPEN_LOOP:
+      default:
+        // Do nothing, voltage is set directly
+        break;
+    }
+  }
+  
+  /**
+   * Clean up resources when the subsystem is destroyed.
+   */
+  public void close() {
+     motor.close();
+   }
+  }
+  {{/if}}
+  
+  /**
+   * Update simulation and telemetry.
+   */
+  @Override
+  public void periodic() {
+    {{{motorControllerPeriodic}}}
+    {{#if isSparkController}}
+    controlLoopFn();
+    {{/if}}
+  }
+  
+  /**
+   * Update simulation.
+   */
+  @Override
+  public void simulationPeriodic() {
+    // Set input voltage from motor controller to simulation
+    elevatorSim.setInput(getVoltage());
+    
+    // Update simulation by 20ms
+    elevatorSim.update(0.020);
+
+    // Convert meters to motor rotations
+    double positionToRotations = (1 / (2.0 * Math.PI * drumRadius)) * gearRatio;
+    double motorPosition = elevatorSim.getPositionMeters() * positionToRotations;
+    double motorVelocity = elevatorSim.getVelocityMetersPerSecond() * positionToRotations;
+
+    {{{motorControllerSimulationPeriodic}}}
+  }
+  
+ 
+  
+  /**
+   * Get the current position in the Rotations.
+   * @return Position in Rotations
+   */
+   {{#if logPosition}}
+   @Logged(name = "Position/Rotations")
+   {{/if}}
+  public double getPosition() {
+    // Rotations
+      {{{getPositionMethod}}}
+  }
+
+  {{#if (or (eq positionUnit 'Degrees') (eq positionUnit 'Radians'))}}
+  /**
+   * Get the current position in {{positionUnit}}.
+   * @return Position in {{positionUnit}}.
+   */
+  {{#if logPosition}}
+  @Logged(name = "Position/{{positionUnit}}")
+  {{/if}}
+public double getPosition{{positionUnit}}() {
+  {{#if (eq positionUnit 'Degrees')}}
+  return getPosition() * 360;
+  {{else}}
+  return getPosition() * 2 * Math.PI;
+  {{/if}}
+}
+{{/if}}
+  
+  /**
+   * Get the current velocity in rotations per second.
+   * @return Velocity in rotations per second
+   */
+   {{#if logVelocity}}
+   @Logged(name = "Velocity")
+   {{/if}}
+  public double getVelocity() {
+    {{{getVelocityMethod}}}
+  }
+  
+  /**
+   * Get the current applied voltage.
+   * @return Applied voltage
+   */
+   {{#if logVoltage}}
+   @Logged(name = "Voltage")
+   {{/if}}
+  public double getVoltage() {
+    {{{getVoltageMethod}}}
+  }
+  
+  /**
+   * Get the current motor current.
+   * @return Motor current in amps
+   */
+   {{#if logCurrent}}
+   @Logged(name = "Current")
+   {{/if}}
+  public double getCurrent() {
+    {{{getCurrentMethod}}}
+  }
+  
+  /**
+   * Get the current motor temperature.
+   * @return Motor temperature in Celsius
+   */
+   {{#if logTemperature}}
+   @Logged(name = "Temperature")
+   {{/if}}
+  public double getTemperature() {
+    {{{getTemperatureMethod}}}
+  }
+  
+  /**
+   * Set elevator position.
+   * @param position The target position in meters
+   */
+  public void setPosition(double position) {
+    setPosition(position, 0);
+  }
+  
+  /**
+   * Set elevator position with acceleration.
+   * @param position The target position in meters
+   * @param acceleration The acceleration in meters per second squared
+   */
+  public void setPosition(double position, double acceleration) {
+    // Convert meters to rotations
+    double positionRotations = position / (2.0 * Math.PI * drumRadius);
+    
+    {{#if isSparkController}}
+    // Use the ProfiledPIDController
+    targetPosition = positionRotations;
+    currentControlMode = ControlMode.POSITION;
+    
+    // If acceleration is specified, update constraints
+    if (acceleration > 0) {
+      double maxAccelRotations = acceleration / (2.0 * Math.PI * drumRadius);
+      constraints = new TrapezoidProfile.Constraints(constraints.maxVelocity, maxAccelRotations);
+      profiledPIDController.setConstraints(constraints);
+    }
+    {{else}}
+    {{{setPositionMethod}}}
+    {{/if}}
+  }
+  
+  /**
+   * Set elevator velocity.
+   * @param velocity The target velocity in meters per second
+   */
+  public void setVelocity(double velocity) {
+    setVelocity(velocity, 0);
+  }
+  
+  /**
+   * Set elevator velocity with acceleration.
+   * @param velocity The target velocity in meters per second
+   * @param acceleration The acceleration in meters per second squared
+   */
+  public void setVelocity(double velocity, double acceleration) {
+    // Convert meters/sec to rotations/sec
+    double velocityRotations = velocity / (2.0 * Math.PI * drumRadius);
+    
+    {{#if isSparkController}}
+    // Use the ProfiledPIDController
+    targetVelocity = velocityRotations;
+    currentControlMode = ControlMode.VELOCITY;
+    
+    // If acceleration is specified, update constraints
+    if (acceleration > 0) {
+      double maxAccelRotations = acceleration / (2.0 * Math.PI * drumRadius);
+      constraints = new TrapezoidProfile.Constraints(constraints.maxVelocity, maxAccelRotations);
+      profiledPIDController.setConstraints(constraints);
+    }
+    {{else}}
+    {{{setVelocityMethod}}}
+    {{/if}}
+  }
+  
+  /**
+   * Set motor voltage directly.
+   * @param voltage The voltage to apply
+   */
+  public void setVoltage(double voltage) {
+    {{#if isSparkController}}
+    currentControlMode = ControlMode.OPEN_LOOP;
+    {{/if}}
+    {{{setVoltageMethod}}}
+  }
+  
+  /**
+   * Get the elevator simulation for testing.
+   * @return The elevator simulation model
+   */
+  public ElevatorSim getSimulation() {
+    return elevatorSim;
+  }
+  
+    public double getMinHeightMeters() {
+    return minheight;
+  }
+
+  public double getMaxHeightMeters() {
+    return maxheight;
+  }
+
+
+  /**
+   * Creates a command to set the elevator to a specific height.
+   * @param heightMeters The target height in meters
+   * @return A command that sets the elevator to the specified height
+   */
+  public Command setHeightCommand(double heightMeters) {
+    return runOnce(() -> setPosition(heightMeters));
+  }
+  
+  /**
+   * Creates a command to move the elevator to a specific height with a profile.
+   * @param heightMeters The target height in meters
+   * @return A command that moves the elevator to the specified height
+   */
+  public Command moveToHeightCommand(double heightMeters) {
+    return run(() -> {
+      {{#if isSparkController}}
+      // Just set the position and let the profiled controller handle it
+      setPosition(heightMeters);
+      {{else}}
+      double currentHeight = getPosition() * (2.0 * Math.PI * drumRadius);
+      double error = heightMeters - currentHeight;
+      double velocity = Math.signum(error) * Math.min(Math.abs(error) * 2.0, maxVelocity);
+      setVelocity(velocity);
+      {{/if}}
+    }).until(() -> {
+      double currentHeight = getPosition() * (2.0 * Math.PI * drumRadius);
+      return Math.abs(heightMeters - currentHeight) < 0.02; // 2cm tolerance
+    });
+  }
+  
+  /**
+   * Creates a command to stop the elevator.
+   * @return A command that stops the elevator
+   */
+  public Command stopCommand() {
+    return runOnce(() -> setVelocity(0));
+  }
+  
+  /**
+   * Creates a command to move the elevator at a specific velocity.
+   * @param velocityMetersPerSecond The target velocity in meters per second
+   * @return A command that moves the elevator at the specified velocity
+   */
+  public Command moveAtVelocityCommand(double velocityMetersPerSecond) {
+    return run(() -> setVelocity(velocityMetersPerSecond));
+  }
+}
