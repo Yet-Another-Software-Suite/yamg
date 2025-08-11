@@ -40,8 +40,8 @@ public {{subsystemName}}Sim({{subsystemName}} elevatorSubsystem) {
   this.elevator = elevatorSubsystem;
   
   // Get elevator parameters from simulation
-  minHeight = elevator.getSimulation().getMinHeightMeters();
-  maxHeight = elevator.getSimulation().getMaxHeightMeters();
+  minHeight = elevator.getMinHeightMeters();
+  maxHeight = elevator.getMaxHeightMeters();
   
   // Calculate scale factor to keep visualization in reasonable bounds
   double elevatorTravel = maxHeight - minHeight;
