@@ -57,6 +57,7 @@ export class ControlsBaseSim {
     gearing: number
     count: number
   }
+  arm: boolean = false
 
   constructor(canvas: HTMLCanvasElement, options: ControlsBaseSimOptions = {}) {
     this.canvas = canvas
@@ -158,9 +159,9 @@ export class ControlsBaseSim {
     this.controlMode = mode
   }
 
-  calculateFeedforward(velocity: number, acceleration: number, position?: number): number {
+  calculateFeedforward(velocity: number, acceleration: number): number {
     // Calculate feedforward voltage
-    const gravityComponent = (this.kG || 0) * Math.cos(position || 0)
+    const gravityComponent = (this.kG || 0) * Math.cos(this.arm ? this.position : 0)
     const staticComponent = this.kS * Math.sign(velocity)
     const velocityComponent = this.kV * velocity
     const accelerationComponent = this.kA * acceleration
