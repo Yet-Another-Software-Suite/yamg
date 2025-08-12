@@ -37,6 +37,7 @@ export class ArmSim extends ControlsBaseSim {
 
     // Initialize position
     this.position = this.startingAngle
+    this.arm = true
 
     // Override kG with calculated gravity compensation
     this.kG =
