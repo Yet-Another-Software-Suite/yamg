@@ -493,7 +493,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             onChange={(e) => handleNumberChange(e, field.onChange)}
                           />
                         </FormControl>
-                        <FormDescription>Static feedforward as kS * sin({mechanismType == "Elevator" ? "Meters per Second" : "Radians per Second"})</FormDescription>
+                        <FormDescription>Static feedforward in V*(s/({mechanismType == "Elevator" ? "m" : "rad"})</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -514,7 +514,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             onChange={(e) => handleNumberChange(e, field.onChange)}
                           />
                         </FormControl>
-                        <FormDescription>Velocity feedforward in {mechanismType == "Elevator" ? "Meters per Second" : "Radians per Second"} (auto-calculable with ReCalc)</FormDescription>
+                        <FormDescription>Velocity feedforward in V*(s/{mechanismType == "Elevator" ? "m" : "rad"}) (auto-calculable with ReCalc)</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -535,7 +535,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             onChange={(e) => handleNumberChange(e, field.onChange)}
                           />
                         </FormControl>
-                        <FormDescription>Acceleration feedforward in {mechanismType == "Elevator" ? "Meters per Second²" : "Radians per Second²"} (auto-calculable with ReCalc)</FormDescription>
+                        <FormDescription>Acceleration feedforward in V*(s²/{mechanismType == "Elevator" ? "m" : "rad"}) (auto-calculable with ReCalc)</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -557,7 +557,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                               onChange={(e) => handleNumberChange(e, field.onChange)}
                             />
                           </FormControl>
-                          <FormDescription>Gravity compensation (auto-calculable with ReCalc)</FormDescription>
+                          <FormDescription>Gravity compensation in V (auto-calculable with ReCalc)</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
