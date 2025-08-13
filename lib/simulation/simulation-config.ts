@@ -1,8 +1,8 @@
-import { getSimMotorType } from "@/lib/config/hardware-config"
-import type { FormValues } from "@/lib/types"
-import type { ArmSimOptions } from "./arm-sim"
-import type { ElevatorSimOptions } from "./elevator-sim"
-import type { ControlsBaseSimOptions } from "./controls-base-sim"
+import { getSimMotorType } from "@/lib/config/hardware-config";
+import type { FormValues } from "@/lib/types";
+import type { ArmSimOptions } from "./arm-sim";
+import type { ElevatorSimOptions } from "./elevator-sim";
+import type { ControlsBaseSimOptions } from "./controls-base-sim";
 
 /**
  * Creates simulation options based on form values
@@ -25,15 +25,15 @@ export function createSimulationOptions(
     kV: formValues.feedforward?.kV || 0,
     kA: formValues.feedforward?.kA || 0,
     kG: formValues.feedforward?.kG || 0,
-  }
+  };
 
   // Mechanism-specific options
   switch (formValues.mechanismType) {
     case "Arm": {
       // Convert mass from lbs to kg if needed
-      let mass = formValues.armParams?.mass || 5.0
+      let mass = formValues.armParams?.mass || 5.0;
       if (formValues.armParams?.massUnit === "lbs") {
-        mass = mass * 0.453592 // Convert lbs to kg
+        mass = mass * 0.453592; // Convert lbs to kg
       }
 
       const armOptions: ArmSimOptions = {
@@ -52,15 +52,15 @@ export function createSimulationOptions(
           formValues.armParams?.startingPosition !== undefined
             ? (Math.PI * formValues.armParams.startingPosition) / 180
             : 0,
-      }
-      return { simType: "ArmSim", options: armOptions }
+      };
+      return { simType: "ArmSim", options: armOptions };
     }
 
     case "Elevator": {
       // Convert mass from lbs to kg if needed
-      let mass = formValues.elevatorParams?.mass || 5.0
+      let mass = formValues.elevatorParams?.mass || 5.0;
       if (formValues.elevatorParams?.massUnit === "lbs") {
-        mass = mass * 0.453592 // Convert lbs to kg
+        mass = mass * 0.453592; // Convert lbs to kg
       }
 
       const elevatorOptions: ElevatorSimOptions = {
@@ -70,8 +70,8 @@ export function createSimulationOptions(
         minHeight: formValues.elevatorParams?.hardLimitMin || 0,
         maxHeight: formValues.elevatorParams?.hardLimitMax || 1.0,
         startingHeight: formValues.elevatorParams?.startingHeight || 0,
-      }
-      return { simType: "ElevatorSim", options: elevatorOptions }
+      };
+      return { simType: "ElevatorSim", options: elevatorOptions };
     }
 
     case "Pivot": {
@@ -84,12 +84,12 @@ export function createSimulationOptions(
         maxAngle: Math.PI / 2,
         startingAngle: 0,
         kG: 0, // No gravity compensation for pivot
-      }
-      return { simType: "ArmSim", options: pivotOptions }
+      };
+      return { simType: "ArmSim", options: pivotOptions };
     }
 
     default:
-      throw new Error(`Unknown mechanism type: ${formValues.mechanismType}`)
+      throw new Error(`Unknown mechanism type: ${formValues.mechanismType}`);
   }
 }
 
@@ -101,20 +101,32 @@ export function getSliderRangeConfig(formValues: FormValues, simType: string) {
     switch (formValues.mechanismType) {
       case "Arm":
         return {
-          min: formValues.armParams?.hardLimitMin !== undefined ? formValues.armParams.hardLimitMin : -90,
-          max: formValues.armParams?.hardLimitMax !== undefined ? formValues.armParams.hardLimitMax : 90,
+          min:
+            formValues.armParams?.hardLimitMin !== undefined
+              ? formValues.armParams.hardLimitMin
+              : -90,
+          max:
+            formValues.armParams?.hardLimitMax !== undefined
+              ? formValues.armParams.hardLimitMax
+              : 90,
           step: 1,
           unit: "°",
           initialValue: formValues.armParams?.startingPosition || 0,
-        }
+        };
       case "Elevator":
         return {
-          min: formValues.elevatorParams?.hardLimitMin !== undefined ? formValues.elevatorParams.hardLimitMin : 0,
-          max: formValues.elevatorParams?.hardLimitMax !== undefined ? formValues.elevatorParams.hardLimitMax : 1.0,
+          min:
+            formValues.elevatorParams?.hardLimitMin !== undefined
+              ? formValues.elevatorParams.hardLimitMin
+              : 0,
+          max:
+            formValues.elevatorParams?.hardLimitMax !== undefined
+              ? formValues.elevatorParams.hardLimitMax
+              : 1.0,
           step: 0.01,
           unit: "m",
           initialValue: formValues.elevatorParams?.startingHeight || 0,
-        }
+        };
       case "Pivot":
         return {
           min: -90,
@@ -122,9 +134,9 @@ export function getSliderRangeConfig(formValues: FormValues, simType: string) {
           step: 1,
           unit: "°",
           initialValue: 0,
-        }
+        };
       default:
-        return { min: -1, max: 1, step: 0.1, unit: "", initialValue: 0 }
+        return { min: -1, max: 1, step: 0.1, unit: "", initialValue: 0 };
     }
   } else {
     // Velocity control
@@ -137,7 +149,7 @@ export function getSliderRangeConfig(formValues: FormValues, simType: string) {
           step: 1,
           unit: "°/s",
           initialValue: 0,
-        }
+        };
       case "Elevator":
         return {
           min: -1,
@@ -145,9 +157,9 @@ export function getSliderRangeConfig(formValues: FormValues, simType: string) {
           step: 0.01,
           unit: "m/s",
           initialValue: 0,
-        }
+        };
       default:
-        return { min: -1, max: 1, step: 0.1, unit: "", initialValue: 0 }
+        return { min: -1, max: 1, step: 0.1, unit: "", initialValue: 0 };
     }
   }
 }
@@ -155,23 +167,33 @@ export function getSliderRangeConfig(formValues: FormValues, simType: string) {
 /**
  * Convert UI target value to simulation target value
  */
-export function convertTargetValue(value: number, formValues: FormValues, simType: string): number {
+export function convertTargetValue(
+  value: number,
+  formValues: FormValues,
+  simType: string,
+): number {
   if (simType === "position") {
-    if (formValues.mechanismType === "Arm" || formValues.mechanismType === "Pivot") {
+    if (
+      formValues.mechanismType === "Arm" ||
+      formValues.mechanismType === "Pivot"
+    ) {
       // Convert degrees to radians for arm/pivot
-      return (value * Math.PI) / 180
+      return (value * Math.PI) / 180;
     } else {
       // Use meters directly for elevator
-      return value
+      return value;
     }
   } else {
     // Velocity control
-    if (formValues.mechanismType === "Arm" || formValues.mechanismType === "Pivot") {
+    if (
+      formValues.mechanismType === "Arm" ||
+      formValues.mechanismType === "Pivot"
+    ) {
       // Convert degrees/s to radians/s for arm/pivot
-      return (value * Math.PI) / 180
+      return (value * Math.PI) / 180;
     } else {
       // Use m/s directly for elevator
-      return value
+      return value;
     }
   }
 }

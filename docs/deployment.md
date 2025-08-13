@@ -9,6 +9,7 @@ GitHub Pages is a free hosting service that makes it easy to deploy static websi
 ### Manual Deployment
 
 1. Build the static site:
+
    ```bash
    pnpm build
    ```
@@ -16,6 +17,7 @@ GitHub Pages is a free hosting service that makes it easy to deploy static websi
 2. The static site will be generated in the `out` directory.
 
 3. Push the `out` directory to the `gh-pages` branch:
+
    ```bash
    git add out/ -f
    git commit -m "Deploy to GitHub Pages"
@@ -35,7 +37,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -48,8 +50,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'
-          cache: 'pnpm'
+          node-version: "18"
+          cache: "pnpm"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
@@ -90,10 +92,10 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  basePath: '/your-repo-name',  // Change this to your repository name
+  basePath: "/your-repo-name", // Change this to your repository name
   trailingSlash: true,
-  output: 'export',
-  distDir: 'out',
+  output: "export",
+  distDir: "out",
 };
 
 export default nextConfig;

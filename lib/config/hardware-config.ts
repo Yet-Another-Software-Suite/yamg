@@ -7,36 +7,36 @@
 
 // Motor interface defining properties of a motor
 export interface MotorDefinition {
-  name: string
-  displayName: string
+  name: string;
+  displayName: string;
   // Motor constants
-  kv: number // RPM/V
-  kt: number // N-m/A
-  resistance: number // Ohms per motor
-  mass: number // kg per motor
+  kv: number; // RPM/V
+  kt: number; // N-m/A
+  resistance: number; // Ohms per motor
+  mass: number; // kg per motor
   // Compatibility
-  compatibleControllers: string[]
+  compatibleControllers: string[];
   // Optional properties
-  description?: string
+  description?: string;
 }
 
 // Motor controller interface defining properties and capabilities
 export interface MotorControllerDefinition {
-  name: string
-  displayName: string
+  name: string;
+  displayName: string;
   // Capabilities
-  supportsCurrentLimit: boolean
-  supportsSupplyCurrentLimit: boolean
-  supportsBrakeMode: boolean
-  supportsRampRate: boolean
-  supportsSoftLimits: boolean
+  supportsCurrentLimit: boolean;
+  supportsSupplyCurrentLimit: boolean;
+  supportsBrakeMode: boolean;
+  supportsRampRate: boolean;
+  supportsSoftLimits: boolean;
   // Java import path
-  importPath: string
+  importPath: string;
   // Optional properties
-  description?: string
+  description?: string;
   // Limitations
-  maxCurrentLimit?: number
-  maxVoltage?: number
+  maxCurrentLimit?: number;
+  maxVoltage?: number;
 }
 
 // Define all supported motors
@@ -48,7 +48,13 @@ export const MOTORS: Record<string, MotorDefinition> = {
     kt: 0.0181,
     resistance: 0.066,
     mass: 0.53977492,
-    compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova", "ReduxNitrate"],
+    compatibleControllers: [
+      "SparkMAX",
+      "SparkFlex",
+      "TalonFXS",
+      "ThriftyNova",
+      "ReduxNitrate",
+    ],
     description: "REV Robotics NEO Brushless Motor",
   },
   NEO550: {
@@ -58,7 +64,13 @@ export const MOTORS: Record<string, MotorDefinition> = {
     kt: 0.0097,
     resistance: 0.108,
     mass: 0.2540117,
-    compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova", "ReduxNitrate"],
+    compatibleControllers: [
+      "SparkMAX",
+      "SparkFlex",
+      "TalonFXS",
+      "ThriftyNova",
+      "ReduxNitrate",
+    ],
     description: "REV Robotics NEO 550 Brushless Motor",
   },
   Minion: {
@@ -66,9 +78,15 @@ export const MOTORS: Record<string, MotorDefinition> = {
     displayName: "Minion",
     kv: 627.6,
     kt: 0.0155,
-    resistance: 0.060,
+    resistance: 0.06,
     mass: 0.4399846,
-    compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova", "ReduxNitrate"],
+    compatibleControllers: [
+      "SparkMAX",
+      "SparkFlex",
+      "TalonFXS",
+      "ThriftyNova",
+      "ReduxNitrate",
+    ],
     description: "REV Robotics Minion Brushless Motor",
   },
   Vortex: {
@@ -78,7 +96,12 @@ export const MOTORS: Record<string, MotorDefinition> = {
     kt: 0.0171, // Same as NEO for now - will need actual specs
     resistance: 0.057, // Same as NEO for now - will need actual specs
     mass: 0.5805982, // Same as NEO for now - will need actual specs
-    compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ReduxNitrate"],
+    compatibleControllers: [
+      "SparkMAX",
+      "SparkFlex",
+      "TalonFXS",
+      "ReduxNitrate",
+    ],
     description: "REV Robotics NEO Vortex Brushless Motor",
   },
   Cu60: {
@@ -111,7 +134,7 @@ export const MOTORS: Record<string, MotorDefinition> = {
     compatibleControllers: ["TalonFX"],
     description: "CTRE Kraken X60 Brushless Motor",
   },
-}
+};
 
 // Define all supported motor controllers
 export const MOTOR_CONTROLLERS: Record<string, MotorControllerDefinition> = {
@@ -193,16 +216,16 @@ export const MOTOR_CONTROLLERS: Record<string, MotorControllerDefinition> = {
     maxCurrentLimit: 80, // Placeholder - will need actual specs
     maxVoltage: 12,
   },
-}
+};
 
 // Define mechanism types
 export interface MechanismDefinition {
-  name: string
-  displayName: string
-  description: string
-  templateName: string
-  simClassName: string
-  requiresGravityCompensation: boolean
+  name: string;
+  displayName: string;
+  description: string;
+  templateName: string;
+  simClassName: string;
+  requiresGravityCompensation: boolean;
 }
 
 export const MECHANISMS: Record<string, MechanismDefinition> = {
@@ -230,7 +253,7 @@ export const MECHANISMS: Record<string, MechanismDefinition> = {
     simClassName: "ArmSim",
     requiresGravityCompensation: false,
   },
-}
+};
 
 // Helper functions
 
@@ -238,44 +261,49 @@ export const MECHANISMS: Record<string, MechanismDefinition> = {
  * Get a motor definition by name
  */
 export function getMotor(motorName: string): MotorDefinition {
-  const motor = MOTORS[motorName]
+  const motor = MOTORS[motorName];
   if (!motor) {
-    throw new Error(`Unknown motor type: ${motorName}`)
+    throw new Error(`Unknown motor type: ${motorName}`);
   }
-  return motor
+  return motor;
 }
 
 /**
  * Get a motor controller definition by name
  */
-export function getMotorController(controllerName: string): MotorControllerDefinition {
-  const controller = MOTOR_CONTROLLERS[controllerName]
+export function getMotorController(
+  controllerName: string,
+): MotorControllerDefinition {
+  const controller = MOTOR_CONTROLLERS[controllerName];
   if (!controller) {
-    throw new Error(`Unknown motor controller type: ${controllerName}`)
+    throw new Error(`Unknown motor controller type: ${controllerName}`);
   }
-  return controller
+  return controller;
 }
 
 /**
  * Get a mechanism definition by name
  */
 export function getMechanism(mechanismName: string): MechanismDefinition {
-  const mechanism = MECHANISMS[mechanismName]
+  const mechanism = MECHANISMS[mechanismName];
   if (!mechanism) {
-    throw new Error(`Unknown mechanism type: ${mechanismName}`)
+    throw new Error(`Unknown mechanism type: ${mechanismName}`);
   }
-  return mechanism
+  return mechanism;
 }
 
 /**
  * Check if a motor is compatible with a motor controller
  */
-export function isMotorCompatibleWithController(motorName: string, controllerName: string): boolean {
+export function isMotorCompatibleWithController(
+  motorName: string,
+  controllerName: string,
+): boolean {
   try {
-    const motor = getMotor(motorName)
-    return motor.compatibleControllers.includes(controllerName)
+    const motor = getMotor(motorName);
+    return motor.compatibleControllers.includes(controllerName);
   } catch (error) {
-    return true
+    return true;
   }
 }
 
@@ -283,7 +311,9 @@ export function isMotorCompatibleWithController(motorName: string, controllerNam
  * Get all motors compatible with a specific controller
  */
 export function getCompatibleMotors(controllerName: string): MotorDefinition[] {
-  return Object.values(MOTORS).filter((motor) => motor.compatibleControllers.includes(controllerName))
+  return Object.values(MOTORS).filter((motor) =>
+    motor.compatibleControllers.includes(controllerName),
+  );
 }
 
 /**
@@ -292,24 +322,24 @@ export function getCompatibleMotors(controllerName: string): MotorDefinition[] {
 export function getWPILibMotorType(motorName: string): string {
   switch (motorName) {
     case "NEO":
-      return "DCMotor.getNEO(1)"
+      return "DCMotor.getNEO(1)";
     case "NEO550":
-      return "DCMotor.getNeo550(1)"
+      return "DCMotor.getNeo550(1)";
     case "Krakenx60":
-      return "DCMotor.getKrakenX60(1)"
+      return "DCMotor.getKrakenX60(1)";
     case "Minion":
       // From https://store.ctr-electronics.com/products/minion-brushless-motor
-      return customDCMotor(3.1, 200.46, 1.43, 7200)
+      return customDCMotor(3.1, 200.46, 1.43, 7200);
     case "Krakenx44":
       // From https://wcproducts.com/blogs/wcp-blog/kraken-x44
-      return customDCMotor(4.05, 275, 1.4, 7530)
+      return customDCMotor(4.05, 275, 1.4, 7530);
     case "Vortex":
-      return "DCMotor.getNEOVortex(1)"
+      return "DCMotor.getNEOVortex(1)";
     case "Cu60":
       // Placeholder - will need actual DCMotor specs for Cu60
-      return customDCMotor(4.05, 275, 1.4, 7530)
+      return customDCMotor(4.05, 275, 1.4, 7530);
     default:
-      return "DCMotor.getNEO(1)"
+      return "DCMotor.getNEO(1)";
   }
 }
 
@@ -319,21 +349,21 @@ export function getWPILibMotorType(motorName: string): string {
 export function getSimMotorType(motorName: string): string {
   switch (motorName) {
     case "NEO":
-      return "NEO"
+      return "NEO";
     case "NEO550":
-      return "NEO550"
+      return "NEO550";
     case "Krakenx60":
-      return "KrakenX60"
+      return "KrakenX60";
     case "Krakenx44":
-      return "KrakenX44"
+      return "KrakenX44";
     case "Minion":
-      return "Falcon500" // Closest approximation
+      return "Falcon500"; // Closest approximation
     case "Vortex":
-      return "NEOVortex"
+      return "NEOVortex";
     case "Cu60":
-      return "Cu60"
+      return "Cu60";
     default:
-      return "NEO"
+      return "NEO";
   }
 }
 
@@ -346,5 +376,5 @@ function customDCMotor(
   freeCurrentAmps: number,
   freeSpeedRPM: number,
 ): string {
-  return `new DCMotor(12, ${stallTorqueNewtonMeters}, ${stallCurrentAmps}, ${freeCurrentAmps}, Units.rotationsPerMinuteToRadiansPerSecond(${freeSpeedRPM}), 1)`
+  return `new DCMotor(12, ${stallTorqueNewtonMeters}, ${stallCurrentAmps}, ${freeCurrentAmps}, Units.rotationsPerMinuteToRadiansPerSecond(${freeSpeedRPM}), 1)`;
 }

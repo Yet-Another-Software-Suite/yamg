@@ -32,17 +32,20 @@ This tool helps FRC teams quickly generate well-structured, command-based Java c
 ### Installation
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/yourusername/frc-mechanism-generator.git
    cd frc-mechanism-generator
    ```
 
 2. Install dependencies:
+
    ```bash
    pnpm install
    ```
 
 3. Start the development server:
+
    ```bash
    pnpm dev
    ```
@@ -54,16 +57,19 @@ This tool helps FRC teams quickly generate well-structured, command-based Java c
 This project is configured for easy deployment to GitHub Pages:
 
 1. Update the `basePath` in `next.config.mjs` to match your repository name:
+
    ```javascript
    basePath: '/your-repo-name',
    ```
 
 2. Build and export the static site:
+
    ```bash
    pnpm build
    ```
 
 3. Push the `out` directory to the `gh-pages` branch:
+
    ```bash
    git add out/ -f
    git commit -m "Deploy to GitHub Pages"

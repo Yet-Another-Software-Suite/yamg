@@ -1,65 +1,92 @@
-"use client"
+"use client";
 
-import type React from "react"
-import type { UseFormReturn } from "react-hook-form"
-import { FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Card, CardContent } from "@/components/ui/card"
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
+import type React from "react";
+import type { UseFormReturn } from "react-hook-form";
+import {
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormDescription,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   MECHANISMS,
   MOTOR_CONTROLLERS,
   MOTORS,
   getCompatibleMotors,
   isMotorCompatibleWithController,
-} from "@/lib/config/hardware-config"
-import ReCalcIntegration from "./recalc-integration"
+} from "@/lib/config/hardware-config";
+import ReCalcIntegration from "./recalc-integration";
 
 export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
-  const mechanismType = form.watch("mechanismType")
-  const motorControllerType = form.watch("motorControllerType", "SparkMAX")
-  const motorType = form.watch("motorType", "NEO")
+  const mechanismType = form.watch("mechanismType");
+  const motorControllerType = form.watch("motorControllerType", "SparkMAX");
+  const motorType = form.watch("motorType", "NEO");
 
   // Get all available controllers and motors from the configuration
-  const allControllers = Object.values(MOTOR_CONTROLLERS)
-  const allMotors = Object.values(MOTORS)
+  const allControllers = Object.values(MOTOR_CONTROLLERS);
+  const allMotors = Object.values(MOTORS);
 
   // Get compatible controllers and motors based on current selections
-  const compatibleMotors = getCompatibleMotors(motorControllerType)
+  const compatibleMotors = getCompatibleMotors(motorControllerType);
 
   // Handle motor controller change
   const handleMotorControllerChange = (value: string) => {
-    form.setValue("motorControllerType", value)
+    form.setValue("motorControllerType", value);
 
     // If changing away from TalonFX and using a Kraken motor, switch to KrakenX60
-    if (value !== "TalonFX" && !isMotorCompatibleWithController(motorType, value)) {
-      form.setValue("motorType", "NEO")
-    } else if (value === "TalonFX" && !isMotorCompatibleWithController(motorType, value)) {
-      form.setValue("motorType", "Krakenx60")
+    if (
+      value !== "TalonFX" &&
+      !isMotorCompatibleWithController(motorType, value)
+    ) {
+      form.setValue("motorType", "NEO");
+    } else if (
+      value === "TalonFX" &&
+      !isMotorCompatibleWithController(motorType, value)
+    ) {
+      form.setValue("motorType", "Krakenx60");
     }
-  }
+  };
 
   // Handle motor type change
   const handleMotorTypeChange = (value: string) => {
-    form.setValue("motorType", value)
-  }
+    form.setValue("motorType", value);
+  };
 
   // Safe number input handler
-  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>, onChange: (...event: any[]) => void) => {
-    const value = e.target.value
+  const handleNumberChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    onChange: (...event: any[]) => void,
+  ) => {
+    const value = e.target.value;
     if (value === "") {
-      onChange("")
+      onChange("");
     } else {
-      const numValue = Number.parseFloat(value)
+      const numValue = Number.parseFloat(value);
       if (!isNaN(numValue)) {
-        onChange(numValue)
+        onChange(numValue);
       }
     }
-  }
+  };
 
   return (
     <div className="space-y-6">
@@ -108,7 +135,12 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
         </CardContent>
       </Card>
 
-      <Accordion type="single" collapsible className="w-full" defaultValue="motorConfig">
+      <Accordion
+        type="single"
+        collapsible
+        className="w-full"
+        defaultValue="motorConfig"
+      >
         <AccordionItem value="motorConfig">
           <AccordionTrigger>Motor Configuration</AccordionTrigger>
           <AccordionContent>
@@ -119,7 +151,10 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Motor Controller Type</FormLabel>
-                    <Select onValueChange={handleMotorControllerChange} value={field.value}>
+                    <Select
+                      onValueChange={handleMotorControllerChange}
+                      value={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select motor controller" />
@@ -127,7 +162,10 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                       </FormControl>
                       <SelectContent>
                         {allControllers.map((controller) => (
-                          <SelectItem key={controller.name} value={controller.name}>
+                          <SelectItem
+                            key={controller.name}
+                            value={controller.name}
+                          >
                             {controller.displayName}
                           </SelectItem>
                         ))}
@@ -144,7 +182,10 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Motor Type</FormLabel>
-                    <Select onValueChange={handleMotorTypeChange} value={field.value}>
+                    <Select
+                      onValueChange={handleMotorTypeChange}
+                      value={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select motor type" />
@@ -159,7 +200,10 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                       </SelectContent>
                     </Select>
                     <FormDescription>
-                      {!isMotorCompatibleWithController("NEO", motorControllerType)
+                      {!isMotorCompatibleWithController(
+                        "NEO",
+                        motorControllerType,
+                      )
                         ? "Kraken motors can only be used with TalonFX"
                         : ""}
                     </FormDescription>
@@ -175,7 +219,11 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                   <FormItem>
                     <FormLabel>CAN ID</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} onChange={(e) => handleNumberChange(e, field.onChange)} />
+                      <Input
+                        type="number"
+                        {...field}
+                        onChange={(e) => handleNumberChange(e, field.onChange)}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -196,7 +244,9 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                         onChange={(e) => handleNumberChange(e, field.onChange)}
                       />
                     </FormControl>
-                    <FormDescription>Motor rotations per mechanism rotation. (eg 9:1 is 9/1)</FormDescription>
+                    <FormDescription>
+                      Motor rotations per mechanism rotation. (eg 9:1 is 9/1)
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -209,10 +259,15 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                   <FormItem className="flex flex-row items-center justify-between">
                     <div className="space-y-0.5">
                       <FormLabel>Brake Mode</FormLabel>
-                      <FormDescription>Enable brake mode (disable for coast)</FormDescription>
+                      <FormDescription>
+                        Enable brake mode (disable for coast)
+                      </FormDescription>
                     </div>
                     <FormControl>
-                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
                     </FormControl>
                   </FormItem>
                 )}
@@ -234,10 +289,14 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             placeholder="0.0"
                             {...field}
                             value={field.value ?? ""}
-                            onChange={(e) => handleNumberChange(e, field.onChange)}
+                            onChange={(e) =>
+                              handleNumberChange(e, field.onChange)
+                            }
                           />
                         </FormControl>
-                        <FormDescription>Time to reach full throttle (0 = disabled)</FormDescription>
+                        <FormDescription>
+                          Time to reach full throttle (0 = disabled)
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -256,10 +315,14 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             placeholder="0.0"
                             {...field}
                             value={field.value ?? ""}
-                            onChange={(e) => handleNumberChange(e, field.onChange)}
+                            onChange={(e) =>
+                              handleNumberChange(e, field.onChange)
+                            }
                           />
                         </FormControl>
-                        <FormDescription>Time to reach full velocity (0 = disabled)</FormDescription>
+                        <FormDescription>
+                          Time to reach full velocity (0 = disabled)
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -282,7 +345,9 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             placeholder="40"
                             {...field}
                             value={field.value ?? ""}
-                            onChange={(e) => handleNumberChange(e, field.onChange)}
+                            onChange={(e) =>
+                              handleNumberChange(e, field.onChange)
+                            }
                           />
                         </FormControl>
                         <FormMessage />
@@ -290,7 +355,8 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                     )}
                   />
 
-                  {MOTOR_CONTROLLERS[motorControllerType].supportsSupplyCurrentLimit && (
+                  {MOTOR_CONTROLLERS[motorControllerType]
+                    .supportsSupplyCurrentLimit && (
                     <FormField
                       control={form.control}
                       name="currentLimits.supply"
@@ -303,10 +369,14 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                               placeholder="40"
                               {...field}
                               value={field.value ?? ""}
-                              onChange={(e) => handleNumberChange(e, field.onChange)}
+                              onChange={(e) =>
+                                handleNumberChange(e, field.onChange)
+                              }
                             />
                           </FormControl>
-                          <FormDescription>Only for TalonFX/TalonFXS</FormDescription>
+                          <FormDescription>
+                            Only for TalonFX/TalonFXS
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -323,7 +393,10 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
           <AccordionContent>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>PID Values ({mechanismType == "Elevator" ? "Meters" : "Radians"})</Label>
+                <Label>
+                  PID Values (
+                  {mechanismType == "Elevator" ? "Meters" : "Radians"})
+                </Label>
                 <div className="grid grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
@@ -336,7 +409,9 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             type="number"
                             step="0.01"
                             {...field}
-                            onChange={(e) => handleNumberChange(e, field.onChange)}
+                            onChange={(e) =>
+                              handleNumberChange(e, field.onChange)
+                            }
                           />
                         </FormControl>
                         <FormMessage />
@@ -355,7 +430,9 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             type="number"
                             step="0.01"
                             {...field}
-                            onChange={(e) => handleNumberChange(e, field.onChange)}
+                            onChange={(e) =>
+                              handleNumberChange(e, field.onChange)
+                            }
                           />
                         </FormControl>
                         <FormMessage />
@@ -374,7 +451,9 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             type="number"
                             step="0.01"
                             {...field}
-                            onChange={(e) => handleNumberChange(e, field.onChange)}
+                            onChange={(e) =>
+                              handleNumberChange(e, field.onChange)
+                            }
                           />
                         </FormControl>
                         <FormMessage />
@@ -397,10 +476,16 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                           step="0.1"
                           {...field}
                           value={field.value ?? ""}
-                          onChange={(e) => handleNumberChange(e, field.onChange)}
+                          onChange={(e) =>
+                            handleNumberChange(e, field.onChange)
+                          }
                         />
                       </FormControl>
-                      <FormDescription>Maximum velocity in {mechanismType == "Elevator" ? "meters" : "radians"} per second</FormDescription>
+                      <FormDescription>
+                        Maximum velocity in{" "}
+                        {mechanismType == "Elevator" ? "meters" : "radians"} per
+                        second
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -418,10 +503,16 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                           step="0.1"
                           {...field}
                           value={field.value ?? ""}
-                          onChange={(e) => handleNumberChange(e, field.onChange)}
+                          onChange={(e) =>
+                            handleNumberChange(e, field.onChange)
+                          }
                         />
                       </FormControl>
-                      <FormDescription>Maximum acceleration in {mechanismType == "Elevator" ? "meters" : "radians"} per second²</FormDescription>
+                      <FormDescription>
+                        Maximum acceleration in{" "}
+                        {mechanismType == "Elevator" ? "meters" : "radians"} per
+                        second²
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -443,10 +534,14 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             step="0.1"
                             {...field}
                             value={field.value ?? ""}
-                            onChange={(e) => handleNumberChange(e, field.onChange)}
+                            onChange={(e) =>
+                              handleNumberChange(e, field.onChange)
+                            }
                           />
                         </FormControl>
-                        <FormDescription>Maximum position limit</FormDescription>
+                        <FormDescription>
+                          Maximum position limit
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -464,10 +559,14 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             step="0.1"
                             {...field}
                             value={field.value ?? ""}
-                            onChange={(e) => handleNumberChange(e, field.onChange)}
+                            onChange={(e) =>
+                              handleNumberChange(e, field.onChange)
+                            }
                           />
                         </FormControl>
-                        <FormDescription>Minimum position limit</FormDescription>
+                        <FormDescription>
+                          Minimum position limit
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -490,10 +589,15 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             step="0.01"
                             {...field}
                             value={field.value ?? ""}
-                            onChange={(e) => handleNumberChange(e, field.onChange)}
+                            onChange={(e) =>
+                              handleNumberChange(e, field.onChange)
+                            }
                           />
                         </FormControl>
-                        <FormDescription>Static feedforward in V*(s/({mechanismType == "Elevator" ? "m" : "rad"})</FormDescription>
+                        <FormDescription>
+                          Static feedforward in V*(s/(
+                          {mechanismType == "Elevator" ? "m" : "rad"})
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -511,10 +615,16 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             step="0.01"
                             {...field}
                             value={field.value ?? ""}
-                            onChange={(e) => handleNumberChange(e, field.onChange)}
+                            onChange={(e) =>
+                              handleNumberChange(e, field.onChange)
+                            }
                           />
                         </FormControl>
-                        <FormDescription>Velocity feedforward in V*(s/{mechanismType == "Elevator" ? "m" : "rad"}) (auto-calculable with ReCalc)</FormDescription>
+                        <FormDescription>
+                          Velocity feedforward in V*(s/
+                          {mechanismType == "Elevator" ? "m" : "rad"})
+                          (auto-calculable with ReCalc)
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -532,16 +642,23 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             step="0.01"
                             {...field}
                             value={field.value ?? ""}
-                            onChange={(e) => handleNumberChange(e, field.onChange)}
+                            onChange={(e) =>
+                              handleNumberChange(e, field.onChange)
+                            }
                           />
                         </FormControl>
-                        <FormDescription>Acceleration feedforward in V*(s²/{mechanismType == "Elevator" ? "m" : "rad"}) (auto-calculable with ReCalc)</FormDescription>
+                        <FormDescription>
+                          Acceleration feedforward in V*(s²/
+                          {mechanismType == "Elevator" ? "m" : "rad"})
+                          (auto-calculable with ReCalc)
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
 
-                  {(mechanismType === "Elevator" || mechanismType === "Arm") && (
+                  {(mechanismType === "Elevator" ||
+                    mechanismType === "Arm") && (
                     <FormField
                       control={form.control}
                       name="feedforward.kG"
@@ -554,19 +671,22 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                               step="0.01"
                               {...field}
                               value={field.value ?? ""}
-                              onChange={(e) => handleNumberChange(e, field.onChange)}
+                              onChange={(e) =>
+                                handleNumberChange(e, field.onChange)
+                              }
                             />
                           </FormControl>
-                          <FormDescription>Gravity compensation in V (auto-calculable with ReCalc)</FormDescription>
+                          <FormDescription>
+                            Gravity compensation in V (auto-calculable with
+                            ReCalc)
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   )}
 
-                  <ReCalcIntegration
-                    formValues={form.getValues()}
-                  />
+                  <ReCalcIntegration formValues={form.getValues()} />
                 </div>
               </div>
             </div>
@@ -586,7 +706,9 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                     <FormControl>
                       <Input placeholder="Subsystem" {...field} />
                     </FormControl>
-                    <FormDescription>Base path for telemetry values</FormDescription>
+                    <FormDescription>
+                      Base path for telemetry values
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -624,7 +746,10 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                         <FormControl>
-                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
                         </FormControl>
                         <div className="space-y-1 leading-none">
                           <FormLabel>Position</FormLabel>
@@ -640,7 +765,10 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                         <FormControl>
-                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
                         </FormControl>
                         <div className="space-y-1 leading-none">
                           <FormLabel>Velocity</FormLabel>
@@ -656,7 +784,10 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                         <FormControl>
-                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
                         </FormControl>
                         <div className="space-y-1 leading-none">
                           <FormLabel>Voltage</FormLabel>
@@ -672,11 +803,16 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                         <FormControl>
-                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
                         </FormControl>
                         <div className="space-y-1 leading-none">
                           <FormLabel>Temperature</FormLabel>
-                          <FormDescription>Log motor temperature</FormDescription>
+                          <FormDescription>
+                            Log motor temperature
+                          </FormDescription>
                         </div>
                       </FormItem>
                     )}
@@ -688,7 +824,10 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                         <FormControl>
-                          <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                          <Checkbox
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
                         </FormControl>
                         <div className="space-y-1 leading-none">
                           <FormLabel>Current</FormLabel>
@@ -720,7 +859,9 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                           step="0.01"
                           {...field}
                           value={field.value ?? ""}
-                          onChange={(e) => handleNumberChange(e, field.onChange)}
+                          onChange={(e) =>
+                            handleNumberChange(e, field.onChange)
+                          }
                         />
                       </FormControl>
                       <FormMessage />
@@ -741,10 +882,14 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             step="0.01"
                             {...field}
                             value={field.value ?? ""}
-                            onChange={(e) => handleNumberChange(e, field.onChange)}
+                            onChange={(e) =>
+                              handleNumberChange(e, field.onChange)
+                            }
                           />
                         </FormControl>
-                        <FormDescription>Minimum height for simulation</FormDescription>
+                        <FormDescription>
+                          Minimum height for simulation
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -762,10 +907,14 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             step="0.01"
                             {...field}
                             value={field.value ?? ""}
-                            onChange={(e) => handleNumberChange(e, field.onChange)}
+                            onChange={(e) =>
+                              handleNumberChange(e, field.onChange)
+                            }
                           />
                         </FormControl>
-                        <FormDescription>Maximum height for simulation</FormDescription>
+                        <FormDescription>
+                          Maximum height for simulation
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -785,7 +934,9 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             step="0.1"
                             {...field}
                             value={field.value ?? ""}
-                            onChange={(e) => handleNumberChange(e, field.onChange)}
+                            onChange={(e) =>
+                              handleNumberChange(e, field.onChange)
+                            }
                           />
                         </FormControl>
                         <FormMessage />
@@ -799,7 +950,10 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Mass Unit</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select mass unit" />
@@ -828,11 +982,14 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                           step="0.001"
                           {...field}
                           value={field.value ?? ""}
-                          onChange={(e) => handleNumberChange(e, field.onChange)}
+                          onChange={(e) =>
+                            handleNumberChange(e, field.onChange)
+                          }
                         />
                       </FormControl>
                       <FormDescription>
-                        Drum/sprocket radius for converting rotations to linear distance
+                        Drum/sprocket radius for converting rotations to linear
+                        distance
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -860,7 +1017,9 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                           step="0.01"
                           {...field}
                           value={field.value ?? ""}
-                          onChange={(e) => handleNumberChange(e, field.onChange)}
+                          onChange={(e) =>
+                            handleNumberChange(e, field.onChange)
+                          }
                         />
                       </FormControl>
                       <FormMessage />
@@ -880,10 +1039,14 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                           step="0.1"
                           {...field}
                           value={field.value ?? ""}
-                          onChange={(e) => handleNumberChange(e, field.onChange)}
+                          onChange={(e) =>
+                            handleNumberChange(e, field.onChange)
+                          }
                         />
                       </FormControl>
-                      <FormDescription>Initial angle for simulation</FormDescription>
+                      <FormDescription>
+                        Initial angle for simulation
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -902,10 +1065,14 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             step="1"
                             {...field}
                             value={field.value ?? ""}
-                            onChange={(e) => handleNumberChange(e, field.onChange)}
+                            onChange={(e) =>
+                              handleNumberChange(e, field.onChange)
+                            }
                           />
                         </FormControl>
-                        <FormDescription>Minimum angle for simulation</FormDescription>
+                        <FormDescription>
+                          Minimum angle for simulation
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -923,10 +1090,14 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             step="1"
                             {...field}
                             value={field.value ?? ""}
-                            onChange={(e) => handleNumberChange(e, field.onChange)}
+                            onChange={(e) =>
+                              handleNumberChange(e, field.onChange)
+                            }
                           />
                         </FormControl>
-                        <FormDescription>Maximum angle for simulation</FormDescription>
+                        <FormDescription>
+                          Maximum angle for simulation
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -946,7 +1117,9 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             step="0.1"
                             {...field}
                             value={field.value ?? ""}
-                            onChange={(e) => handleNumberChange(e, field.onChange)}
+                            onChange={(e) =>
+                              handleNumberChange(e, field.onChange)
+                            }
                           />
                         </FormControl>
                         <FormMessage />
@@ -960,7 +1133,10 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Mass Unit</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select mass unit" />
@@ -989,10 +1165,14 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             step="1"
                             {...field}
                             value={field.value ?? ""}
-                            onChange={(e) => handleNumberChange(e, field.onChange)}
+                            onChange={(e) =>
+                              handleNumberChange(e, field.onChange)
+                            }
                           />
                         </FormControl>
-                        <FormDescription>Distance from fulcrum to center of Mass in meters.</FormDescription>
+                        <FormDescription>
+                          Distance from fulcrum to center of Mass in meters.
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -1004,5 +1184,5 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
         )}
       </Accordion>
     </div>
-  )
+  );
 }

@@ -11,8 +11,8 @@ const nextConfig = {
   },
   //basePath: '/yamg',  // important if your repo is not served from root
   //trailingSlash: false,          // helps with routing in static export
-  output: 'export', // Enable static export
-  distDir: 'out', // Output directory for the static build
+  output: "export", // Enable static export
+  distDir: "out", // Output directory for the static build
 };
 
 export default nextConfig;

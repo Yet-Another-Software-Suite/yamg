@@ -1,12 +1,13 @@
-export const getImports = () => `import com.thriftyrobotics.nova.hardware.ThriftyNova;
+export const getImports =
+  () => `import com.thriftyrobotics.nova.hardware.ThriftyNova;
 import com.thriftyrobotics.nova.hardware.ThriftyEncoder;
 import com.thriftyrobotics.nova.controller.PIDController;
 import com.thriftyrobotics.nova.controller.ControlMode;
-import com.thriftyrobotics.nova.controller.NeutralMode;`
+import com.thriftyrobotics.nova.controller.NeutralMode;`;
 
 export const getDeclaration = () => `private final ThriftyNova motor;
 private final ThriftyEncoder encoder;
-private final PIDController pidController;`
+private final PIDController pidController;`;
 
 export const getInitialization = () => `motor = new ThriftyNova(canID);
 
@@ -40,10 +41,10 @@ pidController.setD(kD);
   motor.enableForwardSoftLimit(true);
   motor.configReverseSoftLimit(reverseSoftLimit);
   motor.enableReverseSoftLimit(true);
-{{/if}}`
+{{/if}}`;
 
-export const getPeriodic = () => ``
-export const getSimulationPeriodic = () => ``
+export const getPeriodic = () => ``;
+export const getSimulationPeriodic = () => ``;
 
 export const getMethods = () => ({
   getPositionMethod: `return encoder.getPosition() / gearRatio;`,
@@ -65,4 +66,4 @@ pidController.setReference(adjustedVelocity, ControlMode.VELOCITY, ffVolts);`,
   getCurrentMethod: `return motor.getOutputCurrent();`,
 
   getTemperatureMethod: `return motor.getTemperature();`,
-})
+});
