@@ -1,5 +1,4 @@
 import type { FormValues, FileOutput } from "./types";
-import Handlebars from "handlebars";
 import { getMotorControllerModule, isRevController } from "./motor-controllers";
 import {
   getMechanism,
@@ -7,42 +6,29 @@ import {
   getWPILibMotorType,
 } from "./config/hardware-config";
 
-// Initialize Handlebars
-function initializeHandlebars() {
-  // add eq helper
-  Handlebars.registerHelper("eq", function (a, b) {
-    return a === b;
-  });
+import Handlebars from "handlebars/dist/handlebars.js";
 
-  // add or helper -> stackoverflow.com/questions/13036499/handlebars-js-or-helper
-  Handlebars.registerHelper("or", function () {
-    // Remove the last argument (Handlebars options object)
-    const args = Array.prototype.slice.call(arguments, 0, -1);
+function initializeHandlebars() {
+  Handlebars.registerHelper("eq", (a, b) => a === b);
+  Handlebars.registerHelper("or", function (...args) {
+    args.pop(); // remove Handlebars options object
     return args.some(Boolean);
   });
 }
 
-// Initialize Handlebars when this module is loaded
 initializeHandlebars();
-
 // Fetch template from public directory
 async function fetchTemplate(templateName: string): Promise<string> {
   try {
     // First try with .java.hbs extension
-    const response = await fetch(`templates/${templateName}.java.hbs`);
-    if (response.ok) {
-      const body = await response.text();
-      return body;
-    }
+    let response = await fetch(`/templates/${templateName}.java.hbs`);
+    if (response.ok) return await response.text();
 
-    // If that fails, try with .hbs extension
-    const fallbackResponse = await fetch(`templates/${templateName}.hbs`);
-    if (fallbackResponse.ok) {
-      const body = await response.text();
-      return body;
-    }
+    // If that fails, try .hbs extension
+    response = await fetch(`/templates/${templateName}.hbs`);
+    if (response.ok) return await response.text();
 
-    throw new Error(`Failed to fetch template: ${templateName}`);
+    throw new Error(`Template not found: ${templateName}`);
   } catch (error) {
     console.error(`Error fetching template ${templateName}:`, error);
     throw error;

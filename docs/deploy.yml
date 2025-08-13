@@ -2,15 +2,15 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
-        contents: write
-        pages: write
+      contents: write
+      pages: write
     steps:
       - name: Checkout
         uses: actions/checkout@v3

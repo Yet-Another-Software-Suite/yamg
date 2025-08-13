@@ -1,5 +1,3 @@
-"use client";
-
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ClipboardCopy, FilePlus2, Download } from "lucide-react";
@@ -74,7 +72,7 @@ export default function GeneratedCodePanel({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 bg-zinc-800 p-4 rounded-lg">
       <div className="flex justify-between items-center mb-4">
         <div className="flex gap-2 overflow-x-auto">
           {files.map((f, i) => (

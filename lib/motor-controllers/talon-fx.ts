@@ -12,7 +12,7 @@ import com.ctre.phoenix6.configs.SoftwareLimitSwitchConfigs;
 import com.ctre.phoenix6.configs.OpenLoopRampsConfigs;
 import com.ctre.phoenix6.configs.ClosedLoopRampsConfigs;
 import edu.wpi.first.units.measure.*;
-`
+`;
 
 export const getDeclaration = () => `private final TalonFX motor;
 private final PositionVoltage positionRequest;
@@ -22,7 +22,7 @@ private final StatusSignal<AngularVelocity> velocitySignal;
 private final StatusSignal<Voltage> voltageSignal;
 private final StatusSignal<Current> statorCurrentSignal;
 private final StatusSignal<Temperature> temperatureSignal;
-`
+`;
 
 export const getInitialization = () => `motor = new TalonFX(canID);
 
@@ -82,14 +82,15 @@ config.Feedback.SensorToMechanismRatio = gearRatio;
 motor.getConfigurator().apply(config);
 
 // Reset encoder position
-motor.setPosition(0);`
+motor.setPosition(0);`;
 
-export const getPeriodic = () => `BaseStatusSignal.refreshAll(positionSignal, velocitySignal, voltageSignal, statorCurrentSignal, temperatureSignal);`
+export const getPeriodic = () =>
+  `BaseStatusSignal.refreshAll(positionSignal, velocitySignal, voltageSignal, statorCurrentSignal, temperatureSignal);`;
 
 export const getSimulationPeriodic = () => `
   motor.getSimState().setRawRotorPosition(motorPosition);
   motor.getSimState().setRotorVelocity(motorVelocity);
-`
+`;
 
 export const getMethods = () => ({
   getPositionMethod: `return positionSignal.getValueAsDouble();`,
@@ -110,4 +111,4 @@ motor.setControl(velocityRequest.withVelocity(velocityRotations).withFeedForward
   getCurrentMethod: `return statorCurrentSignal.getValueAsDouble();`,
 
   getTemperatureMethod: `return temperatureSignal.getValueAsDouble();`,
-})
+});

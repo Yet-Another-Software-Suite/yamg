@@ -28,18 +28,40 @@ ControlsBaseSim (Base class)
 The simulation implements a simplified physics model based on the WPILib simulation classes:
 
 1. **Motor Model**:
+
    ```typescript
    // Motor constants based on type
    const motorConstants = {
      NEO: { kv: 473, kt: 0.025, R: 0.116 / motorCount, m: 0.425 * motorCount },
-     NEO550: { kv: 774, kt: 0.015, R: 0.08 / motorCount, m: 0.235 * motorCount },
-     Falcon500: { kv: 577, kt: 0.019, R: 0.115 / motorCount, m: 0.31 * motorCount },
-     KrakenX60: { kv: 590, kt: 0.021, R: 0.1 / motorCount, m: 0.39 * motorCount },
-     KrakenX44: { kv: 590, kt: 0.014, R: 0.15 / motorCount, m: 0.26 * motorCount },
-   }
+     NEO550: {
+       kv: 774,
+       kt: 0.015,
+       R: 0.08 / motorCount,
+       m: 0.235 * motorCount,
+     },
+     Falcon500: {
+       kv: 577,
+       kt: 0.019,
+       R: 0.115 / motorCount,
+       m: 0.31 * motorCount,
+     },
+     KrakenX60: {
+       kv: 590,
+       kt: 0.021,
+       R: 0.1 / motorCount,
+       m: 0.39 * motorCount,
+     },
+     KrakenX44: {
+       kv: 590,
+       kt: 0.014,
+       R: 0.15 / motorCount,
+       m: 0.26 * motorCount,
+     },
+   };
    ```
 
 2. **Control System**:
+
    ```typescript
    // PID Control
    calculatePID(error: number): number {
@@ -61,9 +83,11 @@ The simulation implements a simplified physics model based on the WPILib simulat
 
 3. **Mechanism-Specific Physics**:
    - **Arm**: Rotational dynamics with gravity torque
+
      ```typescript
      // Calculate gravity torque
-     const gravityTorque = this.mass * 9.81 * (this.length / 2) * Math.sin(this.position);
+     const gravityTorque =
+       this.mass * 9.81 * (this.length / 2) * Math.sin(this.position);
      // Calculate net torque
      const netTorque = motorTorque - gravityTorque;
      // Calculate acceleration
@@ -112,7 +136,10 @@ To add a new mechanism type (e.g., a differential drive):
 
 ```typescript
 // lib/simulation/differential-drive-sim.ts
-import { ControlsBaseSim, type ControlsBaseSimOptions } from "@/lib/simulation/controls-base-sim";
+import {
+  ControlsBaseSim,
+  type ControlsBaseSimOptions,
+} from "@/lib/simulation/controls-base-sim";
 
 export interface DifferentialDriveSimOptions extends ControlsBaseSimOptions {
   trackWidth?: number;
@@ -122,20 +149,23 @@ export interface DifferentialDriveSimOptions extends ControlsBaseSimOptions {
 export class DifferentialDriveSim extends ControlsBaseSim {
   trackWidth: number;
   wheelRadius: number;
-  
-  constructor(canvas: HTMLCanvasElement, options: DifferentialDriveSimOptions = {}) {
+
+  constructor(
+    canvas: HTMLCanvasElement,
+    options: DifferentialDriveSimOptions = {},
+  ) {
     super(canvas, options);
-    
+
     this.trackWidth = options.trackWidth || 0.5; // meters
     this.wheelRadius = options.wheelRadius || 0.1; // meters
-    
+
     // Initialize other properties
   }
-  
+
   override updatePhysics(): void {
     // Implement differential drive physics
   }
-  
+
   override draw(): void {
     // Implement differential drive visualization
   }
@@ -145,7 +175,10 @@ export class DifferentialDriveSim extends ControlsBaseSim {
 2. Export the new class in `lib/simulation/index.ts`:
 
 ```typescript
-export { DifferentialDriveSim, type DifferentialDriveSimOptions } from "@/lib/simulation/differential-drive-sim";
+export {
+  DifferentialDriveSim,
+  type DifferentialDriveSimOptions,
+} from "@/lib/simulation/differential-drive-sim";
 ```
 
 3. Update `simulation-component.tsx` to handle the new mechanism type:
@@ -154,9 +187,9 @@ export { DifferentialDriveSim, type DifferentialDriveSimOptions } from "@/lib/si
 // In the useEffect that initializes the simulation
 switch (formValues.mechanismType) {
   case "Arm":
-    // ...
+  // ...
   case "Elevator":
-    // ...
+  // ...
   case "DifferentialDrive":
     sim = new DifferentialDriveSim(canvas, {
       trackWidth: formValues.driveParams?.trackWidth || 0.5,
@@ -179,11 +212,11 @@ To modify an existing simulation:
    // In arm-sim.ts
    override updatePhysics(): void {
      // Existing code...
-     
+
      // Add friction
      const frictionTorque = 0.1 * Math.sign(this.velocity);
      const netTorque = motorTorque - gravityTorque - frictionTorque;
-     
+
      // Rest of the method...
    }
    ```
@@ -196,10 +229,10 @@ To modify an existing simulation:
    // In arm-sim.ts
    override draw(): void {
      // Existing code...
-     
+
      // Change arm color
      ctx.strokeStyle = "#ff0000"; // Red instead of blue
-     
+
      // Rest of the method...
    }
    ```

@@ -1,53 +1,59 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { useLayoutEffect, useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import type { FormValues } from "@/lib/types"
-import dynamic from "next/dynamic"
+import { useLayoutEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import type { FormValues } from "@/lib/types";
+import dynamic from "next/dynamic";
 
 // Dynamically import simulation components with no SSR
-const SimulationComponent = dynamic(() => import("@/components/simulation-component"), {
-  ssr: false,
-  loading: () => (
-    <div className="flex justify-center items-center h-64">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      <p className="ml-3">Loading simulation...</p>
-    </div>
-  ),
-})
+const SimulationComponent = dynamic(
+  () => import("@/components/simulation-component"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <p className="ml-3">Loading simulation...</p>
+      </div>
+    ),
+  },
+);
 
 // Add error handling for the simulation component
 function SimulationErrorBoundary({ children }) {
-  const [hasError, setHasError] = useState(false)
+  const [hasError, setHasError] = useState(false);
 
   useLayoutEffect(() => {
-    const originalError = console.error
+    const originalError = console.error;
     console.error = (...args) => {
       if (
         args[0]?.includes?.("ResizeObserver loop") ||
         (typeof args[0] === "string" && args[0].includes("ResizeObserver loop"))
       ) {
-        return
+        return;
       }
-      setHasError(true)
-      originalError.apply(console, args)
-    }
+      setHasError(true);
+      originalError.apply(console, args);
+    };
 
     return () => {
-      console.error = originalError
-    }
-  }, [])
+      console.error = originalError;
+    };
+  }, []);
 
   if (hasError) {
     return (
       <div className="p-4 bg-yellow-100 text-yellow-800 rounded-md">
         <p className="font-semibold">Warning:</p>
-        <p>The simulation encountered a rendering issue. This doesn't affect functionality.</p>
+        <p>
+          The simulation encountered a rendering issue. This doesn't affect
+          functionality.
+        </p>
         <button
           className="mt-2 px-4 py-2 bg-yellow-200 hover:bg-yellow-300 rounded-md"
           onClick={() => setHasError(false)}
@@ -55,39 +61,39 @@ function SimulationErrorBoundary({ children }) {
           Try Again
         </button>
       </div>
-    )
+    );
   }
 
-  return children
+  return children;
 }
 
 interface SimulationTabProps {
-  formValues: FormValues
+  formValues: FormValues;
 }
 
 export default function SimulationTab({ formValues }: SimulationTabProps) {
-  const [simType, setSimType] = useState<string>("position")
-  const [motorCount, setMotorCount] = useState<number>(1)
+  const [simType, setSimType] = useState<string>("position");
+  const [motorCount, setMotorCount] = useState<number>(1);
 
   // Safe number input handler
   const handleMotorCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
+    const value = e.target.value;
     if (value === "") {
-      setMotorCount(1)
+      setMotorCount(1);
     } else {
-      const numValue = Number.parseInt(value, 10)
+      const numValue = Number.parseInt(value, 10);
       if (!isNaN(numValue) && numValue >= 1 && numValue <= 4) {
-        setMotorCount(numValue)
+        setMotorCount(numValue);
       }
     }
-  }
+  };
 
   return (
     <Card className="w-full">
-      <CardHeader>
+      <CardHeader className="bg-zinc-800">
         <CardTitle>Mechanism Simulation</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="bg-zinc-800">
         <div className="space-y-4">
           <Tabs defaultValue="position" onValueChange={setSimType}>
             <TabsList className="grid w-full grid-cols-2">
@@ -109,7 +115,9 @@ export default function SimulationTab({ formValues }: SimulationTabProps) {
               onChange={handleMotorCountChange}
               className="w-20"
             />
-            <span className="text-sm text-muted-foreground">Number of motors in the gearbox (1-4)</span>
+            <span className="text-sm text-muted-foreground">
+              Number of motors in the gearbox (1-4)
+            </span>
           </div>
 
           <SimulationErrorBoundary>
@@ -123,5 +131,5 @@ export default function SimulationTab({ formValues }: SimulationTabProps) {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

@@ -5,13 +5,13 @@ import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.RelativeEncoder;
-`
-
+`;
 
 export const getDeclaration = () => `private final SparkMax motor;
-private final RelativeEncoder encoder;`
+private final RelativeEncoder encoder;`;
 
-export const getInitialization = () => `SparkMaxConfig motorConfig = new SparkMaxConfig();
+export const getInitialization =
+  () => `SparkMaxConfig motorConfig = new SparkMaxConfig();
 motor = new SparkMax(canID, MotorType.kBrushless);
 motorConfig.idleMode(brakeMode ? IdleMode.kBrake : IdleMode.kCoast);
 
@@ -43,10 +43,10 @@ encoder.setPosition(0);
 {{/if}}
 
 // Save configuration
-motor.configure(motorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);`
+motor.configure(motorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);`;
 
-export const getPeriodic = () => ``
-export const getSimulationPeriodic = () => ``
+export const getPeriodic = () => ``;
+export const getSimulationPeriodic = () => ``;
 
 export const getMethods = () => ({
   getPositionMethod: `return encoder.getPosition() / gearRatio;`,
@@ -69,4 +69,4 @@ double ffVolts = feedforward.calculate(velocity, acceleration);`,
   getCurrentMethod: `return motor.getOutputCurrent();`,
 
   getTemperatureMethod: `return motor.getMotorTemperature();`,
-})
+});

@@ -1,5 +1,3 @@
-"use client";
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MechanismForm from "@/components/mechanism-form";
 import GeneratedCodePanel from "./generatedCodePanel";

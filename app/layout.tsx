@@ -1,22 +1,28 @@
-import type React from "react"
-import "@/app/globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
-import { Footer } from "@/components/footer"
+import type React from "react";
+import "@/app/globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
+import { Footer } from "@/components/footer";
 
 export const metadata = {
   title: "Yet Another Mechanisms Generator (YAMG)",
-  description: "Generate code for FRC mechanisms, and simulate them in the browser!",
-}
+  description:
+    "Generate code for FRC mechanisms, and simulate them in the browser!",
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen bg-background">
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} forcedTheme="dark">
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem={false}
+          forcedTheme="dark"
+        >
           {children}
           <Footer />
         </ThemeProvider>
@@ -35,5 +41,5 @@ export default function RootLayout({
         />
       </body>
     </html>
-  )
+  );
 }
