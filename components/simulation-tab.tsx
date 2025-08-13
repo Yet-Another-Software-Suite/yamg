@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useLayoutEffect, useState } from "react";
+import { JSX, useLayoutEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -25,7 +25,7 @@ const SimulationComponent = dynamic(
 );
 
 // Add error handling for the simulation component
-function SimulationErrorBoundary({ children }) {
+function SimulationErrorBoundary({ children }: { children: JSX.Element }) {
   const [hasError, setHasError] = useState(false);
 
   useLayoutEffect(() => {
