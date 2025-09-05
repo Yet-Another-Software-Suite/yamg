@@ -71,6 +71,8 @@ jobs:
           # If source files changed but packages didn't, rebuild from a prior cache.
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json', '**/yarn.lock') }}-
+      - name: Update dependencies
+        run: pnpm update
       - name: Install dependencies
         run: pnpm install
       - name: Build with Next.js
