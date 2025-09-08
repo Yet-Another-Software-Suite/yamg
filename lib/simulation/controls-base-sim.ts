@@ -57,6 +57,7 @@ export class ControlsBaseSim {
     gearing: number
     count: number
   }
+  arm: boolean
 
   constructor(canvas: HTMLCanvasElement, options: ControlsBaseSimOptions = {}) {
     this.arm = false

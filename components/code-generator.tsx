@@ -31,6 +31,9 @@ export default function CodeGenerator() {
     return () => sub.unsubscribe();
   }, [form]);
 
+  // Regen code if tab changes.
+  useEffect(()=>{shouldRegenerateCode.current = true}, [activeFileIndex]);
+
   // Generate code when form changes
   useEffect(() => {
     const generate = async () => {
