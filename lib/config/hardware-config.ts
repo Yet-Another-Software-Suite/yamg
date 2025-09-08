@@ -201,6 +201,7 @@ export interface MechanismDefinition {
   displayName: string
   description: string
   templateName: string
+  simTemplateName: string
   simClassName: string
   requiresGravityCompensation: boolean
 }
@@ -211,6 +212,7 @@ export const MECHANISMS: Record<string, MechanismDefinition> = {
     displayName: "Elevator",
     description: "Linear vertical mechanism",
     templateName: "elevator-subsystem",
+    simTemplateName: "elevator-sim",
     simClassName: "ElevatorSim",
     requiresGravityCompensation: true,
   },
@@ -219,6 +221,7 @@ export const MECHANISMS: Record<string, MechanismDefinition> = {
     displayName: "Arm",
     description: "Rotational mechanism with gravity effects",
     templateName: "arm-subsystem",
+    simTemplateName: "arm-sim",
     simClassName: "ArmSim",
     requiresGravityCompensation: true,
   },
@@ -227,6 +230,7 @@ export const MECHANISMS: Record<string, MechanismDefinition> = {
     displayName: "Pivot (Turret/Wrist)",
     description: "Rotational mechanism without significant gravity effects",
     templateName: "pivot-subsystem",
+    simTemplateName: "pivot-sim",
     simClassName: "ArmSim",
     requiresGravityCompensation: false,
   },

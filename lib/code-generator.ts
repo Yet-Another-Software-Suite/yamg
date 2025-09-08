@@ -253,8 +253,7 @@ export async function generateFiles(
     subsystemContent = await processTemplate(mechanism.templateName, formData);
 
     // Generate the simulation file
-    const simTemplateName = `${formData.mechanismType.toLowerCase()}-sim`;
-    simContent = await processTemplate(simTemplateName, formData);
+    simContent = await processTemplate(mechanism.simTemplateName, formData);
 
     files.push({
       filename: subsystemFileName,
