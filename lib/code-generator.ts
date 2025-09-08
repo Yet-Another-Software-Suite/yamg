@@ -187,7 +187,7 @@ async function processTemplate(
     let compiledTemplate = Handlebars.compile(template);
     let result = compiledTemplate(templateData);
     while (result.includes("{{#if")) {
-      console.log(result);
+      // console.log(result);
       compiledTemplate = Handlebars.compile(result);
       result = compiledTemplate(templateData);
     }

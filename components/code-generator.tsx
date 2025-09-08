@@ -34,6 +34,7 @@ export default function CodeGenerator() {
   // Generate code when form changes
   useEffect(() => {
     const generate = async () => {
+      console.log("Active Index: "+activeFileIndex)
       if (!shouldRegenerateCode.current) return;
       try {
         setIsGenerating(true);
