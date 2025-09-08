@@ -4,6 +4,7 @@ import { useEffect, useRef, useLayoutEffect, useState } from "react"
 import Prism from "prismjs"
 import "prismjs/components/prism-java"
 import "./prism-frc-theme.css" // Custom theme
+import { FileOutput } from "@/lib/types"
 
 function suppressResizeObserverErrors() {
   const originalConsoleError = console.error
@@ -19,15 +20,17 @@ function suppressResizeObserverErrors() {
 }
 
 interface CodeDisplayProps {
-  code: string
+  files: FileOutput[];
+  activeIndex: number
   language: string
 }
 
-export default function CodeDisplay({ code, language }: CodeDisplayProps) {
+export default function CodeDisplay({ files, activeIndex, language }: CodeDisplayProps) {
   const codeRef = useRef<HTMLPreElement>(null)
   const [displayCode, setDisplayCode] = useState("")
   const [importCount, setImportCount] = useState(0)
   const [lineOffset, setLineOffset] = useState(0)
+  const [lineNumbers, setLineNumbers] = useState([0])
   const [hasImports, setHasImports] = useState(false)
 
   useLayoutEffect(() => {
@@ -41,6 +44,8 @@ export default function CodeDisplay({ code, language }: CodeDisplayProps) {
 
   // Process code whenever it changes
   useEffect(() => {
+    // Get the code
+    var code = files[activeIndex].content;
     // Split code into imports and implementation
     const lines = code.split("\n")
 
@@ -85,30 +90,21 @@ export default function CodeDisplay({ code, language }: CodeDisplayProps) {
 
     // Create the display code - always hide imports
     setDisplayCode(implementationLines.join("\n"))
-  }, [code])
 
-  // Optimize the highlighting to prevent excessive reflows
-  useEffect(() => {
-    if (typeof window !== "undefined" && codeRef.current && displayCode) {
-      // Use requestAnimationFrame to ensure DOM is ready
-      const highlightCode = () => {
-        try {
-          Prism.highlightElement(codeRef.current)
-        } catch (e) {
-          console.warn("Prism highlighting error:", e)
+    // Generate line numbers based on the current display code
+    setLineNumbers(displayCode.split("\n").map((_, index) => index + lineOffset + 1));
+    requestAnimationFrame(()=>{
+      if(codeRef.current)
+      {
+        try{
+          Prism.highlightElement(codeRef.current, false)
+        }catch(e) {
+          console.warn("Prism highlighting error:", e);
         }
       }
+    })
+  }, [files, activeIndex])
 
-      const timeoutId = setTimeout(() => {
-        requestAnimationFrame(highlightCode)
-      }, 0)
-
-      return () => clearTimeout(timeoutId)
-    }
-  }, [displayCode])
-
-  // Generate line numbers based on the current display code
-  const lineNumbers = displayCode.split("\n").map((_, index) => index + lineOffset + 1)
 
   return (
     <div className="relative rounded-md overflow-hidden code-container">
@@ -129,8 +125,8 @@ export default function CodeDisplay({ code, language }: CodeDisplayProps) {
         </div>
 
         {/* Code content */}
-        <pre ref={codeRef} className={`language-${language} p-4 overflow-x-auto flex-1 leading-6`}>
-          <code className={`language-${language}`}>{displayCode}</code>
+        <pre className={`language-${language} p-4 overflow-x-auto flex-1 leading-6`}>
+          <code ref={codeRef} className={`language-${language}`}>{displayCode}</code>
         </pre>
       </div>
     </div>

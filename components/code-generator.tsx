@@ -32,7 +32,9 @@ export default function CodeGenerator() {
   }, [form]);
 
   // Regen code if tab changes.
-  useEffect(()=>{shouldRegenerateCode.current = true}, [activeFileIndex]);
+  useEffect(() => {
+    shouldRegenerateCode.current = true;
+  }, [activeFileIndex]);
 
   // Generate code when form changes
   useEffect(() => {
@@ -40,7 +42,7 @@ export default function CodeGenerator() {
       console.log("Active Index: "+activeFileIndex)
       if (!shouldRegenerateCode.current) return;
       try {
-        setIsGenerating(true);
+        // setIsGenerating(true);
         setError(null);
         const values = form.getValues() as FormValues;
         const generated = await generateFiles(values);

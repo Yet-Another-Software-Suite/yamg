@@ -7,6 +7,7 @@ import JSZip from "jszip";
 import FileSaver from "file-saver";
 import CodeDisplay from "@/components/code-display";
 import type { FileOutput } from "@/lib/types";
+import { useEffect } from "react";
 
 interface Props {
   files: FileOutput[];
@@ -108,7 +109,9 @@ export default function GeneratedCodePanel({
           </Button>
         </div>
       </div>
-      <CodeDisplay code={files[activeIndex].content} language="java" />
+      <CodeDisplay files={files}
+                   activeIndex={activeIndex}
+                   language="java" />
     </div>
   );
 }
