@@ -6,6 +6,8 @@ import {
   getMotorController,
   getWPILibMotorType,
 } from "./config/hardware-config";
+import * as prettier from "prettier";
+import pluginJava from "prettier-plugin-java";
 
 // Initialize Handlebars
 function initializeHandlebars() {
@@ -189,10 +191,10 @@ async function processTemplate(
       compiledTemplate = Handlebars.compile(result);
       result = compiledTemplate(templateData);
     }
-    return result; /*prettier.format(result, {
+    return prettier.format(result, {
       parser: "java",
       plugins: [pluginJava],
-    })*/
+    });
   } catch (error) {
     console.error("Error processing template:", error);
     return "Error processing template: " + (error as Error).message;

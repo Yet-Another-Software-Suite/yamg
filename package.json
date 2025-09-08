@@ -51,8 +51,8 @@
     "next": "15.2.4",
     "next-themes": "^0.4.6",
     "prismjs": "latest",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
     "react-hook-form": "latest",
     "react-resizable-panels": "^2.1.9",
     "recharts": "2.15.0",
@@ -64,17 +64,16 @@
   },
   "devDependencies": {
     "@types/file-saver": "^2.0.7",
-    "@types/node": "^22.15.18",
+    "@types/node": "^22.18.1",
     "@types/prismjs": "^1.26.5",
-    "@types/react": "^19.1.4",
-    "@types/react-dom": "^19.1.5",
-    "eslint": "^9.27.0",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "eslint": "^9.35.0",
     "eslint-config-next": "15.3.2",
-    "postcss": "^8.5.3",
-    "prettier": "^3.5.3",
-    "prettier-plugin-java": "^2.6.7",
+    "postcss": "^8.5.6",
+    "prettier": "^3.6.2",
+    "prettier-plugin-java": "^2.7.4",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.2"
   }
 }
-

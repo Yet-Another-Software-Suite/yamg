@@ -2,8 +2,6 @@
 
 A web-based tool for generating Java code for FRC (FIRST Robotics Competition) mechanisms like elevators, arms, and pivots.
 
-![FRC Mechanism Code Generator Screenshot](/screenshot.png)
-
 ## Overview
 
 This tool helps FRC teams quickly generate well-structured, command-based Java code for common robot mechanisms. It provides:
@@ -11,8 +9,8 @@ This tool helps FRC teams quickly generate well-structured, command-based Java c
 - Form-based configuration for mechanism parameters
 - Real-time simulation of mechanism behavior
 - Generated Java code for subsystems with proper control methods
-- Support for different motor controllers (SparkMAX, SparkFlex, TalonFX, TalonFXS, ThriftyNova)
-- Support for different motor types (NEO, NEO550, Minion, Krakenx44, Krakenx60)
+- Support for different motor controllers (SparkMAX, SparkFlex, TalonFX, TalonFXS, ThriftyNova, Redux Nitro)
+- Support for different motor types (NEO, NEO550, Minion, Krakenx44, Krakenx60, Cu60, Cu40)
 
 ## Features
 
@@ -33,8 +31,8 @@ This tool helps FRC teams quickly generate well-structured, command-based Java c
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/frc-mechanism-generator.git
-   cd frc-mechanism-generator
+   gh repo clone Yet-Another-Software-Suite/yamg
+   cd yamg
    ```
 
 2. Install dependencies:
