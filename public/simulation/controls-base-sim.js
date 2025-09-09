@@ -50,6 +50,9 @@ class ControlsBaseSim {
       Falcon500: { kv: 577, kt: 0.019, R: 0.115 / motorCount, m: 0.31 * motorCount },
       KrakenX60: { kv: 590, kt: 0.021, R: 0.1 / motorCount, m: 0.39 * motorCount },
       KrakenX44: { kv: 590, kt: 0.014, R: 0.15 / motorCount, m: 0.26 * motorCount },
+      Cu60: {kv: 567.6, kt: 0.0166, R: 0.027 / motorCount, m: 0.100 * motorCount},
+      Minion: {kv: 627.6, kt: 0.0155, R: 0.060 / motorCount, m: 0.063 * motorCount},
+      NEOVortex: {kv: 575.1, kt: 	0.0171, R:0.057 / motorCount, m:  0.072 * motorCount}
     }
 
     const constants = motorConstants[motorType] || motorConstants["NEO"]
