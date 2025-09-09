@@ -76,6 +76,7 @@ public class {{subsystemName}} extends SubsystemBase {
  
  // Simulation
  private final SingleJointedArmSim armSim;
+ private final DCMotor dcMotor;
  
  /**
   * Creates a new Arm Subsystem.
@@ -85,8 +86,9 @@ public class {{subsystemName}} extends SubsystemBase {
    {{{motorControllerInitialization}}}
    
    // Initialize simulation
+   dcMotor = {{{dcMotorType}}};
    armSim = new SingleJointedArmSim(
-     {{{dcMotorType}}}, // Motor type
+     dcMotor, // Motor type
      gearRatio,
      SingleJointedArmSim.estimateMOI(armLength, {{mass}}), // Arm moment of inertia
      armLength, // Arm length (m)
@@ -169,7 +171,7 @@ public class {{subsystemName}} extends SubsystemBase {
  @Override
  public void simulationPeriodic() {
    // Set input voltage from motor controller to simulation
-   armSim.setInput(getVoltage());
+   armSim.setInput(dcMotor.getVoltage(dcMotor.getTorque(armSim.getCurrentDrawAmps()), armSim.getVelocityRadPerSec()));
    
    // Update simulation by 20ms
    armSim.update(0.020);

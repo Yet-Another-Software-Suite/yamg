@@ -74,6 +74,7 @@ public class {{subsystemName}} extends SubsystemBase {
   
   // Simulation
   private final ElevatorSim elevatorSim;
+  private final DCMotor dcMotor;
   
   /**
    * Creates a new Elevator Subsystem.
@@ -83,8 +84,9 @@ public class {{subsystemName}} extends SubsystemBase {
     {{{motorControllerInitialization}}}
     
     // Initialize simulation
+    dcMotor = {{{dcMotorType}}};
     elevatorSim = new ElevatorSim(
-      {{{dcMotorType}}}, // Motor type
+      dcMotor, // Motor type
       gearRatio,
       {{mass}}, // Carriage mass (kg)
       drumRadius, // Drum radius (m)
@@ -163,14 +165,16 @@ public class {{subsystemName}} extends SubsystemBase {
    */
   @Override
   public void simulationPeriodic() {
+    // Meters to Rotations Ratio
+    double positionToRotations = (1 / (2.0 * Math.PI * drumRadius)) * gearRatio;
+
     // Set input voltage from motor controller to simulation
-    elevatorSim.setInput(getVoltage());
+    elevatorSim.setInput(dcMotor.getVoltage(dcMotor.getTorque(elevatorSim.getCurrentDrawAmps()), elevatorSim.getVelocityMetersPerSecond() * positionToRotations * 2 * Math.PI));
     
     // Update simulation by 20ms
     elevatorSim.update(0.020);
 
     // Convert meters to motor rotations
-    double positionToRotations = (1 / (2.0 * Math.PI * drumRadius)) * gearRatio;
     double motorPosition = elevatorSim.getPositionMeters() * positionToRotations;
     double motorVelocity = elevatorSim.getVelocityMetersPerSecond() * positionToRotations;
 

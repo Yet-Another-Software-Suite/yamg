@@ -2,7 +2,7 @@ package frc.robot.subsystems;
 
 import edu.wpi.first.epilogue.Logged;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import edu.wpi.first.wpilibj.simulation.SingleJointedpivotSim;
+import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.math.system.plant.DCMotor;
@@ -76,7 +76,8 @@ private final double CONTROL_LOOP_FREQUENCY = 100.0; // Hz
 {{/if}}
 
 // Simulation
-private final SingleJointedpivotSim pivotSim;
+private final SingleJointedArmSim pivotSim;
+private final DCMotor dcMotor;
 
 /**
  * Creates a new Pivot Subsystem.
@@ -87,8 +88,9 @@ public {{subsystemName}}() {
 
   
   // Initialize simulation
-  pivotSim = new SingleJointedpivotSim(
-    {{{dcMotorType}}}, // Motor type
+  dcMotor = {{{dcMotorType}}};
+  pivotSim = new SingleJointedArmSim(
+    dcMotor, // Motor type
     gearRatio,
     0.01, // Arm moment of inertia - Small value since there are no arm parameters
     0.1, // Arm length (m) - Small value since there are no arm parameters
@@ -171,7 +173,7 @@ public void periodic() {
 @Override
 public void simulationPeriodic() {
   // Set input voltage from motor controller to simulation
-  pivotSim.setInput(getVoltage());
+  pivotSim.setInput(dcMotor.getVoltage(dcMotor.getTorque(pivotSim.getCurrentDrawAmps()), pivotSim.getVelocityRadPerSec()));
   
   // Update simulation by 20ms
   pivotSim.update(0.020);
