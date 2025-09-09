@@ -73,7 +73,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                 <FormItem>
                   <FormLabel>Subsystem Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="ElevatorSubsystem" {...field} />
+                    <Input placeholder="MechanismSubsystem" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
