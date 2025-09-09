@@ -1,93 +1,64 @@
-import type { MotorConfig } from "@/lib/types"
+export const getImports = () => `import com.reduxrobotics.nitrate.hardware.ReduxNitrate;
+import com.reduxrobotics.nitrate.hardware.ReduxNitrate.IdleMode;
+import com.reduxrobotics.nitrate.hardware.ReduxNitrate.CurrentLimitConfig;`
 
-export const generateImports = (config: MotorConfig): string[] => {
-  const imports = [
-    "com.reduxrobotics.nitrate.hardware.ReduxNitrate",
-    "com.reduxrobotics.nitrate.hardware.ReduxNitrate.IdleMode",
-  ]
+export const getDeclaration = () => `private final ReduxNitrate motor;`
 
-  if (config.enableCurrentLimit) {
-    imports.push("com.reduxrobotics.nitrate.hardware.ReduxNitrate.CurrentLimitConfig")
-  }
+export const getInitialization = () => `motor = new ReduxNitrate(canID);
 
-  return imports
-}
+// Configure motor
+motor.setNeutralMode(brakeMode ? NeutralMode.BRAKE : NeutralMode.COAST);
 
-export const generateDeclaration = (config: MotorConfig): string => {
-  return `private final ReduxNitrate m_${config.name}Motor;`
-}
+// Configure encoder
+encoder = motor.getEncoder();
+encoder.setPosition(0);
 
-export const generateInitialization = (config: MotorConfig): string => {
-  let code = `    m_${config.name}Motor = new ReduxNitrate(${config.canId});\n`
+// Configure PID controller
+pidController = motor.getPIDController();
+pidController.setP(kP);
+pidController.setI(kI);
+pidController.setD(kD);
 
-  // Configure motor settings
-  code += `    m_${config.name}Motor.restoreFactoryDefaults();\n`
+// Set ramp rates
+{{#if enableOpenLoopRamp}}
+  motor.setOpenLoopRampRate(openLoopRampRate);
+{{/if}}
+{{#if enableClosedLoopRamp}}
+  motor.setClosedLoopRampRate(closedLoopRampRate);
+{{/if}}
 
-  // Set idle mode
-  if (config.brakeMode) {
-    code += `    m_${config.name}Motor.setIdleMode(IdleMode.kBrake);\n`
-  } else {
-    code += `    m_${config.name}Motor.setIdleMode(IdleMode.kCoast);\n`
-  }
+// Set current limits
+{{#if enableStatorLimit}}
+  motor.setCurrentLimit(statorCurrentLimit);
+{{/if}}
+{{#if enableSoftLimits}}
+  motor.configForwardSoftLimit(forwardSoftLimit);
+  motor.enableForwardSoftLimit(true);
+  motor.configReverseSoftLimit(reverseSoftLimit);
+  motor.enableReverseSoftLimit(true);
+{{/if}}`
 
-  // Set current limit
-  if (config.enableCurrentLimit && config.currentLimit) {
-    code += `    m_${config.name}Motor.setSmartCurrentLimit(${config.currentLimit});\n`
-  }
+export const getPeriodic = () => ``
+export const getSimulationPeriodic = () => ``
 
-  // Set supply current limit if supported and enabled
-  if (config.enableSupplyCurrentLimit && config.supplyCurrentLimit) {
-    code += `    m_${config.name}Motor.setSupplyCurrentLimit(${config.supplyCurrentLimit});\n`
-  }
+export const getMethods = () => ({
+  getPositionMethod: `return encoder.getPosition() / gearRatio;`,
 
-  // Set ramp rate
-  if (config.rampRate && config.rampRate > 0) {
-    code += `    m_${config.name}Motor.setOpenLoopRampRate(${config.rampRate});\n`
-    code += `    m_${config.name}Motor.setClosedLoopRampRate(${config.rampRate});\n`
-  }
+  getVelocityMethod: `return encoder.getVelocity() / gearRatio;`,
 
-  // Set soft limits
-  if (config.enableSoftLimits) {
-    if (config.forwardSoftLimit !== undefined) {
-      code += `    m_${config.name}Motor.enableSoftLimit(ReduxNitrate.SoftLimitDirection.kForward, true);\n`
-      code += `    m_${config.name}Motor.setSoftLimit(ReduxNitrate.SoftLimitDirection.kForward, ${config.forwardSoftLimit});\n`
-    }
-    if (config.reverseSoftLimit !== undefined) {
-      code += `    m_${config.name}Motor.enableSoftLimit(ReduxNitrate.SoftLimitDirection.kReverse, true);\n`
-      code += `    m_${config.name}Motor.setSoftLimit(ReduxNitrate.SoftLimitDirection.kReverse, ${config.reverseSoftLimit});\n`
-    }
-  }
+  setPositionMethod: `double adjustedPosition = position * gearRatio;
+double ffVolts = feedforward.calculate(getVelocity(), acceleration);
+pidController.setReference(adjustedPosition, ControlMode.POSITION, ffVolts);`,
 
-  // Invert motor if needed
-  if (config.inverted) {
-    code += `    m_${config.name}Motor.setInverted(true);\n`
-  }
+  setVelocityMethod: `double adjustedVelocity = velocity * gearRatio;
+double ffVolts = feedforward.calculate(velocity, acceleration);
+pidController.setReference(adjustedVelocity, ControlMode.VELOCITY, ffVolts);`,
 
-  code += `    m_${config.name}Motor.burnFlash();\n`
+  setVoltageMethod: `motor.setVoltage(voltage);`,
 
-  return code
-}
+  getVoltageMethod: `return motor.getAppliedOutput() * motor.getBusVoltage();`,
 
-export const generateSetVoltage = (config: MotorConfig): string => {
-  return `m_${config.name}Motor.setVoltage(voltage)`
-}
+  getCurrentMethod: `return motor.getOutputCurrent();`,
 
-export const generateGetPosition = (config: MotorConfig): string => {
-  return `m_${config.name}Motor.getPosition().getValueAsDouble()`
-}
-
-export const generateGetVelocity = (config: MotorConfig): string => {
-  return `m_${config.name}Motor.getVelocity().getValueAsDouble()`
-}
-
-export const generateResetEncoder = (config: MotorConfig): string => {
-  return `m_${config.name}Motor.setPosition(0)`
-}
-
-export const generatePIDController = (config: MotorConfig): string => {
-  return `m_${config.name}Motor.getPIDController()`
-}
-
-export const generateSetReference = (config: MotorConfig, reference: string, controlType: string): string => {
-  return `m_${config.name}Motor.getPIDController().setReference(${reference}, ${controlType})`
-}
+  getTemperatureMethod: `return motor.getTemperature();`,
+})

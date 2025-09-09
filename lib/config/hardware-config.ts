@@ -303,15 +303,15 @@ export function getWPILibMotorType(motorName: string): string {
       return "DCMotor.getKrakenX60(1)"
     case "Minion":
       // From https://store.ctr-electronics.com/products/minion-brushless-motor
-      return customDCMotor(3.1, 200.46, 1.43, 7200) + " // Minion Motor"
+      return customDCMotor(3.1, 200.46, 1.43, 7200) + "; // Minion Motor"
     case "Krakenx44":
       // From https://wcproducts.com/blogs/wcp-blog/kraken-x44
-      return customDCMotor(4.05, 275, 1.4, 7530) + " // Kraken X44"
+      return customDCMotor(4.05, 275, 1.4, 7530) + "; // Kraken X44"
     case "Vortex":
       return "DCMotor.getNEOVortex(1)"
     case "Cu60":
       // Placeholder - will need actual DCMotor specs for Cu60
-      return customDCMotor(4.05, 275, 1.4, 7530) + " // Redux Cu60"
+      return customDCMotor(4.05, 275, 1.4, 7530) + "; // Redux Cu60"
     default:
       return "DCMotor.getNEO(1)"
   }
