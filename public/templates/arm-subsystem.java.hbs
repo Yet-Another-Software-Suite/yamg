@@ -29,6 +29,7 @@ import java.util.function.DoubleSupplier;
 @Logged(name = "{{ntKey}}")
 public class {{subsystemName}} extends SubsystemBase {
  // Constants
+  private final DCMotor dcMotor = {{{dcMotorType}}};
  private final int canID = {{canId}};
  private final double gearRatio = {{gearRatio}};
   private final double kP = {{pidValues.kP}};
@@ -76,8 +77,7 @@ public class {{subsystemName}} extends SubsystemBase {
  
  // Simulation
  private final SingleJointedArmSim armSim;
- private final DCMotor dcMotor;
- 
+
  /**
   * Creates a new Arm Subsystem.
   */
@@ -86,7 +86,6 @@ public class {{subsystemName}} extends SubsystemBase {
    {{{motorControllerInitialization}}}
    
    // Initialize simulation
-   dcMotor = {{{dcMotorType}}};
    armSim = new SingleJointedArmSim(
      dcMotor, // Motor type
      gearRatio,

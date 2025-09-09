@@ -25,6 +25,7 @@ import java.util.function.DoubleSupplier;
 @Logged(name = "{{ntKey}}")
 public class {{subsystemName}} extends SubsystemBase {
   // Constants
+  private final DCMotor dcMotor = {{{dcMotorType}}};
   private final int canID = {{canId}};
   private final double gearRatio = {{gearRatio}};
   private final double kP = {{pidValues.kP}};
@@ -44,6 +45,7 @@ public class {{subsystemName}} extends SubsystemBase {
   private final double drumRadius = {{drumRadius}}; // meters
   private final double minheight = 0;
   private final double maxheight = 1;
+
   
   // Feedforward
   private final ElevatorFeedforward feedforward = new ElevatorFeedforward(
@@ -74,7 +76,6 @@ public class {{subsystemName}} extends SubsystemBase {
   
   // Simulation
   private final ElevatorSim elevatorSim;
-  private final DCMotor dcMotor;
   
   /**
    * Creates a new Elevator Subsystem.
@@ -84,7 +85,6 @@ public class {{subsystemName}} extends SubsystemBase {
     {{{motorControllerInitialization}}}
     
     // Initialize simulation
-    dcMotor = {{{dcMotorType}}};
     elevatorSim = new ElevatorSim(
       dcMotor, // Motor type
       gearRatio,
