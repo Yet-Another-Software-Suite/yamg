@@ -170,7 +170,7 @@ public class {{subsystemName}} extends SubsystemBase {
    // Update simulation by 20ms
    armSim.update(0.020);
    RoboRioSim.setVInVoltage(BatterySim.calculateDefaultBatteryLoadedVoltage(armSim.getCurrentDrawAmps()));
-
+   {{{motorControllerSimulationPeriodic}}}
  }
  
  /**
