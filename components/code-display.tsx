@@ -105,7 +105,9 @@ export default function CodeDisplay({ files, activeIndex, language }: CodeDispla
     })
   }, [files, activeIndex])
 
-  setLineNumbers(displayCode.split("\n").map((_, index) => index + lineOffset + 1));
+  useEffect(() => {
+    setLineNumbers(displayCode.split("\n").map((_, index) => index + lineOffset + 1));
+  }, [displayCode])
 
   return (
     <div className="relative rounded-md overflow-hidden code-container">
