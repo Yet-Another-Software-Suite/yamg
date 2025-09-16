@@ -35,6 +35,10 @@ private final double gearRatio = {{gearRatio}};
   private final double kP = {{pidValues.kP}};
   private final double kI = {{pidValues.kI}};
   private final double kD = {{pidValues.kD}};
+  private final double kS = {{kS}};
+  private final double kV = {{kV}};
+  private final double kA = {{kA}};
+  private final double kG = 0; // Unused for pivots
 private final double maxVelocity = {{maxVelocity}}; // rad/s
 private final double maxAcceleration = {{maxAcceleration}}; // rad/s²
 private final boolean brakeMode = {{brakeMode}};
@@ -49,10 +53,10 @@ private final boolean brakeMode = {{brakeMode}};
 
 // Feedforward
 private final ArmFeedforward feedforward = new ArmFeedforward(
-  {{kS}}, // kS
+  kS, // kS
   0, // kG - Pivot doesn't need gravity compensation
-  {{kV}}, // kV
-  {{kA}}  // kA
+  kV, // kV
+  kA  // kA
 );
 
 // Motor controller

@@ -44,6 +44,16 @@ Slot0Configs slot0 = config.Slot0;
 slot0.kP = kP;
 slot0.kI = kI;
 slot0.kD = kD;
+{{#if (eq mechanismType 'Elevator')}}
+slot0.GravityType = GravityTypeValue.Elevator_Static;
+{{/if}}
+{{#if (eq mechanismType 'Arm')}}
+slot0.GravityType = GravityTypeValue.Arm_Cosine;
+{{/if}}
+slot0.kS = kS;
+slot0.kV = kV;
+slot0.kA = kA;
+slot0.kG = kG;
 
 {{#if enableOpenLoopRamp}}
 // Set ramp rates

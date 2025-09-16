@@ -35,6 +35,10 @@ public class {{subsystemName}} extends SubsystemBase {
   private final double kP = {{pidValues.kP}};
   private final double kI = {{pidValues.kI}};
   private final double kD = {{pidValues.kD}};
+  private final double kS = {{kS}};
+  private final double kV = {{kV}};
+  private final double kA = {{kA}};
+  private final double kG = {{kG}};
  private final double maxVelocity = {{maxVelocity}}; // rad/s
  private final double maxAcceleration = {{maxAcceleration}}; // rad/s²
  private final boolean brakeMode = {{brakeMode}};
@@ -49,12 +53,7 @@ public class {{subsystemName}} extends SubsystemBase {
  private final double armLength = {{armLength}}; // meters
  
  // Feedforward
- private final ArmFeedforward feedforward = new ArmFeedforward(
-   {{kS}}, // kS
-   {{kG}}, // kG
-   {{kV}}, // kV
-   {{kA}}  // kA
- );
+ private final ArmFeedforward feedforward = new ArmFeedforward(kS, kG, kV, kA);
  
  // Motor controller
  {{{motorControllerDeclaration}}}
