@@ -47,13 +47,15 @@ slot0.kD = kD;
 {{#if (eq mechanismType 'Elevator')}}
 slot0.GravityType = GravityTypeValue.Elevator_Static;
 {{/if}}
-{{#if (eq mechanismType 'Arm')}}
+{{#if (or (eq mechanismType 'Arm') (eq mechanismType 'Pivot'))}}
 slot0.GravityType = GravityTypeValue.Arm_Cosine;
 {{/if}}
 slot0.kS = kS;
 slot0.kV = kV;
 slot0.kA = kA;
+{{#if (or (eq mechanismType 'Elevator') (eq mechanismType 'Arm'))}}
 slot0.kG = kG;
+{{/if}}
 
 {{#if enableOpenLoopRamp}}
 // Set ramp rates

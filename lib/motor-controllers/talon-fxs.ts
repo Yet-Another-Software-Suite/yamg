@@ -55,7 +55,9 @@ slot0.GravityType = GravityTypeValue.Arm_Cosine;
 slot0.kS = kS;
 slot0.kV = kV;
 slot0.kA = kA;
+{{#if (or (eq mechanismType 'Elevator') (eq mechanismType 'Arm'))}}
 slot0.kG = kG;
+{{/if}}
 
 {{#if enableOpenLoopRamp}}
 // Set ramp rates
