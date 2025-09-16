@@ -112,11 +112,13 @@ export const getMethods = () => ({
 
   setPositionMethod: `
 double ffVolts = feedforward.calculate(getVelocity(), acceleration);
-motor.setControl(positionRequest.withPosition(positionRotations).withFeedForward(ffVolts));`,
+//motor.setControl(positionRequest.withPosition(positionRotations).withFeedForward(ffVolts));
+motor.setControl(positionRequest.withPosition(positionRotations));`,
 
   setVelocityMethod: `
 double ffVolts = feedforward.calculate(getVelocity(), acceleration);
-motor.setControl(velocityRequest.withVelocity(velocityRotations).withFeedForward(ffVolts));`,
+//motor.setControl(velocityRequest.withVelocity(velocityRotations).withFeedForward(ffVolts));
+motor.setControl(velocityRequest.withVelocity(velocityRotations));`,
 
   setVoltageMethod: `motor.setVoltage(voltage);`,
 
