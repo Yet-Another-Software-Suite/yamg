@@ -90,8 +90,8 @@ public class {{subsystemName}} extends SubsystemBase {
      gearRatio,
      SingleJointedArmSim.estimateMOI(armLength, {{mass}}), // Arm moment of inertia
      armLength, // Arm length (m)
-     Units.degreesToRadians({{hardLimitMinRad}}), // Min angle (rad)
-     Units.degreesToRadians({{hardLimitMaxRad}}), // Max angle (rad)
+     ({{hardLimitMinRad}}), // Min angle (rad)
+     ({{hardLimitMaxRad}}), // Max angle (rad)
      true, // Simulate gravity
      Units.degreesToRadians({{startingPositionRad}}) // Starting position (rad)
    );
