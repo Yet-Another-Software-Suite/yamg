@@ -177,8 +177,9 @@ public void periodic() {
 public void simulationPeriodic() {
   // Set input voltage from motor controller to simulation
   // Note: This may need to be talonfx.getSimState().getMotorVoltage() as the input
-  pivotSim.setInput(dcMotor.getVoltage(dcMotor.getTorque(pivotSim.getCurrentDrawAmps()), pivotSim.getVelocityRadPerSec()));
-  
+  //pivotSim.setInput(dcMotor.getVoltage(dcMotor.getTorque(pivotSim.getCurrentDrawAmps()), pivotSim.getVelocityRadPerSec()));
+  pivotSim.setInput(getVoltage());
+
   // Update simulation by 20ms
   pivotSim.update(0.020);
   RoboRioSim.setVInVoltage(BatterySim.calculateDefaultBatteryLoadedVoltage(pivotSim.getCurrentDrawAmps()));

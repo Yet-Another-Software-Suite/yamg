@@ -169,7 +169,8 @@ public class {{subsystemName}} extends SubsystemBase {
 
     // Set input voltage from motor controller to simulation
     // Note: This may need to be talonfx.getSimState().getMotorVoltage() as the input
-    elevatorSim.setInput(dcMotor.getVoltage(dcMotor.getTorque(elevatorSim.getCurrentDrawAmps()), elevatorSim.getVelocityMetersPerSecond() * positionToRotations * 2 * Math.PI));
+    //elevatorSim.setInput(dcMotor.getVoltage(dcMotor.getTorque(elevatorSim.getCurrentDrawAmps()), elevatorSim.getVelocityMetersPerSecond() * positionToRotations * 2 * Math.PI));
+    elevatorSim.setInput(getVoltage());
     
     // Update simulation by 20ms
     elevatorSim.update(0.020);

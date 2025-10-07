@@ -170,8 +170,9 @@ public class {{subsystemName}} extends SubsystemBase {
  public void simulationPeriodic() {
    // Set input voltage from motor controller to simulation
    // Note: This may need to be talonfx.getSimState().getMotorVoltage() as the input.
-   armSim.setInput(dcMotor.getVoltage(dcMotor.getTorque(armSim.getCurrentDrawAmps()), armSim.getVelocityRadPerSec()));
-   
+   //armSim.setInput(dcMotor.getVoltage(dcMotor.getTorque(armSim.getCurrentDrawAmps()), armSim.getVelocityRadPerSec()));
+   armSim.setInput(getVoltage());
+
    // Update simulation by 20ms
    armSim.update(0.020);
    RoboRioSim.setVInVoltage(BatterySim.calculateDefaultBatteryLoadedVoltage(armSim.getCurrentDrawAmps()));
