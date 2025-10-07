@@ -5,10 +5,13 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.RelativeEncoder;
+import com.revrobotics.spark.SparkSim;
+import com.revrobotics.sim.SparkRelativeEncoderSim;
 `
 
 export const getDeclaration = () => `private final SparkFlex motor;
-private final RelativeEncoder encoder;`
+private final RelativeEncoder encoder;
+private final SparkSim motorSim;`
 
 export const getInitialization = () => `SparkFlexConfig motorConfig = new SparkFlexConfig();
 motor = new SparkFlex(canID, MotorType.kBrushless);
@@ -42,10 +45,11 @@ encoder.setPosition(0);
 {{/if}}
 
 // Save configuration
-motor.configure(motorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);`
+motor.configure(motorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+motorSim = new SparkSim(motor, dcMotor);`
 
 export const getPeriodic = () => ``
-export const getSimulationPeriodic = () => ``
+export const getSimulationPeriodic = () => `motorSim.iterate(motorVelocity,RoboRioSim.getVInVoltage(),0.02);`
 
 export const getMethods = () => ({
   getPositionMethod: `return encoder.getPosition() / gearRatio;`,
