@@ -169,6 +169,7 @@ public class {{subsystemName}} extends SubsystemBase {
  @Override
  public void simulationPeriodic() {
    // Set input voltage from motor controller to simulation
+   // Note: This may need to be talonfx.getSimState().getMotorVoltage() as the input.
    armSim.setInput(dcMotor.getVoltage(dcMotor.getTorque(armSim.getCurrentDrawAmps()), armSim.getVelocityRadPerSec()));
    
    // Update simulation by 20ms
