@@ -168,6 +168,7 @@ public class {{subsystemName}} extends SubsystemBase {
     double positionToRotations = (1 / (2.0 * Math.PI * drumRadius)) * gearRatio;
 
     // Set input voltage from motor controller to simulation
+    // Note: This may need to be talonfx.getSimState().getMotorVoltage() as the input
     elevatorSim.setInput(dcMotor.getVoltage(dcMotor.getTorque(elevatorSim.getCurrentDrawAmps()), elevatorSim.getVelocityMetersPerSecond() * positionToRotations * 2 * Math.PI));
     
     // Update simulation by 20ms
