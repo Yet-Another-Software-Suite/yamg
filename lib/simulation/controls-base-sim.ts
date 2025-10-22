@@ -172,11 +172,11 @@ export class ControlsBaseSim {
 
   calculatePID(error: number): number {
     // Calculate PID output
-    this.integral += error * this.dt
+    this.integral += this.kI * error * this.dt
     const derivative = (error - this.prevError) / this.dt
     this.prevError = error
 
-    return this.kP * error + this.kI * this.integral + this.kD * derivative
+    return this.kP * error +  this.integral + this.kD * derivative
   }
 
   update(dt?: number): void {
