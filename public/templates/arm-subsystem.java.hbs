@@ -175,10 +175,10 @@ public class {{subsystemName}} extends SubsystemBase {
    // Sets input voltage based on whether it is talon fx or not
    {{#if (or (eq motorControllerType 'TalonFX') (eq motorControllerType 'TalonFXS'))}}
    // Use motor voltage for TalonFX simulation input
-   {{{armSim}}}.setInput(talonfx.getSimState().getMotorVoltage());
+   armSim.setInput(talonfx.getSimState().getMotorVoltage());
    {{else}}
    // Use getVoltage() for other controllers
-   {{{armSim}}}.setInput(getVoltage());
+   armSim.setInput(getVoltage());
    {{/if}}
 
    // Update simulation by 20ms

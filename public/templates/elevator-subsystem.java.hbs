@@ -174,10 +174,10 @@ public class {{subsystemName}} extends SubsystemBase {
 
     {{#if (or (eq motorControllerType 'TalonFX') (eq motorControllerType 'TalonFXS'))}}
    // Use motor voltage for TalonFX simulation input
-   {{{elevatorSim}}}.setInput(motor.getSimState().getMotorVoltage());
+   elevatorSim.setInput(motor.getSimState().getMotorVoltage());
    {{else}}
    // Use getVoltage() for other controllers
-   {{{elevatorSim}}}.setInput(getVoltage());
+   elevatorSim.setInput(getVoltage());
    {{/if}}
     
     // Update simulation by 20ms
