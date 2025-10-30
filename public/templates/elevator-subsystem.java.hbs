@@ -170,7 +170,15 @@ public class {{subsystemName}} extends SubsystemBase {
     // Set input voltage from motor controller to simulation
     // Note: This may need to be talonfx.getSimState().getMotorVoltage() as the input
     //elevatorSim.setInput(dcMotor.getVoltage(dcMotor.getTorque(elevatorSim.getCurrentDrawAmps()), elevatorSim.getVelocityMetersPerSecond() * positionToRotations * 2 * Math.PI));
-    elevatorSim.setInput(getVoltage());
+    // elevatorSim.setInput(getVoltage());
+
+    {{#if (or (eq motorControllerType 'TalonFX') (eq motorControllerType 'TalonFXS'))}}
+   // Use motor voltage for TalonFX simulation input
+   elevatorSim.setInput(motor.getSimState().getMotorVoltage());
+   {{else}}
+   // Use getVoltage() for other controllers
+   elevatorSim.setInput(getVoltage());
+   {{/if}}
     
     // Update simulation by 20ms
     elevatorSim.update(0.020);

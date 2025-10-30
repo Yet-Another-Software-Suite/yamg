@@ -178,7 +178,15 @@ public void simulationPeriodic() {
   // Set input voltage from motor controller to simulation
   // Note: This may need to be talonfx.getSimState().getMotorVoltage() as the input
   //pivotSim.setInput(dcMotor.getVoltage(dcMotor.getTorque(pivotSim.getCurrentDrawAmps()), pivotSim.getVelocityRadPerSec()));
-  pivotSim.setInput(getVoltage());
+  // pivotSim.setInput(getVoltage());
+  // Set input voltage from motor controller to simulation
+   {{#if (or (eq motorControllerType 'TalonFX') (eq motorControllerType 'TalonFXS'))}}
+   // Use motor voltage for TalonFX simulation input
+   pivotSim.setInput(motor.getSimState().getMotorVoltage());
+   {{else}}
+   // Use getVoltage() for other controllers
+   pivotSim.setInput(getVoltage());
+   {{/if}}
 
   // Update simulation by 20ms
   pivotSim.update(0.020);
