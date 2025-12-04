@@ -78,11 +78,11 @@ export const getMethods = () => ({
 
   getVelocityMethod: `return encoder.getVelocity();`,
 
-  setPositionMethod: `sparkPidController.setSetpoint(positionRotations.in(Rotations),
+  setPositionMethod: `sparkPidController.setSetpoint(positionRotations,
                                        ControlType.kMAXMotionPositionControl,
                                        ClosedLoopSlot.kSlot0);`,
 
-  setVelocityMethod: `sparkPidController.setSetpoint(angle.in(RotationsPerSecond),
+  setVelocityMethod: `sparkPidController.setSetpoint(velocityRotations,
                                        ControlType.kVelocity,
                                        ClosedLoopSlot.kSlot0);`,
 
