@@ -45,6 +45,16 @@ encoder.setPosition(0);
   .reverseSoftLimitEnabled(true);
 {{/if}}
 
+motorConfig.closedLoop
+          .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
+          .pid(kP,kI,kD,ClosedLoopSlot.kSlot0);
+motorConfig.closedLoop.feedForward.kS(kS).kV(kV).kA(kA);
+{{#if (eq mechanismType 'Arm') }}
+motorConfig.closedLoop.feedForward.kCos(kG);
+{{else}}
+motorConfig.closedLoop.feedForward.kG(kG);
+{{/if}}
+
 // Save configuration
 motor.configure(motorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 motorSim = new SparkSim(motor, dcMotor);`

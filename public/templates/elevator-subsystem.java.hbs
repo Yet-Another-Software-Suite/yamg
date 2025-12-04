@@ -10,7 +10,7 @@ import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj.simulation.BatterySim;
 import edu.wpi.first.wpilibj.simulation.RoboRioSim;
-{{#if isSparkController}}
+{{#if wpilibControlled}}
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.Notifier;
@@ -57,7 +57,7 @@ public class {{subsystemName}} extends SubsystemBase {
   // Motor controller
   {{{motorControllerDeclaration}}}
   
-  {{#if isSparkController}}
+  {{#if wpilibControlled}}
   // Control mode
   public enum ControlMode {
     OPEN_LOOP,
@@ -95,7 +95,7 @@ public class {{subsystemName}} extends SubsystemBase {
       {{startingHeight}} // Starting height (m)
     );
     
-    {{#if isSparkController}}
+    {{#if wpilibControlled}}
     // Initialize ProfiledPIDController
     // Convert from meters to rotations for constraints
     double maxVelocityRotations = maxVelocity / (2.0 * Math.PI * drumRadius);
@@ -106,7 +106,7 @@ public class {{subsystemName}} extends SubsystemBase {
     {{/if}}
   }
   
-  {{#if isSparkController}}
+  {{#if wpilibControlled}}
   /**
    * Control loop function that runs at a fixed frequency.
    * This is used for SparkMAX and SparkFlex controllers to implement
@@ -154,7 +154,7 @@ public class {{subsystemName}} extends SubsystemBase {
   @Override
   public void periodic() {
     {{{motorControllerPeriodic}}}
-    {{#if isSparkController}}
+    {{#if wpilibControlled}}
     controlLoopFn();
     {{/if}}
   }
@@ -282,7 +282,7 @@ public double getPosition{{positionUnit}}() {
     // Convert meters to rotations
     double positionRotations = position / (2.0 * Math.PI * drumRadius);
     
-    {{#if isSparkController}}
+    {{#if wpilibControlled}}
     // Use the ProfiledPIDController
     targetPosition = positionRotations;
     currentControlMode = ControlMode.POSITION;
@@ -315,7 +315,7 @@ public double getPosition{{positionUnit}}() {
     // Convert meters/sec to rotations/sec
     double velocityRotations = velocity / (2.0 * Math.PI * drumRadius);
     
-    {{#if isSparkController}}
+    {{#if wpilibControlled}}
     // Use the ProfiledPIDController
     targetVelocity = velocityRotations;
     currentControlMode = ControlMode.VELOCITY;
@@ -336,7 +336,7 @@ public double getPosition{{positionUnit}}() {
    * @param voltage The voltage to apply
    */
   public void setVoltage(double voltage) {
-    {{#if isSparkController}}
+    {{#if wpilibControlled}}
     currentControlMode = ControlMode.OPEN_LOOP;
     {{/if}}
     {{{setVoltageMethod}}}
@@ -375,7 +375,7 @@ public double getPosition{{positionUnit}}() {
    */
   public Command moveToHeightCommand(double heightMeters) {
     return run(() -> {
-      {{#if isSparkController}}
+      {{#if wpilibControlled}}
       // Just set the position and let the profiled controller handle it
       setPosition(heightMeters);
       {{else}}

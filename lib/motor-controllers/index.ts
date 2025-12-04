@@ -3,7 +3,6 @@ import * as SparkFlex from "./spark-flex";
 import * as TalonFX from "./talon-fx";
 import * as TalonFXS from "./talon-fxs";
 import * as ThriftyNova from "./thrifty-nova";
-import * as ReduxNitrate from "./redux-nitrate";
 import {
   getMotorController,
   getWPILibMotorType,
@@ -15,7 +14,6 @@ const motorModules = {
   TalonFX,
   TalonFXS,
   ThriftyNova,
-  ReduxNitrate,
 } as const;
 
 export type MotorType = keyof typeof motorModules;
@@ -31,8 +29,8 @@ export const getMotorType = (type: string) => {
 };
 
 // Check if a motor controller is a REV controller (SparkMAX or SparkFlex)
-export const isRevController = (type: string) => {
-  return type === "SparkMAX" || type === "SparkFlex";
+export const isWPILibControlled = (type: string) => {
+  return type === "ThriftyNova";
 };
 
 // Check if a motor controller supports supply current limits

@@ -1,7 +1,7 @@
 export interface FormValues {
   subsystemName: string
   mechanismType: "Elevator" | "Arm" | "Pivot"
-  motorControllerType: "ThriftyNova" | "SparkMAX" | "SparkFlex" | "TalonFX" | "TalonFXS" | "ReduxNitrate"
+  motorControllerType: "ThriftyNova" | "SparkMAX" | "SparkFlex" | "TalonFX" | "TalonFXS" 
   motorType: "NEO" | "NEO550" | "Minion" | "Krakenx44" | "Krakenx60" | "Vortex" | "Cu60" 
   canId: number
   pidValues: {

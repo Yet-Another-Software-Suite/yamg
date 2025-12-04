@@ -14,7 +14,7 @@ import static edu.wpi.first.units.Units.Radians;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
-{{#if isSparkController}}
+{{#if wpilibControlled}}
 import edu.wpi.first.math.controller.ProfiledPIDController;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.Notifier;
@@ -58,7 +58,7 @@ public class {{subsystemName}} extends SubsystemBase {
  // Motor controller
  {{{motorControllerDeclaration}}}
  
- {{#if isSparkController}}
+ {{#if wpilibControlled}}
  // Control mode
  private enum ControlMode {
    OPEN_LOOP,
@@ -96,7 +96,7 @@ public class {{subsystemName}} extends SubsystemBase {
      ({{startingPositionRad}}) // Starting position (rad)
    );
    
-   {{#if isSparkController}}
+   {{#if wpilibControlled}}
    // Initialize ProfiledPIDController
    // Convert from radians to rotations for constraints
    double maxVelocityRotations = maxVelocity / (2.0 * Math.PI);
@@ -107,7 +107,7 @@ public class {{subsystemName}} extends SubsystemBase {
    {{/if}}
  }
  
- {{#if isSparkController}}
+ {{#if wpilibControlled}}
  /**
   * Control loop function that runs at a fixed frequency.
   * This is used for SparkMAX and SparkFlex controllers to implement
@@ -158,7 +158,7 @@ public class {{subsystemName}} extends SubsystemBase {
  @Override
  public void periodic() {
    {{{motorControllerPeriodic}}}
-{{#if isSparkController}}
+{{#if wpilibControlled}}
    controlLoopFn();
 {{/if}}
  }
@@ -281,7 +281,7 @@ public double getTemperature() {
    double angleRadians = Units.degreesToRadians(angleDegrees);
    double positionRotations = angleRadians / (2.0 * Math.PI);
    
-   {{#if isSparkController}}
+   {{#if wpilibControlled}}
    // Use the ProfiledPIDController
    targetPosition = positionRotations;
    currentControlMode = ControlMode.POSITION;
@@ -315,7 +315,7 @@ public double getTemperature() {
    double velocityRadPerSec = Units.degreesToRadians(velocityDegPerSec);
    double velocityRotations = velocityRadPerSec / (2.0 * Math.PI);
    
-   {{#if isSparkController}}
+   {{#if wpilibControlled}}
    // Use the ProfiledPIDController
    targetVelocity = velocityRotations;
    currentControlMode = ControlMode.VELOCITY;
@@ -342,7 +342,7 @@ public double getTemperature() {
   * @param voltage The voltage to apply
   */
  public void setVoltage(double voltage) {
-   {{#if isSparkController}}
+   {{#if wpilibControlled}}
    currentControlMode = ControlMode.OPEN_LOOP;
    {{/if}}
    {{{setVoltageMethod}}}
@@ -372,7 +372,7 @@ public double getTemperature() {
   */
  public Command moveToAngleCommand(double angleDegrees) {
    return run(() -> {
-     {{#if isSparkController}}
+     {{#if wpilibControlled}}
      // Just set the position and let the profiled controller handle it
      setAngle(angleDegrees);
      {{else}}

@@ -1,6 +1,6 @@
 import type { FormValues, FileOutput } from "./types";
 import Handlebars from "handlebars";
-import { getMotorControllerModule, isRevController } from "./motor-controllers";
+import { getMotorControllerModule, isWPILibControlled } from "./motor-controllers";
 import {
   getMechanism,
   getMotorController,
@@ -59,7 +59,7 @@ async function processTemplate(
   // Add additional template data
   const templateData = {
     ...data,
-    isSparkController: isRevController(data.motorControllerType),
+    wpilibControlled: isWPILibControlled(data.motorControllerType),
     positionUnit: data.telemetry.positionUnit,
     ntKey: data.telemetry.ntKey,
     logPosition: data.telemetry.position,

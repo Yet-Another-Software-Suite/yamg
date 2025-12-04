@@ -50,7 +50,7 @@ export const MOTORS: Record<string, MotorDefinition> = {
     km: 0.070,
     resistance: 0.066,
     mass: 0.53977492,
-    compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova", "ReduxNitrate"],
+    compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova"],
     description: "REV Robotics NEO Brushless Motor",
   },
   NEO550: {
@@ -61,7 +61,7 @@ export const MOTORS: Record<string, MotorDefinition> = {
     km: 0.030,
     resistance: 0.108,
     mass: 0.2540117,
-    compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova", "ReduxNitrate"],
+    compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova"],
     description: "REV Robotics NEO 550 Brushless Motor",
   },
   Minion: {
@@ -72,7 +72,7 @@ export const MOTORS: Record<string, MotorDefinition> = {
     km: 0.063,
     resistance: 0.060,
     mass: 0.4399846,
-    compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova", "ReduxNitrate"],
+    compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova"],
     description: "REV Robotics Minion Brushless Motor",
   },
   Vortex: {
@@ -83,19 +83,8 @@ export const MOTORS: Record<string, MotorDefinition> = {
     km: 0.072,
     resistance: 0.057, 
     mass: 0.5805982, 
-    compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ReduxNitrate"],
+    compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS"],
     description: "REV Robotics NEO Vortex Brushless Motor",
-  },
-  Cu60: {
-    name: "Cu60",
-    displayName: "Redux Cu60",
-    kv: 567.6, 
-    kt: 0.0166, 
-    km: 0.100,
-    resistance: 0.027, 
-    mass: 0.635029, 
-    compatibleControllers: ["ReduxNitrate"],
-    description: "Redux Robotics Cu60 Brushless Motor",
   },
   Krakenx44: {
     name: "Krakenx44",
@@ -186,19 +175,6 @@ export const MOTOR_CONTROLLERS: Record<string, MotorControllerDefinition> = {
     importPath: "com.thriftyrobotics.nova.hardware.ThriftyNova",
     description: "Thrifty Robotics Nova Motor Controller",
     maxCurrentLimit: 60,
-    maxVoltage: 12,
-  },
-  ReduxNitrate: {
-    name: "ReduxNitrate",
-    displayName: "Redux Nitrate",
-    supportsCurrentLimit: true,
-    supportsSupplyCurrentLimit: true,
-    supportsBrakeMode: true,
-    supportsRampRate: true,
-    supportsSoftLimits: true,
-    importPath: "com.reduxrobotics.nitrate.hardware.ReduxNitrate",
-    description: "Redux Robotics Nitrate Motor Controller",
-    maxCurrentLimit: 80, // Placeholder - will need actual specs
     maxVoltage: 12,
   },
 }
@@ -317,9 +293,6 @@ export function getWPILibMotorType(motorName: string): string {
       return customDCMotor(4.05, 275, 1.4, 7530) + "; // Kraken X44"
     case "Vortex":
       return "DCMotor.getNEOVortex(1)"
-    case "Cu60":
-      // Placeholder - will need actual DCMotor specs for Cu60
-      return customDCMotor(4.05, 275, 1.4, 7530) + "; // Redux Cu60"
     default:
       return "DCMotor.getNEO(1)"
   }
