@@ -7,11 +7,16 @@ import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkSim;
 import com.revrobotics.sim.SparkRelativeEncoderSim;
+import com.revrobotics.spark.SparkClosedLoopController;
+import com.revrobotics.spark.FeedbackSensor;
+import com.revrobotics.spark.ClosedLoopSlot;
+import com.revrobotics.spark.SparkBase.ControlType;
 `
 
 export const getDeclaration = () => `private final SparkFlex motor;
 private final RelativeEncoder encoder;
-private final SparkSim motorSim;`
+private final SparkSim motorSim;
+private final SparkClosedLoopController sparkPidController;`
 
 export const getInitialization = () => `SparkFlexConfig motorConfig = new SparkFlexConfig();
 motor = new SparkFlex(canID, MotorType.kBrushless);
@@ -20,6 +25,7 @@ motorConfig.idleMode(brakeMode ? IdleMode.kBrake : IdleMode.kCoast);
 // Configure encoder
 encoder = motor.getEncoder();
 encoder.setPosition(0);
+
 
 // Set ramp rates
 {{#if enableOpenLoopRamp}}
@@ -44,6 +50,8 @@ encoder.setPosition(0);
   .reverseSoftLimitEnabled(true);
 {{/if}}
 
+// Configure Feedback and Feedforward
+sparkPidController = motor.getClosedLoopController();
 motorConfig.closedLoop
           .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
           .pid(kP,kI,kD,ClosedLoopSlot.kSlot0);
@@ -53,6 +61,10 @@ motorConfig.closedLoop.feedForward.kCos(kG);
 {{else}}
 motorConfig.closedLoop.feedForward.kG(kG);
 {{/if}}
+
+// Configure Encoder Gear Ratio
+motorConfig.encoder.positionConversionFactor(1/gearRatio)
+                             .velocityConversionFactor((1/gearRatio)/60); // Covnert RPM to RPS
 
 // Save configuration
 motor.configure(motorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
@@ -66,14 +78,13 @@ export const getMethods = () => ({
 
   getVelocityMethod: `return encoder.getVelocity() / gearRatio / 60.0; // Convert from RPM to RPS`,
 
-  setPositionMethod: `double adjustedPosition = position * gearRatio;
-profiledPIDController.setReference(adjustedPosition, CANSparkBase.ControlType.kPosition, 0, 
-    feedforward.calculate(getVelocity(), acceleration));`,
+  setPositionMethod: `sparkPidController.setSetpoint(positionRotations.in(Rotations),
+                                       ControlType.kMAXMotionPositionControl,
+                                       ClosedLoopSlot.kSlot0);`,
 
-  setVelocityMethod: `// This code is not used for SparkFlex as they use the control loop instead
-// Placeholder to satisfy the compiler
-double adjustedVelocity = velocity * gearRatio * 60.0;
-double ffVolts = feedforward.calculate(velocity, acceleration);`,
+  setVelocityMethod: `sparkPidController.setSetpoint(angle.in(RotationsPerSecond),
+                                       ControlType.kVelocity,
+                                       ClosedLoopSlot.kSlot0);`,
 
   setVoltageMethod: `motor.setVoltage(voltage);`,
 

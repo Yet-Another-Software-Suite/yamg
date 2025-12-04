@@ -6,7 +6,6 @@ const RECALC_MOTOR_MAPPING: Record<string, string> = {
   Krakenx60: "Kraken X60 (FOC)*",
   Vortex: "NEO Vortex",
   Minion: "Minion*",
-  Cu60: "Cu60", 
 }
 
 export interface ReCalcArmParams {

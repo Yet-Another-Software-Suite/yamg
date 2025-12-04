@@ -315,8 +315,6 @@ export function getSimMotorType(motorName: string): string {
       return "Minion" 
     case "Vortex":
       return "NEOVortex"
-    case "Cu60":
-      return "Cu60"
     default:
       return "NEO"
   }

@@ -7,12 +7,17 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.SparkSim;
 import com.revrobotics.sim.SparkRelativeEncoderSim;
+import com.revrobotics.spark.SparkClosedLoopController;
+import com.revrobotics.spark.FeedbackSensor;
+import com.revrobotics.spark.ClosedLoopSlot;
+import com.revrobotics.spark.SparkBase.ControlType;
 `
 
 
 export const getDeclaration = () => `private final SparkMax motor;
 private final RelativeEncoder encoder;
-private final SparkSim motorSim;`
+private final SparkSim motorSim;
+private final SparkClosedLoopController sparkPidController;`
 
 export const getInitialization = () => `SparkMaxConfig motorConfig = new SparkMaxConfig();
 motor = new SparkMax(canID, MotorType.kBrushless);
@@ -45,6 +50,8 @@ encoder.setPosition(0);
   .reverseSoftLimitEnabled(true);
 {{/if}}
 
+// Configure Feedback and Feedforward
+sparkPidController = motor.getClosedLoopController();
 motorConfig.closedLoop
           .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
           .pid(kP,kI,kD,ClosedLoopSlot.kSlot0);
@@ -55,26 +62,29 @@ motorConfig.closedLoop.feedForward.kCos(kG);
 motorConfig.closedLoop.feedForward.kG(kG);
 {{/if}}
 
+// Configure Encoder Gear Ratio
+motorConfig.encoder.positionConversionFactor(1/gearRatio)
+                             .velocityConversionFactor((1/gearRatio)/60); // Covnert RPM to RPS
+
 // Save configuration
 motor.configure(motorConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 motorSim = new SparkSim(motor, dcMotor);`
 
 export const getPeriodic = () => ``
-export const getSimulationPeriodic = () => `motorSim.iterate(motorVelocity*60,RoboRioSim.getVInVoltage(),0.02);`
+export const getSimulationPeriodic = () => `motorSim.iterate(motorVelocity,RoboRioSim.getVInVoltage(),0.02);`
 
 export const getMethods = () => ({
-  getPositionMethod: `return encoder.getPosition() / gearRatio;`,
+  getPositionMethod: `return encoder.getPosition();`,
 
-  getVelocityMethod: `return encoder.getVelocity() / gearRatio / 60.0; // Convert from RPM to RPS`,
+  getVelocityMethod: `return encoder.getVelocity();`,
 
-  setPositionMethod: `double adjustedPosition = position * gearRatio;
-profiledPIDController.setReference(adjustedPosition, CANSparkBase.ControlType.kPosition, 0, 
-    feedforward.calculate(getVelocity(), acceleration));`,
+  setPositionMethod: `sparkPidController.setSetpoint(positionRotations.in(Rotations),
+                                       ControlType.kMAXMotionPositionControl,
+                                       ClosedLoopSlot.kSlot0);`,
 
-  setVelocityMethod: `// This code is not used for SparkMAX as they use the control loop instead
-// Placeholder to satisfy the compiler
-double adjustedVelocity = velocity * gearRatio * 60.0;
-double ffVolts = feedforward.calculate(velocity, acceleration);`,
+  setVelocityMethod: `sparkPidController.setSetpoint(angle.in(RotationsPerSecond),
+                                       ControlType.kVelocity,
+                                       ClosedLoopSlot.kSlot0);`,
 
   setVoltageMethod: `motor.setVoltage(voltage);`,
 
