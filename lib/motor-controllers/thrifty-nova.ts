@@ -7,12 +7,6 @@ export const getInitialization = () => `motor = new ThriftyNova(canID);
 // Configure motor
 motor.setBrakeMode(brakeMode);
 
-// // Configure PID controller
-// pidController = motor.getPIDController();
-// pidController.setP(kP);
-// pidController.setI(kI);
-// pidController.setD(kD);
-
 // Set ramp rates
 {{#if enableOpenLoopRamp}}
   motor.setOpenLoopRampRate(openLoopRampRate);
@@ -40,13 +34,9 @@ export const getMethods = () => ({
 
   getVelocityMethod: `return encoder.getVelocityQuad() / gearRatio;`,
 
-  setPositionMethod: `double adjustedPosition = position * gearRatio;
-double ffVolts = feedforward.calculate(getVelocity(), acceleration);
-pidController.setReference(adjustedPosition, ControlMode.POSITION, ffVolts);`,
+  setPositionMethod: ``,
 
-  setVelocityMethod: `double adjustedVelocity = velocity * gearRatio;
-double ffVolts = feedforward.calculate(velocity, acceleration);
-pidController.setReference(adjustedVelocity, ControlMode.VELOCITY, ffVolts);`,
+  setVelocityMethod: ``,
 
   setVoltageMethod: `motor.setVoltage(voltage);`,
 
