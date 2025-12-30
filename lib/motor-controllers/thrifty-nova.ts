@@ -1,21 +1,11 @@
-export const getImports = () => `import com.thriftyrobotics.nova.hardware.ThriftyNova;
-import com.thriftyrobotics.nova.hardware.ThriftyEncoder;
-import com.thriftyrobotics.nova.controller.PIDController;
-import com.thriftyrobotics.nova.controller.ControlMode;
-import com.thriftyrobotics.nova.controller.NeutralMode;`
+export const getImports = () => `import com.thriftybot.devices.ThriftyNova;`
 
-export const getDeclaration = () => `private final ThriftyNova motor;
-private final ThriftyEncoder encoder;
-private final PIDController pidController;`
+export const getDeclaration = () => `private final ThriftyNova motor;`
 
 export const getInitialization = () => `motor = new ThriftyNova(canID);
 
 // Configure motor
-motor.setNeutralMode(brakeMode ? NeutralMode.BRAKE : NeutralMode.COAST);
-
-// Configure encoder
-encoder = motor.getEncoder();
-encoder.setPosition(0);
+motor.setBrakeMode(brakeMode);
 
 // Configure PID controller
 pidController = motor.getPIDController();
@@ -46,9 +36,9 @@ export const getPeriodic = () => ``
 export const getSimulationPeriodic = () => ``
 
 export const getMethods = () => ({
-  getPositionMethod: `return encoder.getPosition() / gearRatio;`,
+  getPositionMethod: `return encoder.getPositionQuad() / gearRatio;`,
 
-  getVelocityMethod: `return encoder.getVelocity() / gearRatio;`,
+  getVelocityMethod: `return encoder.getVelocityQuad() / gearRatio;`,
 
   setPositionMethod: `double adjustedPosition = position * gearRatio;
 double ffVolts = feedforward.calculate(getVelocity(), acceleration);
