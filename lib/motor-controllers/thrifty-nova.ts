@@ -7,11 +7,11 @@ export const getInitialization = () => `motor = new ThriftyNova(canID);
 // Configure motor
 motor.setBrakeMode(brakeMode);
 
-// Configure PID controller
-pidController = motor.getPIDController();
-pidController.setP(kP);
-pidController.setI(kI);
-pidController.setD(kD);
+// // Configure PID controller
+// pidController = motor.getPIDController();
+// pidController.setP(kP);
+// pidController.setI(kI);
+// pidController.setD(kD);
 
 // Set ramp rates
 {{#if enableOpenLoopRamp}}
