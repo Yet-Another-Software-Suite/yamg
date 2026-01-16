@@ -12,7 +12,6 @@ import {
 } from "@/lib/config/hardware-config"
 
 describe("Hardware Configuration", () => {
-  /* ------------------ getMotor ------------------ */
   describe("getMotor", () => {
     it("returns a valid motor definition", () => {
       const motor = getMotor("NEO")
@@ -27,7 +26,6 @@ describe("Hardware Configuration", () => {
     })
   })
 
-  /* ------------------ getMotorController ------------------ */
   describe("getMotorController", () => {
     it("returns a valid motor controller definition", () => {
       const controller = getMotorController("SparkMAX")
@@ -42,7 +40,6 @@ describe("Hardware Configuration", () => {
     })
   })
 
-  /* ------------------ getMechanism ------------------ */
   describe("getMechanism", () => {
     it("returns a valid mechanism definition", () => {
       const mech = getMechanism("Elevator")
@@ -56,7 +53,6 @@ describe("Hardware Configuration", () => {
     })
   })
 
-  /* ------------------ Compatibility ------------------ */
   describe("isMotorCompatibleWithController", () => {
     it("returns true for compatible motor/controller", () => {
       expect(isMotorCompatibleWithController("NEO", "SparkMAX")).toBe(true)
@@ -75,7 +71,6 @@ describe("Hardware Configuration", () => {
     })
   })
 
-  /* ------------------ getCompatibleMotors ------------------ */
   describe("getCompatibleMotors", () => {
     it("returns motors compatible with a given controller", () => {
       const motors = getCompatibleMotors("SparkMAX")
@@ -92,7 +87,6 @@ describe("Hardware Configuration", () => {
     })
   })
 
-  /* ------------------ WPILib motor mapping ------------------ */
   describe("getWPILibMotorType", () => {
     it("returns correct WPILib string for known motors", () => {
       expect(getWPILibMotorType("NEO")).toBe("DCMotor.getNEO(1)")
@@ -111,7 +105,6 @@ describe("Hardware Configuration", () => {
     })
   })
 
-  /* ------------------ Simulation motor mapping ------------------ */
   describe("getSimMotorType", () => {
     it("returns correct sim motor type", () => {
       expect(getSimMotorType("NEO")).toBe("NEO")
@@ -124,7 +117,6 @@ describe("Hardware Configuration", () => {
     })
   })
 
-  /* ------------------ Data integrity ------------------ */
   describe("data integrity", () => {
     it("all motors reference valid controllers", () => {
       for (const motor of Object.values(MOTORS)) {
