@@ -22,7 +22,7 @@ const SimulationComponent = dynamic(() => import("@/components/simulation-compon
 })
 
 // Add error handling for the simulation component
-function SimulationErrorBoundary({ children }) {
+function SimulationErrorBoundary({ children }: { children: React.ReactNode }) {
   const [hasError, setHasError] = useState(false)
 
   useLayoutEffect(() => {
@@ -58,7 +58,7 @@ function SimulationErrorBoundary({ children }) {
     )
   }
 
-  return children
+  return <>{children}</>
 }
 
 interface SimulationTabProps {
@@ -81,6 +81,26 @@ export default function SimulationTab({ formValues }: SimulationTabProps) {
       }
     }
   }
+
+  // Pull soft limit values safely (adjust names if your schema differs)
+  const softLimits = (formValues as any)?.softLimits
+  const softEnabled = softLimits?.enabled ?? false
+  const softMin = softLimits?.min ?? null
+  const softMax = softLimits?.max ?? null
+
+  // Stable key: NO Date.now() (prevents constant remounting)
+  // Include values that should actually rebuild the simulation when changed
+  const simKey = [
+    formValues.mechanismType,
+    formValues.motorType,
+    formValues.gearRatio,
+    JSON.stringify(formValues.pidValues),
+    motorCount,
+    simType,
+    softEnabled,
+    softMin,
+    softMax,
+  ].join("|")
 
   return (
     <Card className="w-full">
@@ -117,7 +137,7 @@ export default function SimulationTab({ formValues }: SimulationTabProps) {
               formValues={formValues}
               simType={simType}
               motorCount={motorCount}
-              key={`${formValues.mechanismType}-${formValues.motorType}-${formValues.gearRatio}-${JSON.stringify(formValues.pidValues)}-${motorCount}-${Date.now()}`}
+              key={simKey}
             />
           </SimulationErrorBoundary>
         </div>

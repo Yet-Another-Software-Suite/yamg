@@ -24,6 +24,10 @@ function suppressResizeObserverErrors() {
     }
     originalConsoleError.apply(console, args)
   }
+
+  return () => {
+    console.error = originalConsoleError
+  }
 }
 
 interface SimulationComponentProps {
@@ -50,14 +54,10 @@ export default function SimulationComponent({ formValues, simType, motorCount }:
     latestMotorCountRef.current = motorCount
   }, [formValues, motorCount])
 
-  // Add this hook inside the SimulationComponent function, near the top after the state declarations
+  // Suppress ResizeObserver errors safely + restore on unmount
   useLayoutEffect(() => {
-    suppressResizeObserverErrors()
-
-    // Clean up
-    return () => {
-      console.error = console.error
-    }
+    const restore = suppressResizeObserverErrors()
+    return () => restore()
   }, [])
 
   // Function to create/recreate simulation instance
@@ -90,11 +90,13 @@ export default function SimulationComponent({ formValues, simType, motorCount }:
         setTargetValue(sliderConfig.initialValue)
 
         console.log("Created simulation instance with motor count:", currentMotorCount)
+        console.log("Sim build softLimits:", (currentFormValues as any)?.softLimits)
+
         return sim
       }
-    } catch (error) {
-      console.error("Error creating simulation:", error)
-      setError(`Failed to create simulation: ${error instanceof Error ? error.message : String(error)}`)
+    } catch (err) {
+      console.error("Error creating simulation:", err)
+      setError(`Failed to create simulation: ${err instanceof Error ? err.message : String(err)}`)
     }
 
     return null
@@ -106,41 +108,30 @@ export default function SimulationComponent({ formValues, simType, motorCount }:
     if (sim) {
       setSimInstance(sim)
     }
+    // Stop animation if we rebuilt the sim while running
+    setIsRunning(false)
   }, [formValues, simType, motorCount])
 
-  // Fix the animation loop to ensure consistent updates
-  // Replace the entire animation loop useEffect with this improved version
   // Handle animation loop
   useEffect(() => {
     if (!simInstance) return
 
-    // Animation function that gets called repeatedly
     const animate = () => {
-      // Update simulation with fixed time step for consistent physics
       simInstance.update(0.02) // 20ms fixed time step
-
-      // Draw the updated state
       simInstance.draw()
 
-      // Continue the animation loop
       if (isRunning) {
         animationRef.current = requestAnimationFrame(animate)
       }
     }
 
-    // Start or stop the animation loop based on isRunning state
     if (isRunning) {
-      console.log("Starting animation loop")
-      // Start the animation loop
       animationRef.current = requestAnimationFrame(animate)
     } else if (animationRef.current) {
-      console.log("Stopping animation loop")
-      // Stop the animation loop
       cancelAnimationFrame(animationRef.current)
       animationRef.current = null
     }
 
-    // Clean up when component unmounts or dependencies change
     return () => {
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current)
@@ -157,16 +148,13 @@ export default function SimulationComponent({ formValues, simType, motorCount }:
   }, [simType, simInstance])
 
   const toggleSimulation = () => {
-    // When starting the simulation, ensure we have a valid target
     if (!isRunning && simInstance) {
-      // Set the target based on the current slider value
       if (simType === "position") {
         simInstance.setTarget(convertTargetValue(targetValue, formValues, simType))
       } else {
         simInstance.setTargetVelocity(convertTargetValue(targetValue, formValues, simType))
       }
 
-      // Force an initial update to get things moving
       simInstance.update(0.02)
       simInstance.draw()
 
@@ -177,15 +165,12 @@ export default function SimulationComponent({ formValues, simType, motorCount }:
   }
 
   const resetSimulation = () => {
-    // Stop the simulation if it's running
     setIsRunning(false)
 
-    // Create a new simulation instance with the latest form values
     const newSim = createSimulationInstance(true)
     if (newSim) {
       setSimInstance(newSim)
 
-      // Reset target value to initial position based on latest form values
       const sliderConfig = getSliderRangeConfig(latestFormValuesRef.current, simType)
       setTargetValue(sliderConfig.initialValue)
 
@@ -206,16 +191,14 @@ export default function SimulationComponent({ formValues, simType, motorCount }:
         simInstance.setTargetVelocity(convertTargetValue(newTarget, formValues, simType))
       }
 
-      // Redraw if not running
       if (!isRunning) {
         simInstance.draw()
       }
-    } catch (error) {
-      console.error("Error setting target:", error)
+    } catch (err) {
+      console.error("Error setting target:", err)
     }
   }
 
-  // Get min/max values for slider based on mechanism type
   const sliderRange = getSliderRangeConfig(formValues, simType)
 
   if (error) {
