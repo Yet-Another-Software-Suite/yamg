@@ -39,8 +39,8 @@ public class {{subsystemName}} extends SubsystemBase {
   private final double maxAcceleration = {{maxAcceleration}}; // meters per second squared
   private final boolean brakeMode = {{brakeMode}};
  {{#if enableSoftLimits}}
-  private final double forwardSoftLimit = {{forwardSoftLimit}}; // max angle in meters
-  private final double reverseSoftLimit = {{reverseSoftLimit}}; // min angle in meters
+  private final double forwardSoftLimit = {{forwardSoftLimit}}; // max height in meters
+  private final double reverseSoftLimit = {{reverseSoftLimit}}; // min height in meters
  {{/if}}
   private final boolean enableStatorLimit = {{enableStatorLimit}};
   private final int statorCurrentLimit = {{statorCurrentLimit}};
@@ -65,8 +65,8 @@ public class {{subsystemName}} extends SubsystemBase {
     VELOCITY
   }
   private ControlMode currentControlMode = ControlMode.OPEN_LOOP;
-  private double targetPosition = 0.0;
-  private double targetVelocity = 0.0;
+  private double targetPosition = 0.0; // meters
+  private double targetVelocity = 0.0; // meters per second
   
   // Profiled PID Controller
   private ProfiledPIDController profiledPIDController;
@@ -97,11 +97,8 @@ public class {{subsystemName}} extends SubsystemBase {
     
     {{#if wpilibControlled}}
     // Initialize ProfiledPIDController
-    // Convert from meters to rotations for constraints
-    double maxVelocityRotations = maxVelocity / (2.0 * Math.PI * drumRadius);
-    double maxAccelerationRotations = maxAcceleration / (2.0 * Math.PI * drumRadius);
-    
-    constraints = new TrapezoidProfile.Constraints(maxVelocityRotations, maxAccelerationRotations);
+    // Constraints are expressed in meters and meters/sec
+    constraints = new TrapezoidProfile.Constraints(maxVelocity, maxAcceleration);
     profiledPIDController = new ProfiledPIDController(kP, kI, kD, constraints);
     {{/if}}
   }
@@ -193,18 +190,28 @@ public class {{subsystemName}} extends SubsystemBase {
  
   
   /**
-   * Get the current position in the Rotations.
-   * @return Position in Rotations
+   * Get the current elevator position in meters.
+   * @return Position in meters
    */
    {{#if logPosition}}
-   @Logged(name = "Position/Rotations")
+   @Logged(name = "Position/Meters")
    {{/if}}
   public double getPosition() {
-    // Rotations
-      {{{getPositionMethod}}}
+    // Underlying sensor/controller reports rotations; convert to meters.
+    double rotations = {{{getPositionMethod}}};
+    return (rotations / gearRatio) * (2.0 * Math.PI * drumRadius);
   }
 
-  {{#if (or (eq positionUnit 'Degrees') (eq positionUnit 'Radians'))}}
+  /**
+   * Get the current elevator position in rotations (raw).
+   * @return Position in rotations
+   */
+  public double getPositionRotations() {
+    // Rotations (raw)
+    return {{{getPositionMethod}}};
+  }
+
+{{#if (or (eq positionUnit 'Degrees') (eq positionUnit 'Radians'))}}
   /**
    * Get the current position in {{positionUnit}}.
    * @return Position in {{positionUnit}}.
@@ -214,22 +221,24 @@ public class {{subsystemName}} extends SubsystemBase {
   {{/if}}
 public double getPosition{{positionUnit}}() {
   {{#if (eq positionUnit 'Degrees')}}
-  return getPosition() * 360;
+  return getPositionRotations() * 360;
   {{else}}
-  return getPosition() * 2 * Math.PI;
+  return getPositionRotations() * 2 * Math.PI;
   {{/if}}
 }
 {{/if}}
   
   /**
-   * Get the current velocity in rotations per second.
-   * @return Velocity in rotations per second
+   * Get the current elevator velocity in meters per second.
+   * @return Velocity in meters per second
    */
    {{#if logVelocity}}
-   @Logged(name = "Velocity")
+   @Logged(name = "Velocity/MetersPerSecond")
    {{/if}}
   public double getVelocity() {
-    {{{getVelocityMethod}}}
+    // Underlying sensor/controller reports rotations/sec; convert to meters/sec.
+    double rotationsPerSecond = {{{getVelocityMethod}}};
+    return (rotationsPerSecond / gearRatio) * (2.0 * Math.PI * drumRadius);
   }
   
   /**
@@ -284,13 +293,13 @@ public double getPosition{{positionUnit}}() {
     
     {{#if wpilibControlled}}
     // Use the ProfiledPIDController
-    targetPosition = positionRotations;
+    targetPosition = position;
     currentControlMode = ControlMode.POSITION;
     
     // If acceleration is specified, update constraints
     if (acceleration > 0) {
-      double maxAccelRotations = acceleration / (2.0 * Math.PI * drumRadius);
-      constraints = new TrapezoidProfile.Constraints(constraints.maxVelocity, maxAccelRotations);
+      double maxAccelMeters = acceleration;
+      constraints = new TrapezoidProfile.Constraints(constraints.maxVelocity, maxAccelMeters);
       profiledPIDController.setConstraints(constraints);
     }
     {{else}}
@@ -317,13 +326,13 @@ public double getPosition{{positionUnit}}() {
     
     {{#if wpilibControlled}}
     // Use the ProfiledPIDController
-    targetVelocity = velocityRotations;
+    targetVelocity = velocity;
     currentControlMode = ControlMode.VELOCITY;
     
     // If acceleration is specified, update constraints
     if (acceleration > 0) {
-      double maxAccelRotations = acceleration / (2.0 * Math.PI * drumRadius);
-      constraints = new TrapezoidProfile.Constraints(constraints.maxVelocity, maxAccelRotations);
+      double maxAccelMeters = acceleration;
+      constraints = new TrapezoidProfile.Constraints(constraints.maxVelocity, maxAccelMeters);
       profiledPIDController.setConstraints(constraints);
     }
     {{else}}
@@ -379,13 +388,13 @@ public double getPosition{{positionUnit}}() {
       // Just set the position and let the profiled controller handle it
       setPosition(heightMeters);
       {{else}}
-      double currentHeight = getPosition() * (2.0 * Math.PI * drumRadius);
+      double currentHeight = getPosition();
       double error = heightMeters - currentHeight;
       double velocity = Math.signum(error) * Math.min(Math.abs(error) * 2.0, maxVelocity);
       setVelocity(velocity);
       {{/if}}
     }).until(() -> {
-      double currentHeight = getPosition() * (2.0 * Math.PI * drumRadius);
+      double currentHeight = getPosition();
       return Math.abs(heightMeters - currentHeight) < 0.02; // 2cm tolerance
     });
   }
