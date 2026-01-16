@@ -39,8 +39,8 @@ public class {{subsystemName}} extends SubsystemBase {
   private final double maxAcceleration = {{maxAcceleration}}; // meters per second squared
   private final boolean brakeMode = {{brakeMode}};
  {{#if enableSoftLimits}}
-  private final double forwardSoftLimit = {{forwardSoftLimit}}; // max height in meters
-  private final double reverseSoftLimit = {{reverseSoftLimit}}; // min height in meters
+  private final double forwardSoftLimit = {{forwardSoftLimit}}; // max angle in meters
+  private final double reverseSoftLimit = {{reverseSoftLimit}}; // min angle in meters
  {{/if}}
   private final boolean enableStatorLimit = {{enableStatorLimit}};
   private final int statorCurrentLimit = {{statorCurrentLimit}};
@@ -65,8 +65,8 @@ public class {{subsystemName}} extends SubsystemBase {
     VELOCITY
   }
   private ControlMode currentControlMode = ControlMode.OPEN_LOOP;
-  private double targetPosition = 0.0; // meters
-  private double targetVelocity = 0.0; // meters per second
+  private double targetPosition = 0.0;
+  private double targetVelocity = 0.0;
   
   // Profiled PID Controller
   private ProfiledPIDController profiledPIDController;
@@ -190,28 +190,36 @@ public class {{subsystemName}} extends SubsystemBase {
  
   
   /**
-   * Get the current elevator position in meters.
-   * @return Position in meters
+   * Get the current position in motor rotations (raw).
+   *
+   * <p>Note: This is the motor sensor position (typically motor shaft rotations). Use {@link #getPosition()}
+   * for the elevator height in meters.
+   *
+   * @return Position in rotations
    */
    {{#if logPosition}}
-   @Logged(name = "Position/Meters")
+   @Logged(name = "Position/Rotations")
    {{/if}}
-  public double getPosition() {
-    // Underlying sensor/controller reports rotations; convert to meters.
-    double rotations = {{{getPositionMethod}}};
-    return (rotations / gearRatio) * (2.0 * Math.PI * drumRadius);
+  public double getPositionRotations() {
+    // Rotations
+    {{{getPositionMethod}}}
   }
 
   /**
-   * Get the current elevator position in rotations (raw).
-   * @return Position in rotations
+   * Get the current elevator position in meters.
+   *
+   * @return Position in meters
    */
-  public double getPositionRotations() {
-    // Rotations (raw)
-    return {{{getPositionMethod}}};
+  {{#if logPosition}}
+  @Logged(name = "Position/Meters")
+  {{/if}}
+  public double getPosition() {
+    // Convert motor rotations to elevator meters.
+    double motorRotations = getPositionRotations();
+    return (motorRotations / gearRatio) * (2.0 * Math.PI * drumRadius);
   }
 
-{{#if (or (eq positionUnit 'Degrees') (eq positionUnit 'Radians'))}}
+  {{#if (or (eq positionUnit 'Degrees') (eq positionUnit 'Radians'))}}
   /**
    * Get the current position in {{positionUnit}}.
    * @return Position in {{positionUnit}}.
@@ -229,16 +237,32 @@ public double getPosition{{positionUnit}}() {
 {{/if}}
   
   /**
+   * Get the current velocity in motor rotations per second (raw).
+   *
+   * <p>Note: This is the motor sensor velocity (typically motor shaft rotations/sec). Use {@link #getVelocity()}
+   * for the elevator velocity in meters/sec.
+   *
+   * @return Velocity in rotations per second
+   */
+  {{#if logVelocity}}
+  @Logged(name = "Velocity/RotationsPerSecond")
+  {{/if}}
+  public double getVelocityRotationsPerSecond() {
+    {{{getVelocityMethod}}}
+  }
+
+  /**
    * Get the current elevator velocity in meters per second.
+   *
    * @return Velocity in meters per second
    */
-   {{#if logVelocity}}
-   @Logged(name = "Velocity/MetersPerSecond")
-   {{/if}}
+  {{#if logVelocity}}
+  @Logged(name = "Velocity/MetersPerSecond")
+  {{/if}}
   public double getVelocity() {
-    // Underlying sensor/controller reports rotations/sec; convert to meters/sec.
-    double rotationsPerSecond = {{{getVelocityMethod}}};
-    return (rotationsPerSecond / gearRatio) * (2.0 * Math.PI * drumRadius);
+    // Convert motor rotations/sec to elevator meters/sec.
+    double motorRps = getVelocityRotationsPerSecond();
+    return (motorRps / gearRatio) * (2.0 * Math.PI * drumRadius);
   }
   
   /**
@@ -288,8 +312,9 @@ public double getPosition{{positionUnit}}() {
    * @param acceleration The acceleration in meters per second squared
    */
   public void setPosition(double position, double acceleration) {
-    // Convert meters to rotations
-    double positionRotations = position / (2.0 * Math.PI * drumRadius);
+    // Provide a rotations value for motor-controller templates that expect it.
+    // (The public API for the elevator remains meters.)
+    double positionRotations = (position / (2.0 * Math.PI * drumRadius)) * gearRatio;
     
     {{#if wpilibControlled}}
     // Use the ProfiledPIDController
@@ -321,8 +346,9 @@ public double getPosition{{positionUnit}}() {
    * @param acceleration The acceleration in meters per second squared
    */
   public void setVelocity(double velocity, double acceleration) {
-    // Convert meters/sec to rotations/sec
-    double velocityRotations = velocity / (2.0 * Math.PI * drumRadius);
+    // Provide a rotations/sec value for motor-controller templates that expect it.
+    // (The public API for the elevator remains meters/sec.)
+    double velocityRotations = (velocity / (2.0 * Math.PI * drumRadius)) * gearRatio;
     
     {{#if wpilibControlled}}
     // Use the ProfiledPIDController
