@@ -39,8 +39,8 @@ public class {{subsystemName}} extends SubsystemBase {
   private final double maxAcceleration = {{maxAcceleration}}; // meters per second squared
   private final boolean brakeMode = {{brakeMode}};
  {{#if enableSoftLimits}}
-  private final double forwardSoftLimit = {{forwardSoftLimit}}; // max angle in meters
-  private final double reverseSoftLimit = {{reverseSoftLimit}}; // min angle in meters
+  private final double forwardSoftLimit = {{forwardSoftLimit}}; // max height in meters
+  private final double reverseSoftLimit = {{reverseSoftLimit}}; // min height in meters
  {{/if}}
   private final boolean enableStatorLimit = {{enableStatorLimit}};
   private final int statorCurrentLimit = {{statorCurrentLimit}};
@@ -65,8 +65,8 @@ public class {{subsystemName}} extends SubsystemBase {
     VELOCITY
   }
   private ControlMode currentControlMode = ControlMode.OPEN_LOOP;
-  private double targetPosition = 0.0;
-  private double targetVelocity = 0.0;
+  private double targetPosition = 0.0; // meters
+  private double targetVelocity = 0.0; // meters per second
   
   // Profiled PID Controller
   private ProfiledPIDController profiledPIDController;
@@ -198,7 +198,7 @@ public class {{subsystemName}} extends SubsystemBase {
    * @return Position in rotations
    */
    {{#if logPosition}}
-   @Logged(name = "Position/Rotations")
+   @Logged(name = "Position/Meters")
    {{/if}}
   public double getPositionRotations() {
     // Rotations
@@ -219,7 +219,7 @@ public class {{subsystemName}} extends SubsystemBase {
     return (motorRotations / gearRatio) * (2.0 * Math.PI * drumRadius);
   }
 
-  {{#if (or (eq positionUnit 'Degrees') (eq positionUnit 'Radians'))}}
+{{#if (or (eq positionUnit 'Degrees') (eq positionUnit 'Radians'))}}
   /**
    * Get the current position in {{positionUnit}}.
    * @return Position in {{positionUnit}}.
