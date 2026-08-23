@@ -152,7 +152,7 @@ Use the built-in simulation to test your mechanism:
 - **Measure Feedforward**: For best control, measure actual feedforward values on your mechanism
 - **Check Units**: Pay attention to units (degrees vs. radians, rotations vs. meters)
 - **Verify Gear Ratio**: Double-check your gear ratio calculation
-- **Current Limits**: Always set appropriate current limits to protect your motors
+- **Current Limits**: Always set appropriate current limits to protect your motors.
 - **Command Creation**: Use the generated command factory methods for common operations
 
 ## Troubleshooting
