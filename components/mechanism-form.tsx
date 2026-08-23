@@ -323,7 +323,10 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
           <AccordionContent>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>PID Values ({mechanismType == "Elevator" ? "Meters" : "Radians"})</Label>
+                <Label>
+                  PID Values (
+                  {mechanismType == "Elevator" ? "Meters" : mechanismType == "Flywheel" ? "Radians/Sec" : "Radians"})
+                </Label>
                 <div className="grid grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
@@ -998,6 +1001,38 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                     )}
                   />
                 </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        )}
+
+        {mechanismType === "Flywheel" && (
+          <AccordionItem value="flywheelParams">
+            <AccordionTrigger>Flywheel Parameters</AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="flywheelParams.momentOfInertia"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Moment of Inertia (kg·m²)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.0001"
+                          {...field}
+                          value={field.value ?? ""}
+                          onChange={(e) => handleNumberChange(e, field.onChange)}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Rotational inertia of the flywheel about its axis (from CAD or ReCalc)
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
             </AccordionContent>
           </AccordionItem>

@@ -19,6 +19,7 @@ Start by configuring the basic parameters of your mechanism:
    - **Elevator**: For vertical linear motion (e.g., lifts, elevators)
    - **Arm**: For rotational motion with gravity (e.g., arms, pivoting intakes)
    - **Pivot**: For rotational motion without significant gravity effects (e.g., turrets, wrists)
+   - **Flywheel**: For high-speed rotational inertia mechanisms with velocity-only control (e.g., shooters, launchers)
 
 ## Step 2: Motor Configuration
 
@@ -113,6 +114,12 @@ Depending on the mechanism type, configure additional parameters:
 2. **Starting Position**: Initial angle in degrees
 3. **Hard Limits**: Minimum and maximum angles in degrees
 4. **Mass**: Mass of the arm in kg or lbs
+
+### For Flywheels:
+
+1. **Moment of Inertia**: Rotational inertia of the flywheel in kg·m² (from CAD or ReCalc)
+
+Flywheels are velocity-only mechanisms — there is no position control mode, soft limits, or gravity compensation, and the simulation only offers a Velocity Control view.
 
 ## Step 6: Generate and Use Code
 

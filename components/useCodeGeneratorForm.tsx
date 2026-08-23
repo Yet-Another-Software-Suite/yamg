@@ -6,7 +6,7 @@ import * as z from "zod";
 
 export const formSchema = z.object({
   subsystemName: z.string().min(1, "Subsystem name is required"),
-  mechanismType: z.enum(["Elevator", "Arm", "Pivot"]),
+  mechanismType: z.enum(["Elevator", "Arm", "Pivot", "Flywheel"]),
   motorControllerType: z.enum([
     "ThriftyNova",
     "SparkMAX",
@@ -81,6 +81,11 @@ export const formSchema = z.object({
       drumRadius: z.number().optional(),
     })
     .optional(),
+  flywheelParams: z
+    .object({
+      momentOfInertia: z.number().optional(),
+    })
+    .optional(),
 });
 
 export type FormSchema = z.infer<typeof formSchema>;
@@ -127,6 +132,9 @@ export function useCodeGeneratorForm() {
         mass: 5,
         massUnit: "kg",
         drumRadius: 0.0254,
+      },
+      flywheelParams: {
+        momentOfInertia: 0.0025,
       },
     },
   });

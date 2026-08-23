@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useLayoutEffect, useState } from "react"
+import { useEffect, useLayoutEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
@@ -66,8 +66,16 @@ interface SimulationTabProps {
 }
 
 export default function SimulationTab({ formValues }: SimulationTabProps) {
-  const [simType, setSimType] = useState<string>("position")
+  const isVelocityOnly = formValues.mechanismType === "Flywheel"
+  const [simType, setSimType] = useState<string>(isVelocityOnly ? "velocity" : "position")
   const [motorCount, setMotorCount] = useState<number>(1)
+
+  // Flywheels have no meaningful position mode - force velocity control
+  useEffect(() => {
+    if (isVelocityOnly && simType !== "velocity") {
+      setSimType("velocity")
+    }
+  }, [isVelocityOnly, simType])
 
   // Safe number input handler
   const handleMotorCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,9 +97,9 @@ export default function SimulationTab({ formValues }: SimulationTabProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <Tabs defaultValue="position" onValueChange={setSimType}>
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="position">Position Control</TabsTrigger>
+          <Tabs value={simType} onValueChange={setSimType}>
+            <TabsList className={`grid w-full ${isVelocityOnly ? "grid-cols-1" : "grid-cols-2"}`}>
+              {!isVelocityOnly && <TabsTrigger value="position">Position Control</TabsTrigger>}
               <TabsTrigger value="velocity">Velocity Control</TabsTrigger>
             </TabsList>
           </Tabs>

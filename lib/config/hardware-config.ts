@@ -218,6 +218,15 @@ export const MECHANISMS: Record<string, MechanismDefinition> = {
     simClassName: "ArmSim",
     requiresGravityCompensation: false,
   },
+  Flywheel: {
+    name: "Flywheel",
+    displayName: "Flywheel (Shooter)",
+    description: "High-speed rotational inertia mechanism for shooters and launchers",
+    templateName: "flywheel-subsystem",
+    simTemplateName: "flywheel-sim",
+    simClassName: "FlywheelSim",
+    requiresGravityCompensation: false,
+  },
 }
 
 // Helper functions

@@ -46,6 +46,12 @@ describe("Hardware Configuration", () => {
       expect(mech.requiresGravityCompensation).toBe(true)
     })
 
+    it("returns a valid Flywheel mechanism definition without gravity compensation", () => {
+      const mech = getMechanism("Flywheel")
+      expect(mech.requiresGravityCompensation).toBe(false)
+      expect(mech.simClassName).toBe("FlywheelSim")
+    })
+
     it("throws for unknown mechanism", () => {
       expect(() => getMechanism("INVALID_MECH")).toThrow(
         "Unknown mechanism type: INVALID_MECH",

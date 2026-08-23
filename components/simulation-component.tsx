@@ -8,6 +8,7 @@ import type { FormValues } from "@/lib/types"
 import type { ControlsBaseSim } from "@/lib/simulation/controls-base-sim"
 import { ArmSim } from "@/lib/simulation/arm-sim"
 import { ElevatorSim } from "@/lib/simulation/elevator-sim"
+import { FlywheelSim } from "@/lib/simulation/flywheel-sim"
 import { createSimulationOptions, getSliderRangeConfig, convertTargetValue } from "@/lib/simulation/simulation-config"
 
 // Add this function right after the imports but before the component definition
@@ -78,6 +79,8 @@ export default function SimulationComponent({ formValues, simType, motorCount }:
         sim = new ArmSim(canvas, options)
       } else if (simClassName === "ElevatorSim") {
         sim = new ElevatorSim(canvas, options)
+      } else if (simClassName === "FlywheelSim") {
+        sim = new FlywheelSim(canvas, options)
       }
 
       if (sim) {

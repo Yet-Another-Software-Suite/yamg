@@ -36,6 +36,7 @@ describe("ReCalc Utility Functions", () => {
     it("returns false for other mechanism types", () => {
       expect(isReCalcSupported("Drivetrain")).toBe(false)
       expect(isReCalcSupported("Intake")).toBe(false)
+      expect(isReCalcSupported("Flywheel")).toBe(false)
     })
   })
 

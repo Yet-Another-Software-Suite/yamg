@@ -166,6 +166,16 @@ async function processTemplate(
     });
   }
 
+  if (data.mechanismType === "Flywheel") {
+    const momentOfInertia = data.flywheelParams?.momentOfInertia !== undefined
+      ? data.flywheelParams.momentOfInertia
+      : 0.0025;
+
+    Object.assign(templateData, {
+      momentOfInertia,
+    });
+  }
+
   // Process motor controller specific parts
   const motorControllerParts = processMotorControllerTemplate(data);
   Object.assign(templateData, motorControllerParts);

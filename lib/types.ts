@@ -1,6 +1,6 @@
 export interface FormValues {
   subsystemName: string
-  mechanismType: "Elevator" | "Arm" | "Pivot"
+  mechanismType: "Elevator" | "Arm" | "Pivot" | "Flywheel"
   motorControllerType: "ThriftyNova" | "SparkMAX" | "SparkFlex" | "TalonFX" | "TalonFXS" 
   motorType: "NEO" | "NEO550" | "Minion" | "Krakenx44" | "Krakenx60" | "Vortex"
   canId: number
@@ -56,6 +56,9 @@ export interface FormValues {
     mass?: number
     massUnit?: "kg" | "lbs"
     drumRadius?: number
+  }
+  flywheelParams?: {
+    momentOfInertia?: number
   }
 }
 

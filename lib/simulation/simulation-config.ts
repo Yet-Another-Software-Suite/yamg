@@ -2,6 +2,7 @@ import { getSimMotorType } from "@/lib/config/hardware-config"
 import type { FormValues } from "@/lib/types"
 import type { ArmSimOptions } from "./arm-sim"
 import type { ElevatorSimOptions } from "./elevator-sim"
+import type { FlywheelSimOptions } from "./flywheel-sim"
 import type { ControlsBaseSimOptions } from "./controls-base-sim"
 
 /**
@@ -88,6 +89,15 @@ export function createSimulationOptions(
       return { simType: "ArmSim", options: pivotOptions }
     }
 
+    case "Flywheel": {
+      const flywheelOptions: FlywheelSimOptions = {
+        ...commonOptions,
+        momentOfInertia: formValues.flywheelParams?.momentOfInertia || 0.0025,
+        kG: 0, // No gravity compensation for flywheels
+      }
+      return { simType: "FlywheelSim", options: flywheelOptions }
+    }
+
     default:
       throw new Error(`Unknown mechanism type: ${formValues.mechanismType}`)
   }
@@ -146,6 +156,14 @@ export function getSliderRangeConfig(formValues: FormValues, simType: string) {
           unit: "m/s",
           initialValue: 0,
         }
+      case "Flywheel":
+        return {
+          min: 0,
+          max: 6000,
+          step: 50,
+          unit: "RPM",
+          initialValue: 0,
+        }
       default:
         return { min: -1, max: 1, step: 0.1, unit: "", initialValue: 0 }
     }
@@ -169,6 +187,9 @@ export function convertTargetValue(value: number, formValues: FormValues, simTyp
     if (formValues.mechanismType === "Arm" || formValues.mechanismType === "Pivot") {
       // Convert degrees/s to radians/s for arm/pivot
       return (value * Math.PI) / 180
+    } else if (formValues.mechanismType === "Flywheel") {
+      // Convert RPM to radians/s for flywheel
+      return (value * 2 * Math.PI) / 60
     } else {
       // Use m/s directly for elevator
       return value
