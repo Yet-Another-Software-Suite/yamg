@@ -70,8 +70,8 @@ export default function GeneratedCodePanel({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex gap-2 overflow-x-auto">
+      <div className="flex flex-wrap justify-between items-center gap-2 mb-4">
+        <div className="flex flex-wrap gap-2">
           {files.map((f, i) => (
             <Button
               key={i}

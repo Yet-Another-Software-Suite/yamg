@@ -54,6 +54,7 @@ export const formSchema = z.object({
     })
     .optional(),
   telemetry: z.object({
+    logger: z.enum(["telemetry", "epilogue"]),
     ntKey: z.string(),
     position: z.boolean(),
     velocity: z.boolean(),
@@ -114,6 +115,7 @@ export function useCodeGeneratorForm() {
       currentLimits: { stator: 40 },
       rampRates: { openLoop: 0.0, closedLoop: 0.0 },
       telemetry: {
+        logger: "telemetry",
         ntKey: "ElevatorSubsystem",
         position: true,
         velocity: true,

@@ -1,0 +1,69 @@
+package first.robot;
+
+{{#if defaultUsesUnit}}
+import static org.wpilib.units.Units.{{bindingUnit}};
+
+{{/if}}
+import first.robot.constants.DriverConstants;
+import first.robot.mechanisms.ExampleMechanism;
+import first.robot.mechanisms.{{className}};
+import org.wpilib.command3.Scheduler;
+import org.wpilib.command3.button.CommandGamepad;
+{{#if useEpilogue}}
+import org.wpilib.epilogue.Epilogue;
+import org.wpilib.epilogue.Logged;
+import org.wpilib.epilogue.NotLogged;
+{{/if}}
+import org.wpilib.framework.OpModeRobot;
+import org.wpilib.telemetry.Telemetry;
+
+/**
+ * The Robot.java of the WPILib 2027 Command v3 Robot template, with the {{className}} added by
+ * YAMG. Replace your project's Robot.java with it.
+ *
+ * <p>A Commands v3 mechanism has no periodic methods of its own, so Robot calls them every loop.
+{{#if useEpilogue}}
+ * Epilogue logs this class, and through it everything marked {@code @Logged}.
+{{/if}}
+ */
+{{#if useEpilogue}}
+@Logged
+{{/if}}
+public class Robot extends OpModeRobot {
+  // The scheduler that runs every command.
+{{#if useEpilogue}}
+  @NotLogged
+{{/if}}
+  private final Scheduler scheduler = Scheduler.getDefault();
+
+  final ExampleMechanism exampleMechanism = new ExampleMechanism();
+  // Added by YAMG.
+  final {{className}} {{mechanismField}} = new {{className}}();
+  final CommandGamepad exampleController =
+      new CommandGamepad(DriverConstants.DRIVER_CONTROLLER_PORT);
+
+  public Robot() {
+    // When no other command is using the {{mechanismNoun}}, {{defaultDescription}}.
+    {{mechanismField}}.setDefaultCommand({{defaultCommand}});
+  }
+
+  @Override
+  public void robotPeriodic() {
+    // Runs every loop, on the robot and in simulation.
+    // Update the mechanism before the scheduler runs its commands.
+    {{mechanismField}}.periodic();
+    scheduler.run();
+    // Publish the scheduler, so that a dashboard shows which commands are running.
+    Telemetry.log("Scheduler", scheduler, Scheduler.proto);
+{{#if useEpilogue}}
+    // Log everything marked @Logged.
+    Epilogue.update(this);
+{{/if}}
+  }
+
+  @Override
+  public void simulationPeriodic() {
+    // Runs every loop, in simulation only.
+    {{mechanismField}}.simulationPeriodic();
+  }
+}

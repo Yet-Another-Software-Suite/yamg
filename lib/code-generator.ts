@@ -34,6 +34,8 @@ export function setTemplateLoader(loader: TemplateLoader) {
 }
 
 Handlebars.registerHelper("eq", (a, b) => a === b);
+// True when every argument is, for example {{#if (and useEpilogue logPosition)}}.
+Handlebars.registerHelper("and", (...args) => args.slice(0, -1).every(Boolean));
 
 const MECHANISM_FILES: Record<FormValues["mechanismType"], string> = {
   Arm: "arm",
@@ -123,8 +125,8 @@ export function buildTemplateData(data: FormValues) {
     logCurrent: data.telemetry.current,
     logTemperature: data.telemetry.temperature,
     positionUnit: data.telemetry.positionUnit,
-    // YAMS publishes its own telemetry: everything at HIGH, or position and velocity at MID.
-    yamsVerbosity: data.telemetry.voltage || data.telemetry.current || data.telemetry.temperature ? "HIGH" : "MID",
+    // YAMS publishes its own telemetry, so Epilogue is only for plain vendor code.
+    useEpilogue: data.telemetry.logger === "epilogue" && output !== "yams",
     thriftyMotorType: THRIFTY_MOTOR_TYPES[data.motorType] ?? "NEO",
     talonFXSArrangement: TALON_FXS_ARRANGEMENTS[data.motorType] ?? "NEO_JST",
   };
@@ -158,7 +160,75 @@ export function buildTemplateData(data: FormValues) {
     });
   }
 
+  Object.assign(templateData, robotTemplateData(data, templateData));
   return templateData;
+}
+
+/** What Robot.java and the files around it need: the mechanism's field, and its commands. */
+function robotTemplateData(data: FormValues, mechanismData: Record<string, unknown>) {
+  const v3 = (data.commandsVersion ?? "v2") === "v3";
+  const yams = data.outputType === "yams";
+  const field = data.subsystemName.charAt(0).toLowerCase() + data.subsystemName.slice(1);
+  // WPILib allows op mode names of at most 32 characters.
+  const teleop = `${data.subsystemName} Teleop`;
+  const teleopName = teleop.length <= 32 ? teleop : data.subsystemName.slice(0, 32);
+  const round = (value: number) => Math.round(value * 10) / 10;
+  const middle = (low: unknown, high: unknown) => num(round((Number(low) + Number(high)) / 2), 0);
+
+  if (data.mechanismType === "Flywheel") {
+    // Bind a slow and a fast speed: 40% and 80% of the motor's free speed through the gearing.
+    const freeRpm = (getMotor(data.motorType).kv * 12) / (data.gearRatio || 1);
+    const speed = (fraction: number) => num(Math.round((freeRpm * fraction) / 10) * 10, 0);
+    const setter = yams && !v3 ? "run" : "setVelocity";
+    return {
+      mechanismField: field,
+      teleopName,
+      mechanismNoun: "flywheel",
+      bindingUnit: "RPM",
+      defaultCommand: v3 ? `${field}.idle()` : `${field}.set(0)`,
+      defaultUsesUnit: false,
+      defaultDescription: "let the flywheel coast",
+      targetA: `${setter}(RPM.of(${speed(0.4)}))`,
+      targetB: `${setter}(RPM.of(${speed(0.8)}))`,
+      targetDescription: "Spin at a slow speed while the bottom (A) face button is held, and a fast one while the right (B) one is.",
+    };
+  }
+
+  const elevator = data.mechanismType === "Elevator";
+  const unit = elevator ? "Meters" : "Degrees";
+  const start = String(elevator ? mechanismData.startingHeight : mechanismData.startingPosition);
+  const setter = yams && !v3 ? "run" : elevator ? "setHeight" : "setAngle";
+  const noun = data.mechanismType.toLowerCase();
+  return {
+    mechanismField: field,
+    teleopName,
+    mechanismNoun: noun,
+    bindingUnit: unit,
+    defaultCommand: v3 ? `${field}.hold(${unit}.of(${start}))` : `${field}.${setter}(${unit}.of(${start}))`,
+    defaultUsesUnit: true,
+    defaultDescription: `hold the ${noun} where it starts`,
+    targetA: `${setter}(${unit}.of(${start}))`,
+    targetB: `${setter}(${unit}.of(${middle(mechanismData.hardLimitMin, mechanismData.hardLimitMax)}))`,
+    targetDescription: `Go to where the ${noun} starts while the bottom (A) face button is held, and halfway between its limits while the right (B) one is.`,
+  };
+}
+
+/**
+ * The robot files that go with the mechanism: the template file each is rendered from, and the file
+ * it becomes. Commands v2 changes the template's RobotContainer. Commands v3 gets its own teleop op
+ * mode, next to the template's ExampleTeleop.
+ */
+function robotFiles(data: FormValues): { template: string; filename: string }[] {
+  if ((data.commandsVersion ?? "v2") === "v3") {
+    return [
+      { template: "robot/v3/Robot.java.hbs", filename: "Robot.java" },
+      { template: "robot/v3/Teleop.java.hbs", filename: `${data.subsystemName}Teleop.java` },
+    ];
+  }
+  return [
+    { template: "robot/v2/Robot.java.hbs", filename: "Robot.java" },
+    { template: "robot/v2/RobotContainer.java.hbs", filename: "RobotContainer.java" },
+  ];
 }
 
 /** The template paths for a form: the controller partials, then the mechanism file. */
@@ -182,14 +252,27 @@ export async function renderJava(data: FormValues): Promise<string> {
   return template(buildTemplateData(data)).replace(/^\s+/, "");
 }
 
-/** The file a form generates: where it goes in a project, and its formatted Java. */
+/** Render a template that does not use a motor controller's partials, such as Robot.java. */
+async function renderPlain(path: string, data: FormValues): Promise<string> {
+  const template = Handlebars.compile(await loadTemplate(path), { noEscape: true });
+  return template(buildTemplateData(data));
+}
+
+/**
+ * The files a form generates, relative to src/main/java/first/robot: the mechanism, then Robot.java
+ * and the other template files it changes.
+ */
 export async function generateFiles(formData: FormValues): Promise<FileOutput[]> {
-  const folder = (formData.commandsVersion ?? "v2") === "v3" ? "mechanisms" : "subsystems";
-  const filename = `${folder}/${formData.subsystemName}.java`;
+  const commands = formData.commandsVersion ?? "v2";
+  const folder = commands === "v3" ? "mechanisms" : "subsystems";
   try {
-    const java = await renderJava(formData);
-    const content = await formatJava(java);
-    return [{ filename, content }];
+    const files: FileOutput[] = [
+      { filename: `${folder}/${formData.subsystemName}.java`, content: await formatJava(await renderJava(formData)) },
+    ];
+    for (const { template, filename } of robotFiles(formData)) {
+      files.push({ filename, content: await formatJava(await renderPlain(template, formData)) });
+    }
+    return files;
   } catch (error) {
     console.error("Error generating files:", error);
     return [

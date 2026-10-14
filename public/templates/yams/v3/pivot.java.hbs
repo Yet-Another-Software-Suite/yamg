@@ -68,7 +68,7 @@ public class {{className}} implements Mechanism {
       .withSoftLimits(Degrees.of({{reverseSoftLimit}}), Degrees.of({{forwardSoftLimit}}))
 {{/if}}
       // Telemetry name and how much to publish.
-      .withTelemetry("{{ntKey}}Motor", TelemetryVerbosity.{{yamsVerbosity}});
+      .withTelemetry("{{className}}Motor", TelemetryVerbosity.HIGH);
 
 {{> fields}}
 
@@ -76,7 +76,7 @@ public class {{className}} implements Mechanism {
       // The hard stops, used by the simulation.
       .withHardLimits(Degrees.of({{hardLimitMin}}), Degrees.of({{hardLimitMax}}))
       // Telemetry name and how much to publish.
-      .withTelemetry("{{ntKey}}", TelemetryVerbosity.{{yamsVerbosity}});
+      .withTelemetry("{{className}}", TelemetryVerbosity.HIGH);
 
   // The pivot mechanism.
   private final Pivot pivot = new Pivot(pivotConfig, motor);
