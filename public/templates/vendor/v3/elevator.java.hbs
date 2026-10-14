@@ -34,6 +34,7 @@ import org.wpilib.epilogue.Logged;
 import org.wpilib.telemetry.Telemetry;
 {{/if}}
 import org.wpilib.units.measure.Angle;
+import org.wpilib.units.measure.AngularAcceleration;
 import org.wpilib.units.measure.AngularVelocity;
 import org.wpilib.units.measure.Current;
 import org.wpilib.units.measure.Distance;
@@ -100,11 +101,11 @@ public class {{className}} implements Mechanism {
   private static final Distance MIN_HEIGHT = Meters.of({{hardLimitMin}});
   private static final Distance MAX_HEIGHT = Meters.of({{hardLimitMax}});
   private static final Distance STARTING_HEIGHT = Meters.of({{startingHeight}});
-  private static final Angle STARTING_DRIVE_POSITION = toDrivePosition(STARTING_HEIGHT);
+  private static final Angle STARTING_MECHANISM_POSITION = toMechanismPosition(STARTING_HEIGHT);
 {{#if enableSoftLimits}}
   // The motor controller will not drive the elevator past these heights.
-  private static final Angle FORWARD_SOFT_LIMIT = toDrivePosition(Meters.of({{forwardSoftLimit}}));
-  private static final Angle REVERSE_SOFT_LIMIT = toDrivePosition(Meters.of({{reverseSoftLimit}}));
+  private static final Angle FORWARD_SOFT_LIMIT = toMechanismPosition(Meters.of({{forwardSoftLimit}}));
+  private static final Angle REVERSE_SOFT_LIMIT = toMechanismPosition(Meters.of({{reverseSoftLimit}}));
 {{/if}}
 
   // The fastest the closed loop moves the elevator.
@@ -128,6 +129,8 @@ public class {{className}} implements Mechanism {
       DC_MOTOR, GEAR_RATIO, CARRIAGE_MASS.in(Kilograms), TRAVEL_PER_ROTATION.in(Meters) / (2 * Math.PI),
       MIN_HEIGHT.in(Meters), MAX_HEIGHT.in(Meters), true, STARTING_HEIGHT.in(Meters));
 {{> simFields}}
+  // The simulated speed last loop, to work out the acceleration.
+  private AngularVelocity lastMechanismVelocity = RotationsPerSecond.of(0);
 {{#if useEpilogue}}
   @Logged(name = "Mechanism")
 {{/if}}
@@ -144,16 +147,16 @@ public class {{className}} implements Mechanism {
   }
 
   /** How far the {{driveNoun}} has turned for a height. */
-  private static Angle toDrivePosition(Distance height) {
+  private static Angle toMechanismPosition(Distance height) {
     return Rotations.one().times(height.div(TRAVEL_PER_ROTATION));
   }
 
-  private Angle getDrivePosition() {
-{{> getDrivePosition}}
+  private Angle getMechanismPosition() {
+{{> getMechanismPosition}}
   }
 
-  private AngularVelocity getDriveVelocity() {
-{{> getDriveVelocity}}
+  private AngularVelocity getMechanismVelocity() {
+{{> getMechanismVelocity}}
   }
 
   /** The elevator's height. */
@@ -161,7 +164,7 @@ public class {{className}} implements Mechanism {
   @Logged(name = "Height")
 {{/if}}
   public Distance getHeight() {
-    return TRAVEL_PER_ROTATION.times(getDrivePosition().div(Rotations.one()));
+    return TRAVEL_PER_ROTATION.times(getMechanismPosition().div(Rotations.one()));
   }
 
   /** How fast the elevator is moving. */
@@ -169,7 +172,7 @@ public class {{className}} implements Mechanism {
   @Logged(name = "Velocity")
 {{/if}}
   public LinearVelocity getVelocity() {
-    return TRAVEL_PER_ROTATION.per(Second).times(getDriveVelocity().div(RotationsPerSecond.one()));
+    return TRAVEL_PER_ROTATION.per(Second).times(getMechanismVelocity().div(RotationsPerSecond.one()));
   }
 
   /** The voltage the motor controller is applying to the motor. */
@@ -196,8 +199,8 @@ public class {{className}} implements Mechanism {
 {{> getTemperature}}
   }
 
-  private void setDrivePosition(Angle drivePosition, Voltage feedforward) {
-{{> setDrivePosition}}
+  private void setMechanismPosition(Angle mechanismPosition, Voltage feedforward) {
+{{> setMechanismPosition}}
   }
 
   private void setMotorVoltage(Voltage voltage) {
@@ -257,7 +260,7 @@ public class {{className}} implements Mechanism {
       TrapezoidProfile.State next = profile.calculate(LOOP_PERIOD.in(Seconds), setpoint, goal);
       Voltage feedforwardVoltage = Volts.of(feedforward.calculate(setpoint.velocity, next.velocity));
       setpoint = next;
-      setDrivePosition(toDrivePosition(Meters.of(next.position)), feedforwardVoltage);
+      setMechanismPosition(toMechanismPosition(Meters.of(next.position)), feedforwardVoltage);
     }
 
     carriageLigament.setLength(getHeight().in(Meters));
@@ -287,8 +290,11 @@ public class {{className}} implements Mechanism {
 {{> simPrepare}}
     elevatorSim.setInputVoltage({{> simAppliedVoltage}}.in(Volts));
     elevatorSim.update(LOOP_PERIOD.in(Seconds));
-    AngularVelocity driveVelocity =
+    Angle mechanismPosition = toMechanismPosition(Meters.of(elevatorSim.getPosition()));
+    AngularVelocity mechanismVelocity =
         RotationsPerSecond.one().times(MetersPerSecond.of(elevatorSim.getVelocity()).div(TRAVEL_PER_ROTATION.per(Second)));
+    AngularAcceleration mechanismAcceleration = mechanismVelocity.minus(lastMechanismVelocity).div(LOOP_PERIOD);
+    lastMechanismVelocity = mechanismVelocity;
 {{> simUpdate}}
   }
 }

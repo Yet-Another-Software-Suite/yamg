@@ -87,7 +87,7 @@ public class {{className}} implements Mechanism {
   private static final Angle MIN_ANGLE = Degrees.of({{hardLimitMin}});
   private static final Angle MAX_ANGLE = Degrees.of({{hardLimitMax}});
   private static final Angle STARTING_ANGLE = Degrees.of({{startingPosition}});
-  private static final Angle STARTING_DRIVE_POSITION = STARTING_ANGLE;
+  private static final Angle STARTING_MECHANISM_POSITION = STARTING_ANGLE;
 {{#if enableSoftLimits}}
   // The motor controller will not drive the pivot past these angles.
   private static final Angle FORWARD_SOFT_LIMIT = Degrees.of({{forwardSoftLimit}});
@@ -114,6 +114,8 @@ public class {{className}} implements Mechanism {
       DC_MOTOR, GEAR_RATIO, SingleJointedArmSim.estimateMOI(PIVOT_LENGTH.in(Meters), PIVOT_MASS.in(Kilograms)),
       PIVOT_LENGTH.in(Meters), MIN_ANGLE.in(Radians), MAX_ANGLE.in(Radians), false, STARTING_ANGLE.in(Radians));
 {{> simFields}}
+  // The simulated speed last loop, to work out the acceleration.
+  private AngularVelocity lastMechanismVelocity = RotationsPerSecond.of(0);
 {{#if useEpilogue}}
   @Logged(name = "Mechanism")
 {{/if}}
@@ -129,12 +131,12 @@ public class {{className}} implements Mechanism {
     }
   }
 
-  private Angle getDrivePosition() {
-{{> getDrivePosition}}
+  private Angle getMechanismPosition() {
+{{> getMechanismPosition}}
   }
 
-  private AngularVelocity getDriveVelocity() {
-{{> getDriveVelocity}}
+  private AngularVelocity getMechanismVelocity() {
+{{> getMechanismVelocity}}
   }
 
   /** The pivot's angle. */
@@ -142,7 +144,7 @@ public class {{className}} implements Mechanism {
   @Logged(name = "Angle")
 {{/if}}
   public Angle getAngle() {
-    return getDrivePosition();
+    return getMechanismPosition();
   }
 
   /** How fast the pivot is turning. */
@@ -150,7 +152,7 @@ public class {{className}} implements Mechanism {
   @Logged(name = "Velocity")
 {{/if}}
   public AngularVelocity getVelocity() {
-    return getDriveVelocity();
+    return getMechanismVelocity();
   }
 
   /** The voltage the motor controller is applying to the motor. */
@@ -177,8 +179,8 @@ public class {{className}} implements Mechanism {
 {{> getTemperature}}
   }
 
-  private void setDrivePosition(Angle drivePosition, Voltage feedforward) {
-{{> setDrivePosition}}
+  private void setMechanismPosition(Angle mechanismPosition, Voltage feedforward) {
+{{> setMechanismPosition}}
   }
 
   private void setMotorVoltage(Voltage voltage) {
@@ -239,7 +241,7 @@ public class {{className}} implements Mechanism {
       Voltage feedforwardVoltage = Volts.of(feedforward.calculate(
           RadiansPerSecond.of(setpoint.velocity).in(RotationsPerSecond), RadiansPerSecond.of(next.velocity).in(RotationsPerSecond)));
       setpoint = next;
-      setDrivePosition(Radians.of(next.position), feedforwardVoltage);
+      setMechanismPosition(Radians.of(next.position), feedforwardVoltage);
     }
 
     pivotLigament.setAngle(getAngle().in(Degrees));
@@ -269,7 +271,10 @@ public class {{className}} implements Mechanism {
 {{> simPrepare}}
     pivotSim.setInputVoltage({{> simAppliedVoltage}}.in(Volts));
     pivotSim.update(LOOP_PERIOD.in(Seconds));
-    AngularVelocity driveVelocity = RadiansPerSecond.of(pivotSim.getVelocity());
+    Angle mechanismPosition = Radians.of(pivotSim.getAngle());
+    AngularVelocity mechanismVelocity = RadiansPerSecond.of(pivotSim.getVelocity());
+    AngularAcceleration mechanismAcceleration = mechanismVelocity.minus(lastMechanismVelocity).div(LOOP_PERIOD);
+    lastMechanismVelocity = mechanismVelocity;
 {{> simUpdate}}
   }
 }

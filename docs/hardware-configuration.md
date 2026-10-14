@@ -112,7 +112,7 @@ public/templates/vendor/controllers/NewController.hbs
 public/templates/yams/controllers/NewController.hbs
 ```
 
-The vendor file defines `imports`, `fields`, `configure`, `getMotorPosition`, `getMotorVelocity`, `getVoltage`, `getCurrent`, `getTemperature`, `setMotorPosition`, `setMotorVelocity`, `setMotorVoltage`, `simFields`, `simInit`, `simPrepare`, `simAppliedVoltage` and `simUpdate`. Use WPILib units (`Angle`, `AngularVelocity`, `Voltage` and the rest) rather than `double`, work in the motor's rotor angle, and convert the gains from the form's units with `MOTOR_ROTATIONS_PER_GAIN_UNIT`, as the existing controllers do:
+The vendor file defines `imports`, `fields`, `configure`, `getMechanismPosition`, `getMechanismVelocity`, `getVoltage`, `getCurrent`, `getTemperature`, `setMechanismPosition`, `setMechanismVelocity`, `setMotorVoltage`, `simFields`, `simInit`, `simPrepare`, `simAppliedVoltage` and `simUpdate`. Use WPILib units (`Angle`, `AngularVelocity`, `Voltage` and the rest) rather than `double`, and work in turns of the mechanism. A controller that takes the gearing in its config, like a Talon's `SensorToMechanismRatio`, should use it; one that cannot, like a SPARK, multiplies by `GEAR_RATIO` itself. `simUpdate` is given the simulated `mechanismPosition`, `mechanismVelocity` and `mechanismAcceleration`:
 
 ```handlebars
 {{#*inline "imports"}}
@@ -121,8 +121,8 @@ import com.example.NewController;
 {{#*inline "fields"}}
   private final NewController motor = new NewController(CAN_ID);
 {{/inline}}
-{{#*inline "getMotorPosition"}}
-    return Rotations.of(motor.getRotorPosition());
+{{#*inline "getMechanismPosition"}}
+    return Rotations.of(motor.getRotorPosition()).div(GEAR_RATIO);
 {{/inline}}
 ```
 

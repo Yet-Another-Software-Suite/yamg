@@ -168,6 +168,8 @@ export function buildTemplateData(data: FormValues) {
     useEpilogue: data.telemetry.logger === "epilogue" && output !== "yams",
     thriftyMotorType: THRIFTY_MOTOR_TYPES[data.motorType] ?? "NEO",
     talonFXSArrangement: TALON_FXS_ARRANGEMENTS[data.motorType] ?? "NEO_JST",
+    // The motor a simulated Talon FX models.
+    talonSimMotorType: data.motorType === "Krakenx44" ? "KrakenX44" : "KrakenX60",
   };
 
   if (data.mechanismType === "Arm" || data.mechanismType === "Pivot") {

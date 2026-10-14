@@ -28,6 +28,7 @@ import org.wpilib.epilogue.Logged;
 import org.wpilib.telemetry.Telemetry;
 {{/if}}
 import org.wpilib.units.measure.Angle;
+import org.wpilib.units.measure.AngularAcceleration;
 import org.wpilib.units.measure.AngularVelocity;
 import org.wpilib.units.measure.Current;
 import org.wpilib.units.measure.MomentOfInertia;
@@ -69,7 +70,7 @@ public class {{className}} implements Mechanism {
   /** How often the robot loop runs. */
   private static final Time LOOP_PERIOD = Seconds.of(0.020);
   /** The flywheel starts at rest, with its encoder at zero. */
-  private static final Angle STARTING_DRIVE_POSITION = Rotations.of(0);
+  private static final Angle STARTING_MECHANISM_POSITION = Rotations.of(0);
 
   // Closed loop gains, in volts per {{gainUnit}} of error.
   private static final double KP = {{kP}};
@@ -88,6 +89,10 @@ public class {{className}} implements Mechanism {
   private final FlywheelSim flywheelSim = new FlywheelSim(
       Models.flywheelFromPhysicalConstants(DC_MOTOR, MOMENT_OF_INERTIA.in(KilogramSquareMeters), GEAR_RATIO), DC_MOTOR);
 {{> simFields}}
+  // The simulated speed last loop, to work out the acceleration.
+  private AngularVelocity lastMechanismVelocity = RotationsPerSecond.of(0);
+  // Where the simulated flywheel has turned to.
+  private Angle simulatedPosition = STARTING_MECHANISM_POSITION;
 {{#if useEpilogue}}
   @Logged(name = "Mechanism")
 {{/if}}
@@ -103,12 +108,12 @@ public class {{className}} implements Mechanism {
     }
   }
 
-  private Angle getDrivePosition() {
-{{> getDrivePosition}}
+  private Angle getMechanismPosition() {
+{{> getMechanismPosition}}
   }
 
-  private AngularVelocity getDriveVelocity() {
-{{> getDriveVelocity}}
+  private AngularVelocity getMechanismVelocity() {
+{{> getMechanismVelocity}}
   }
 
   /** How fast the flywheel is spinning. */
@@ -116,7 +121,7 @@ public class {{className}} implements Mechanism {
   @Logged(name = "Velocity")
 {{/if}}
   public AngularVelocity getVelocity() {
-    return getDriveVelocity();
+    return getMechanismVelocity();
   }
 
   /** The voltage the motor controller is applying to the motor. */
@@ -143,8 +148,8 @@ public class {{className}} implements Mechanism {
 {{> getTemperature}}
   }
 
-  private void setDriveVelocity(AngularVelocity driveVelocity, Voltage feedforward) {
-{{> setDriveVelocity}}
+  private void setMechanismVelocity(AngularVelocity mechanismVelocity, Voltage feedforward) {
+{{> setMechanismVelocity}}
   }
 
   private void setMotorVoltage(Voltage voltage) {
@@ -193,11 +198,11 @@ public class {{className}} implements Mechanism {
     if (goalVelocity != null) {
       // The feedforward does most of the work, and the closed loop corrects what is left.
       Voltage feedforwardVoltage = Volts.of(feedforward.calculate(goalVelocity.in(RotationsPerSecond)));
-      setDriveVelocity(goalVelocity, feedforwardVoltage);
+      setMechanismVelocity(goalVelocity, feedforwardVoltage);
     }
 
     // Turn the spoke with the flywheel, so that the drawing shows it spinning.
-    spokeLigament.setAngle(getDrivePosition().in(Rotations) * 360 % 360);
+    spokeLigament.setAngle(getMechanismPosition().in(Rotations) * 360 % 360);
 {{#unless useEpilogue}}
 {{#if logVelocity}}
     Telemetry.log("{{ntKey}}/Velocity", getVelocity());
@@ -221,7 +226,12 @@ public class {{className}} implements Mechanism {
 {{> simPrepare}}
     flywheelSim.setInputVoltage({{> simAppliedVoltage}}.in(Volts));
     flywheelSim.update(LOOP_PERIOD.in(Seconds));
-    AngularVelocity driveVelocity = RadiansPerSecond.of(flywheelSim.getAngularVelocity());
+    AngularVelocity mechanismVelocity = RadiansPerSecond.of(flywheelSim.getAngularVelocity());
+    // The flywheel simulation has no position, so it is added up from the speed.
+    simulatedPosition = simulatedPosition.plus(mechanismVelocity.times(LOOP_PERIOD));
+    Angle mechanismPosition = simulatedPosition;
+    AngularAcceleration mechanismAcceleration = mechanismVelocity.minus(lastMechanismVelocity).div(LOOP_PERIOD);
+    lastMechanismVelocity = mechanismVelocity;
 {{> simUpdate}}
   }
 }

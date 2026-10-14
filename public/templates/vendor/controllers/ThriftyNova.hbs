@@ -29,14 +29,14 @@ import org.wpilib.math.controller.PIDController;
         NovaConfig.softLimitReverse(REVERSE_SOFT_LIMIT.times(GEAR_RATIO).in(Rotations)),
         NovaConfig.softLimitEnable(true));
 {{/if}}
-    motor.setIntPosition(STARTING_DRIVE_POSITION.times(GEAR_RATIO).in(Rotations));
+    motor.setIntPosition(STARTING_MECHANISM_POSITION.times(GEAR_RATIO).in(Rotations));
 {{/inline}}
-{{#*inline "getDrivePosition"}}
+{{#*inline "getMechanismPosition"}}
     // The Nova counts motor rotations.
-    return RobotBase.isSimulation() ? simDrivePosition : Rotations.of(motor.status().getIntPosition()).div(GEAR_RATIO);
+    return RobotBase.isSimulation() ? simMechanismPosition : Rotations.of(motor.status().getIntPosition()).div(GEAR_RATIO);
 {{/inline}}
-{{#*inline "getDriveVelocity"}}
-    return RobotBase.isSimulation() ? simDriveVelocity : RotationsPerSecond.of(motor.status().getIntVelocity()).div(GEAR_RATIO);
+{{#*inline "getMechanismVelocity"}}
+    return RobotBase.isSimulation() ? simMechanismVelocity : RotationsPerSecond.of(motor.status().getIntVelocity()).div(GEAR_RATIO);
 {{/inline}}
 {{#*inline "getVoltage"}}
     return RobotBase.isSimulation() ? appliedVoltage : Volts.of(motor.status().getAppliedVoltage());
@@ -47,20 +47,20 @@ import org.wpilib.math.controller.PIDController;
 {{#*inline "getTemperature"}}
     return Celsius.of(motor.status().getTemperature());
 {{/inline}}
-{{#*inline "setDrivePosition"}}
+{{#*inline "setMechanismPosition"}}
     // The PID works in {{gainUnit}}s.
     Voltage pidVoltage = Volts.of(pid.calculate(
 {{#if linear}}
-        TRAVEL_PER_ROTATION.times(getDrivePosition().div(Rotations.one())).in(Meters),
-        TRAVEL_PER_ROTATION.times(drivePosition.div(Rotations.one())).in(Meters)));
+        TRAVEL_PER_ROTATION.times(getMechanismPosition().div(Rotations.one())).in(Meters),
+        TRAVEL_PER_ROTATION.times(mechanismPosition.div(Rotations.one())).in(Meters)));
 {{else}}
-        getDrivePosition().in(Rotations), drivePosition.in(Rotations)));
+        getMechanismPosition().in(Rotations), mechanismPosition.in(Rotations)));
 {{/if}}
     setMotorVoltage(pidVoltage.plus(feedforward));
 {{/inline}}
-{{#*inline "setDriveVelocity"}}
+{{#*inline "setMechanismVelocity"}}
     // The PID works in rotations per second.
-    Voltage pidVoltage = Volts.of(pid.calculate(getDriveVelocity().in(RotationsPerSecond), driveVelocity.in(RotationsPerSecond)));
+    Voltage pidVoltage = Volts.of(pid.calculate(getMechanismVelocity().in(RotationsPerSecond), mechanismVelocity.in(RotationsPerSecond)));
     setMotorVoltage(pidVoltage.plus(feedforward));
 {{/inline}}
 {{#*inline "setMotorVoltage"}}
@@ -68,14 +68,14 @@ import org.wpilib.math.controller.PIDController;
     motor.setVoltage(voltage);
 {{/inline}}
 {{#*inline "simFields"}}
-  // The simulated {{driveNoun}}.
-  private Angle simDrivePosition = STARTING_DRIVE_POSITION;
-  private AngularVelocity simDriveVelocity = RotationsPerSecond.of(0);
+  // The simulated mechanism.
+  private Angle simMechanismPosition = STARTING_MECHANISM_POSITION;
+  private AngularVelocity simMechanismVelocity = RotationsPerSecond.of(0);
 {{/inline}}
 {{#*inline "simInit"}}{{/inline}}
 {{#*inline "simPrepare"}}{{/inline}}
 {{#*inline "simAppliedVoltage"}}(appliedVoltage.gt(batteryVoltage) ? batteryVoltage : appliedVoltage.lt(batteryVoltage.times(-1)) ? batteryVoltage.times(-1) : appliedVoltage){{/inline}}
 {{#*inline "simUpdate"}}
-    simDriveVelocity = driveVelocity;
-    simDrivePosition = simDrivePosition.plus(driveVelocity.times(LOOP_PERIOD));
+    simMechanismPosition = mechanismPosition;
+    simMechanismVelocity = mechanismVelocity;
 {{/inline}}

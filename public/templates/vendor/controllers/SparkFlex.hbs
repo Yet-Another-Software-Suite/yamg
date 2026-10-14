@@ -53,13 +53,13 @@ import static org.wpilib.units.Units.Milliseconds;
         .reverseSoftLimitEnabled(true);
 {{/if}}
     motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-    encoder.setPosition(STARTING_DRIVE_POSITION.times(GEAR_RATIO).in(Rotations));
+    encoder.setPosition(STARTING_MECHANISM_POSITION.times(GEAR_RATIO).in(Rotations));
 {{/inline}}
-{{#*inline "getDrivePosition"}}
+{{#*inline "getMechanismPosition"}}
     // The encoder counts motor rotations.
     return Rotations.of(encoder.getPosition().get()).div(GEAR_RATIO);
 {{/inline}}
-{{#*inline "getDriveVelocity"}}
+{{#*inline "getMechanismVelocity"}}
     return RPM.of(encoder.getVelocity().get()).div(GEAR_RATIO);
 {{/inline}}
 {{#*inline "getVoltage"}}
@@ -71,11 +71,11 @@ import static org.wpilib.units.Units.Milliseconds;
 {{#*inline "getTemperature"}}
     return Celsius.of(motor.getMotorTemperature().get());
 {{/inline}}
-{{#*inline "setDrivePosition"}}
-    closedLoop.setSetpoint(drivePosition.times(GEAR_RATIO).in(Rotations), ControlType.kPosition, ClosedLoopSlot.kSlot0, feedforward.in(Volts), ArbFFUnits.kVoltage);
+{{#*inline "setMechanismPosition"}}
+    closedLoop.setSetpoint(mechanismPosition.times(GEAR_RATIO).in(Rotations), ControlType.kPosition, ClosedLoopSlot.kSlot0, feedforward.in(Volts), ArbFFUnits.kVoltage);
 {{/inline}}
-{{#*inline "setDriveVelocity"}}
-    closedLoop.setSetpoint(driveVelocity.times(GEAR_RATIO).in(RPM), ControlType.kVelocity, ClosedLoopSlot.kSlot0, feedforward.in(Volts), ArbFFUnits.kVoltage);
+{{#*inline "setMechanismVelocity"}}
+    closedLoop.setSetpoint(mechanismVelocity.times(GEAR_RATIO).in(RPM), ControlType.kVelocity, ClosedLoopSlot.kSlot0, feedforward.in(Volts), ArbFFUnits.kVoltage);
 {{/inline}}
 {{#*inline "setMotorVoltage"}}
     motor.setVoltage(voltage);
@@ -91,5 +91,5 @@ import static org.wpilib.units.Units.Milliseconds;
 {{#*inline "simAppliedVoltage"}}batteryVoltage.times(motorSim.getAppliedOutput()){{/inline}}
 {{#*inline "simUpdate"}}
     // Give the SPARK the motor's simulated speed, so that it updates its encoder.
-    motorSim.iterate(driveVelocity.times(GEAR_RATIO).in(RPM), batteryVoltage.in(Volts), LOOP_PERIOD.in(Seconds));
+    motorSim.iterate(mechanismVelocity.times(GEAR_RATIO).in(RPM), batteryVoltage.in(Volts), LOOP_PERIOD.in(Seconds));
 {{/inline}}
