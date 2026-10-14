@@ -92,17 +92,25 @@ Configure the control system parameters:
 
 ## Step 4: Telemetry Configuration
 
+This section is hidden when **Use YAMS** is on, because YAMS publishes its own telemetry.
+
 Configure what data to log:
 
-1. **NetworkTables Key**: Base path for telemetry values
+1. **Logging**: How the values are logged
+   - **Telemetry**: The mechanism logs them with `Telemetry.log` in its `periodic()`. Nothing else is needed
+   - **Epilogue**: The getters you pick are marked `@Logged`, and Epilogue logs them. Mark `Robot` (and `RobotContainer` for Commands v2) `@Logged`, and call `Epilogue.bind(this)` in the `Robot` constructor, or `Epilogue.update(this)` in `robotPeriodic()` for Commands v3
+
+   Both publish each value with its unit.
+
+2. **NetworkTables Key**: Base path for telemetry values
    - Example: `Subsystem` or `Elevator`
 
-2. **Position Unit**: Select the unit for position data
+3. **Position Unit**: Select the unit for an arm or pivot angle
    - **Rotations**: Position in rotations
    - **Radians**: Position in radians
    - **Degrees**: Position in degrees
 
-3. **Telemetry Values**: Select which values to log
+4. **Telemetry Values**: Select which values to log
    - **Position**: Log mechanism position
    - **Velocity**: Log mechanism velocity
    - **Voltage**: Log applied voltage

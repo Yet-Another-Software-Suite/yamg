@@ -26,7 +26,11 @@ import org.wpilib.simulation.SingleJointedArmSim;
 import org.wpilib.smartdashboard.Mechanism2d;
 import org.wpilib.smartdashboard.MechanismLigament2d;
 import org.wpilib.system.RobotController;
+{{#if useEpilogue}}
+import org.wpilib.epilogue.Logged;
+{{else}}
 import org.wpilib.telemetry.Telemetry;
+{{/if}}
 import org.wpilib.units.measure.Angle;
 import org.wpilib.units.measure.AngularAcceleration;
 import org.wpilib.units.measure.AngularVelocity;
@@ -42,7 +46,15 @@ import org.wpilib.units.measure.Voltage;
  *
  * <p>Angles are measured from horizontal: 0 degrees points the arm straight out, and positive
  * angles raise it.
+{{#if useEpilogue}}
+ *
+ * <p>Epilogue logs the getters marked {@code @Logged}. Mark the class that holds this one {@code
+ * @Logged} too, and bind Epilogue to the robot.
+{{/if}}
  */
+{{#if useEpilogue}}
+@Logged(name = "{{ntKey}}", strategy = Logged.Strategy.OPT_IN)
+{{/if}}
 public class {{className}} implements Mechanism {
   private static final int CAN_ID = {{canId}};
   private static final DCMotor DC_MOTOR = {{{dcMotor}}};
@@ -104,6 +116,9 @@ public class {{className}} implements Mechanism {
       DC_MOTOR, GEAR_RATIO, SingleJointedArmSim.estimateMOI(ARM_LENGTH.in(Meters), ARM_MASS.in(Kilograms)),
       ARM_LENGTH.in(Meters), MIN_ANGLE.in(Radians), MAX_ANGLE.in(Radians), true, STARTING_ANGLE.in(Radians));
 {{> simFields}}
+{{#if useEpilogue}}
+  @Logged(name = "Mechanism")
+{{/if}}
   private final Mechanism2d mechanism2d = new Mechanism2d(3 * ARM_LENGTH.in(Meters), 3 * ARM_LENGTH.in(Meters));
   private final MechanismLigament2d armLigament = mechanism2d
       .getRoot("Pivot", 1.5 * ARM_LENGTH.in(Meters), 1.5 * ARM_LENGTH.in(Meters))
@@ -130,26 +145,41 @@ public class {{className}} implements Mechanism {
   }
 
   /** The arm's angle, from horizontal. */
+{{#if (and useEpilogue logPosition)}}
+  @Logged(name = "Angle")
+{{/if}}
   public Angle getAngle() {
-    return getMotorPosition().div(GEAR_RATIO);
+    return {{positionUnit}}.of(getMotorPosition().div(GEAR_RATIO).in({{positionUnit}}));
   }
 
   /** How fast the arm is turning. */
+{{#if (and useEpilogue logVelocity)}}
+  @Logged(name = "Velocity")
+{{/if}}
   public AngularVelocity getVelocity() {
     return getMotorVelocity().div(GEAR_RATIO);
   }
 
   /** The voltage the motor controller is applying to the motor. */
+{{#if (and useEpilogue logVoltage)}}
+  @Logged(name = "Voltage")
+{{/if}}
   public Voltage getVoltage() {
 {{> getVoltage}}
   }
 
   /** The motor's stator current. */
+{{#if (and useEpilogue logCurrent)}}
+  @Logged(name = "Current")
+{{/if}}
   public Current getCurrent() {
 {{> getCurrent}}
   }
 
   /** The motor's temperature. */
+{{#if (and useEpilogue logTemperature)}}
+  @Logged(name = "Temperature")
+{{/if}}
   public Temperature getTemperature() {
 {{> getTemperature}}
   }
@@ -208,8 +238,10 @@ public class {{className}} implements Mechanism {
       setMotorPosition(toMotorPosition(Radians.of(next.position)), feedforwardVoltage);
     }
 
+    armLigament.setAngle(getAngle().in(Degrees));
+{{#unless useEpilogue}}
 {{#if logPosition}}
-    Telemetry.log("{{ntKey}}/Angle", {{positionUnit}}.of(getAngle().in({{positionUnit}})));
+    Telemetry.log("{{ntKey}}/Angle", getAngle());
 {{/if}}
 {{#if logVelocity}}
     Telemetry.log("{{ntKey}}/Velocity", getVelocity());
@@ -223,8 +255,8 @@ public class {{className}} implements Mechanism {
 {{#if logTemperature}}
     Telemetry.log("{{ntKey}}/Temperature", getTemperature());
 {{/if}}
-    armLigament.setAngle(getAngle().in(Degrees));
     Telemetry.log("{{ntKey}}/Mechanism", mechanism2d);
+{{/unless}}
   }
 
   /** Call this from Robot.simulationPeriodic(). */

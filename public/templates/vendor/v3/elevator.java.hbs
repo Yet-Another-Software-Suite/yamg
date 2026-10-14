@@ -24,7 +24,11 @@ import org.wpilib.simulation.ElevatorSim;
 import org.wpilib.smartdashboard.Mechanism2d;
 import org.wpilib.smartdashboard.MechanismLigament2d;
 import org.wpilib.system.RobotController;
+{{#if useEpilogue}}
+import org.wpilib.epilogue.Logged;
+{{else}}
 import org.wpilib.telemetry.Telemetry;
+{{/if}}
 import org.wpilib.units.measure.Angle;
 import org.wpilib.units.measure.AngularVelocity;
 import org.wpilib.units.measure.Current;
@@ -41,7 +45,15 @@ import org.wpilib.units.measure.Voltage;
  * YAMG.
  *
  * <p>Heights are measured by how far the drum has wound in the rope or belt.
+{{#if useEpilogue}}
+ *
+ * <p>Epilogue logs the getters marked {@code @Logged}. Mark the class that holds this one {@code
+ * @Logged} too, and bind Epilogue to the robot.
+{{/if}}
  */
+{{#if useEpilogue}}
+@Logged(name = "{{ntKey}}", strategy = Logged.Strategy.OPT_IN)
+{{/if}}
 public class {{className}} implements Mechanism {
   private static final int CAN_ID = {{canId}};
   private static final DCMotor DC_MOTOR = {{{dcMotor}}};
@@ -104,6 +116,9 @@ public class {{className}} implements Mechanism {
       DC_MOTOR, GEAR_RATIO, CARRIAGE_MASS.in(Kilograms), DRUM_RADIUS.in(Meters),
       MIN_HEIGHT.in(Meters), MAX_HEIGHT.in(Meters), true, STARTING_HEIGHT.in(Meters));
 {{> simFields}}
+{{#if useEpilogue}}
+  @Logged(name = "Mechanism")
+{{/if}}
   private final Mechanism2d mechanism2d = new Mechanism2d(1, MAX_HEIGHT.in(Meters) + 0.5);
   private final MechanismLigament2d carriageLigament = mechanism2d
       .getRoot("Base", 0.5, 0)
@@ -130,26 +145,41 @@ public class {{className}} implements Mechanism {
   }
 
   /** The elevator's height. */
+{{#if (and useEpilogue logPosition)}}
+  @Logged(name = "Height")
+{{/if}}
   public Distance getHeight() {
     return Meters.of(getMotorPosition().in(Rotations) / MOTOR_ROTATIONS_PER_GAIN_UNIT);
   }
 
   /** How fast the elevator is moving. */
+{{#if (and useEpilogue logVelocity)}}
+  @Logged(name = "Velocity")
+{{/if}}
   public LinearVelocity getVelocity() {
     return MetersPerSecond.of(getMotorVelocity().in(RotationsPerSecond) / MOTOR_ROTATIONS_PER_GAIN_UNIT);
   }
 
   /** The voltage the motor controller is applying to the motor. */
+{{#if (and useEpilogue logVoltage)}}
+  @Logged(name = "Voltage")
+{{/if}}
   public Voltage getVoltage() {
 {{> getVoltage}}
   }
 
   /** The motor's stator current. */
+{{#if (and useEpilogue logCurrent)}}
+  @Logged(name = "Current")
+{{/if}}
   public Current getCurrent() {
 {{> getCurrent}}
   }
 
   /** The motor's temperature. */
+{{#if (and useEpilogue logTemperature)}}
+  @Logged(name = "Temperature")
+{{/if}}
   public Temperature getTemperature() {
 {{> getTemperature}}
   }
@@ -208,6 +238,8 @@ public class {{className}} implements Mechanism {
       setMotorPosition(toMotorPosition(Meters.of(next.position)), feedforwardVoltage);
     }
 
+    carriageLigament.setLength(getHeight().in(Meters));
+{{#unless useEpilogue}}
 {{#if logPosition}}
     Telemetry.log("{{ntKey}}/Height", getHeight());
 {{/if}}
@@ -223,8 +255,8 @@ public class {{className}} implements Mechanism {
 {{#if logTemperature}}
     Telemetry.log("{{ntKey}}/Temperature", getTemperature());
 {{/if}}
-    carriageLigament.setLength(getHeight().in(Meters));
     Telemetry.log("{{ntKey}}/Mechanism", mechanism2d);
+{{/unless}}
   }
 
   /** Call this from Robot.simulationPeriodic(). */

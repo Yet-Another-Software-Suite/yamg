@@ -69,7 +69,7 @@ public class {{className}} extends SubsystemBase {
       .withSoftLimits(Degrees.of({{reverseSoftLimit}}), Degrees.of({{forwardSoftLimit}}))
 {{/if}}
       // Telemetry name and how much to publish.
-      .withTelemetry("{{ntKey}}Motor", TelemetryVerbosity.{{yamsVerbosity}});
+      .withTelemetry("{{className}}Motor", TelemetryVerbosity.HIGH);
 
 {{> fields}}
 
@@ -79,7 +79,7 @@ public class {{className}} extends SubsystemBase {
       // The length of the arm, used by the simulation.
       .withLength(Meters.of({{armLength}}))
       // Telemetry name and how much to publish.
-      .withTelemetry("{{ntKey}}", TelemetryVerbosity.{{yamsVerbosity}});
+      .withTelemetry("{{className}}", TelemetryVerbosity.HIGH);
 
   // The arm mechanism.
   private final Arm arm = new Arm(armConfig, motor);

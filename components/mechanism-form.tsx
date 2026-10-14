@@ -23,6 +23,8 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
   const mechanismType = form.watch("mechanismType")
   const motorControllerType = form.watch("motorControllerType", "SparkMAX")
   const motorType = form.watch("motorType", "NEO")
+  // YAMS publishes its own telemetry, so the Telemetry section is only for plain vendor code.
+  const usesYams = form.watch("outputType") === "yams"
 
   // The units the generated code uses, which are also the units YAMS uses.
   const isElevator = mechanismType === "Elevator"
@@ -633,10 +635,38 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
           </AccordionContent>
         </AccordionItem>
 
+        {!usesYams && (
         <AccordionItem value="telemetry">
           <AccordionTrigger>Telemetry</AccordionTrigger>
           <AccordionContent>
             <div className="space-y-4">
+              <FormField
+                control={form.control}
+                name="telemetry.logger"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Logging</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select how to log" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="telemetry">Telemetry</SelectItem>
+                        <SelectItem value="epilogue">Epilogue</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Telemetry logs from the mechanism&apos;s periodic(). Epilogue logs the getters marked @Logged, and needs
+                      @Logged on Robot (and RobotContainer) with Epilogue.bind(this), or Epilogue.update(this) for Commands
+                      v3.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="telemetry.ntKey"
@@ -762,6 +792,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
             </div>
           </AccordionContent>
         </AccordionItem>
+        )}
 
         {mechanismType === "Elevator" && (
           <AccordionItem value="elevatorParams">

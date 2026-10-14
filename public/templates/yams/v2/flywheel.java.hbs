@@ -55,7 +55,7 @@ public class {{className}} extends SubsystemBase {
       .withClosedLoopRampRate(Seconds.of({{closedLoopRampRate}}))
 {{/if}}
       // Telemetry name and how much to publish.
-      .withTelemetry("{{ntKey}}Motor", TelemetryVerbosity.{{yamsVerbosity}});
+      .withTelemetry("{{className}}Motor", TelemetryVerbosity.HIGH);
 
 {{> fields}}
 
@@ -63,7 +63,7 @@ public class {{className}} extends SubsystemBase {
       // The diameter of the wheel, used by the simulation.
       .withDiameter(Meters.of({{flywheelDiameter}}))
       // Telemetry name and how much to publish.
-      .withTelemetry("{{ntKey}}", TelemetryVerbosity.{{yamsVerbosity}});
+      .withTelemetry("{{className}}", TelemetryVerbosity.HIGH);
 
   // The flywheel mechanism.
   private final FlyWheel flywheel = new FlyWheel(flywheelConfig, motor);

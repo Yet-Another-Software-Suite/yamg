@@ -36,6 +36,8 @@ export interface FormValues {
     closedLoop?: number
   }
   telemetry: {
+    /** Log with Telemetry calls in periodic(), or with Epilogue annotations. */
+    logger?: "telemetry" | "epilogue"
     ntKey: string
     position: boolean
     velocity: boolean

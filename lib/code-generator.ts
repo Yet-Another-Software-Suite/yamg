@@ -34,6 +34,8 @@ export function setTemplateLoader(loader: TemplateLoader) {
 }
 
 Handlebars.registerHelper("eq", (a, b) => a === b);
+// True when every argument is, for example {{#if (and useEpilogue logPosition)}}.
+Handlebars.registerHelper("and", (...args) => args.slice(0, -1).every(Boolean));
 
 const MECHANISM_FILES: Record<FormValues["mechanismType"], string> = {
   Arm: "arm",
@@ -123,8 +125,7 @@ export function buildTemplateData(data: FormValues) {
     logCurrent: data.telemetry.current,
     logTemperature: data.telemetry.temperature,
     positionUnit: data.telemetry.positionUnit,
-    // YAMS publishes its own telemetry: everything at HIGH, or position and velocity at MID.
-    yamsVerbosity: data.telemetry.voltage || data.telemetry.current || data.telemetry.temperature ? "HIGH" : "MID",
+    useEpilogue: data.telemetry.logger === "epilogue",
     thriftyMotorType: THRIFTY_MOTOR_TYPES[data.motorType] ?? "NEO",
     talonFXSArrangement: TALON_FXS_ARRANGEMENTS[data.motorType] ?? "NEO_JST",
   };
