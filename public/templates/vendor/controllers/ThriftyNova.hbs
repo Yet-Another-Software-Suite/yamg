@@ -51,8 +51,8 @@ import org.wpilib.math.controller.PIDController;
     // The PID works in {{gainUnit}}s.
     Voltage pidVoltage = Volts.of(pid.calculate(
 {{#if linear}}
-        TRAVEL_PER_ROTATION.times(getMechanismPosition().div(Rotations.one())).in(Meters),
-        TRAVEL_PER_ROTATION.times(mechanismPosition.div(Rotations.one())).in(Meters)));
+        TRAVEL_PER_ROTATION.times(getMechanismPosition().in(Rotations)).in(Meters),
+        TRAVEL_PER_ROTATION.times(mechanismPosition.in(Rotations)).in(Meters)));
 {{else}}
         getMechanismPosition().in(Rotations), mechanismPosition.in(Rotations)));
 {{/if}}

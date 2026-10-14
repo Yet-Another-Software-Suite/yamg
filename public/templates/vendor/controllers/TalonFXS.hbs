@@ -41,7 +41,8 @@ import static org.wpilib.units.Units.RotationsPerSecondPerSecond;
     // Arm_Cosine scales kG by the cosine of the arm's angle, which is 0 when the arm points straight out.
     // kV and kA are per radian, so they go to per turn.
     config.Slot0.withGravityType(GravityTypeValue.Arm_Cosine).withKG({{kG}});
-    config.Slot0.withKS({{kS}}).withKV({{kV}} * 2 * Math.PI).withKA({{kA}} * 2 * Math.PI);
+    double radiansPerRotation = Rotations.of(1).in(Radians);
+    config.Slot0.withKS({{kS}}).withKV({{kV}} * radiansPerRotation).withKA({{kA}} * radiansPerRotation);
 {{/if}}
 {{#if (eq mechanismType "Elevator")}}
     // Elevator_Static applies kG all the time. kV and kA are per meter, so they go to per turn.
@@ -58,8 +59,8 @@ import static org.wpilib.units.Units.RotationsPerSecondPerSecond;
     // Motion Magic: the fastest the profile moves and accelerates the mechanism.
 {{#if linear}}
     config.MotionMagic
-        .withMotionMagicCruiseVelocity(RotationsPerSecond.one().times(MAX_VELOCITY.div(TRAVEL_PER_ROTATION.per(Second))))
-        .withMotionMagicAcceleration(RotationsPerSecondPerSecond.one().times(MAX_ACCELERATION.div(TRAVEL_PER_ROTATION.per(Second).per(Second))));
+        .withMotionMagicCruiseVelocity(RotationsPerSecond.of(MAX_VELOCITY.div(TRAVEL_PER_ROTATION).in(MetersPerSecond.per(Meter))))
+        .withMotionMagicAcceleration(RotationsPerSecondPerSecond.of(MAX_ACCELERATION.div(TRAVEL_PER_ROTATION).in(MetersPerSecondPerSecond.per(Meter))));
 {{else}}
     config.MotionMagic.withMotionMagicCruiseVelocity(MAX_VELOCITY).withMotionMagicAcceleration(MAX_ACCELERATION);
 {{/if}}

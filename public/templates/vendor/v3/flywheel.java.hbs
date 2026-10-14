@@ -2,6 +2,7 @@ package first.robot.mechanisms;
 
 import static org.wpilib.units.Units.Amps;
 import static org.wpilib.units.Units.Celsius;
+import static org.wpilib.units.Units.Degrees;
 import static org.wpilib.units.Units.KilogramSquareMeters;
 import static org.wpilib.units.Units.RPM;
 import static org.wpilib.units.Units.RadiansPerSecond;
@@ -232,7 +233,7 @@ public class {{className}} implements Mechanism {
     }
 
     // Turn the spoke with the flywheel, so that the drawing shows it spinning.
-    spokeLigament.setAngle(getMechanismPosition().in(Rotations) * 360 % 360);
+    spokeLigament.setAngle(getMechanismPosition().in(Degrees) % 360);
 {{#unless useEpilogue}}
 {{#if logVelocity}}
     Telemetry.log("{{ntKey}}/Velocity", getVelocity());

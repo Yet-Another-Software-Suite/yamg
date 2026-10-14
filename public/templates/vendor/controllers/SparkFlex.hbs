@@ -52,7 +52,7 @@ import static org.wpilib.units.Units.Milliseconds;
       // In simulation the feedforward and the profile run on the SystemCore instead.
       // The SPARK runs the feedforward itself. Its kS and kG are in volts, and its kV and kA per
       // motor RPM, so they are converted from per {{gainUnit}}.
-      double rpmPerGainUnit = GEAR_RATIO * 60.0{{#if linear}} / TRAVEL_PER_ROTATION.in(Meters){{/if}}{{#if (eq mechanismType "Arm")}} / (2 * Math.PI){{/if}};
+      double rpmPerGainUnit = {{#if (eq mechanismType "Arm")}}RadiansPerSecond{{else}}RotationsPerSecond{{/if}}.of(GEAR_RATIO).in(RPM){{#if linear}} / TRAVEL_PER_ROTATION.in(Meters){{/if}};
       config.closedLoop.feedForward.kS({{kS}}).kV({{kV}} / rpmPerGainUnit).kA({{kA}} / rpmPerGainUnit);
 {{#if (eq mechanismType "Arm")}}
       // kCos scales kG by the cosine of the arm's angle, which is 0 when the arm points straight out.
@@ -67,8 +67,8 @@ import static org.wpilib.units.Units.Milliseconds;
       config.closedLoop.maxMotion
           .positionMode(MAXMotionPositionMode.kMAXMotionTrapezoidal)
 {{#if linear}}
-          .cruiseVelocity(RotationsPerSecond.of(GEAR_RATIO).times(MAX_VELOCITY.div(TRAVEL_PER_ROTATION.per(Second))).in(RPM))
-          .maxAcceleration(RotationsPerSecondPerSecond.of(GEAR_RATIO).times(MAX_ACCELERATION.div(TRAVEL_PER_ROTATION.per(Second).per(Second))).in(RPM.per(Second)));
+          .cruiseVelocity(RotationsPerSecond.of(MAX_VELOCITY.div(TRAVEL_PER_ROTATION).in(MetersPerSecond.per(Meter))).times(GEAR_RATIO).in(RPM))
+          .maxAcceleration(RotationsPerSecondPerSecond.of(MAX_ACCELERATION.div(TRAVEL_PER_ROTATION).in(MetersPerSecondPerSecond.per(Meter))).times(GEAR_RATIO).in(RPM.per(Second)));
 {{else}}
           .cruiseVelocity(MAX_VELOCITY.times(GEAR_RATIO).in(RPM))
           .maxAcceleration(MAX_ACCELERATION.times(GEAR_RATIO).in(RPM.per(Second)));
