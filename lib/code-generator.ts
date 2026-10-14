@@ -162,7 +162,6 @@ export function buildTemplateData(data: FormValues) {
     logVoltage: data.telemetry.voltage,
     logCurrent: data.telemetry.current,
     logTemperature: data.telemetry.temperature,
-    positionUnit: data.telemetry.positionUnit,
     // YAMS publishes its own telemetry, so Epilogue is only for plain vendor code.
     useEpilogue: data.telemetry.logger === "epilogue" && output !== "yams",
     thriftyMotorType: THRIFTY_MOTOR_TYPES[data.motorType] ?? "NEO",

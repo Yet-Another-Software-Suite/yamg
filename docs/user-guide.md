@@ -105,12 +105,7 @@ Configure what data to log:
 2. **NetworkTables Key**: Base path for telemetry values
    - Example: `Subsystem` or `Elevator`
 
-3. **Position Unit**: Select the unit for an arm or pivot angle
-   - **Rotations**: Position in rotations
-   - **Radians**: Position in radians
-   - **Degrees**: Position in degrees
-
-4. **Telemetry Values**: Select which values to log
+3. **Telemetry Values**: Select which values to log. Each is published with its unit, so a dashboard can show it in whatever unit you like
    - **Position**: Log mechanism position
    - **Velocity**: Log mechanism velocity
    - **Voltage**: Log applied voltage

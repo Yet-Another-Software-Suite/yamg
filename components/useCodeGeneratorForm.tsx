@@ -61,7 +61,6 @@ export const formSchema = z.object({
     voltage: z.boolean(),
     temperature: z.boolean(),
     current: z.boolean(),
-    positionUnit: z.enum(["Rotations", "Radians", "Degrees"]),
   }),
   armParams: z
     .object({
@@ -128,7 +127,6 @@ export function useCodeGeneratorForm() {
         voltage: true,
         temperature: false,
         current: false,
-        positionUnit: "Rotations",
       },
       armParams: {
         length: 1.0,

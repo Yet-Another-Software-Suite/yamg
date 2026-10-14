@@ -149,7 +149,7 @@ public class {{className}} extends SubsystemBase {
   @Logged(name = "Angle")
 {{/if}}
   public Angle getAngle() {
-    return {{positionUnit}}.of(getMotorPosition().div(GEAR_RATIO).in({{positionUnit}}));
+    return getMotorPosition().div(GEAR_RATIO);
   }
 
   /** How fast the pivot is turning. */

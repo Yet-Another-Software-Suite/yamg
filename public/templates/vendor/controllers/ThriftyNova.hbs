@@ -72,5 +72,5 @@ import org.wpilib.math.controller.PIDController;
 {{#*inline "simAppliedVoltage"}}(appliedVoltage.gt(batteryVoltage) ? batteryVoltage : appliedVoltage.lt(batteryVoltage.times(-1)) ? batteryVoltage.times(-1) : appliedVoltage){{/inline}}
 {{#*inline "simUpdate"}}
     simMotorVelocity = motorVelocity;
-    simMotorPosition = simMotorPosition.plus(Rotations.of(motorVelocity.in(RotationsPerSecond) * LOOP_PERIOD.in(Seconds)));
+    simMotorPosition = simMotorPosition.plus(motorVelocity.times(LOOP_PERIOD));
 {{/inline}}
