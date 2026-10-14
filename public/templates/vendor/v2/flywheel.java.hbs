@@ -116,7 +116,7 @@ public class {{className}} extends SubsystemBase {
   @Logged(name = "Velocity")
 {{/if}}
   public AngularVelocity getVelocity() {
-    return RPM.of(getMotorVelocity().div(GEAR_RATIO).in(RPM));
+    return getMotorVelocity().div(GEAR_RATIO);
   }
 
   /** The voltage the motor controller is applying to the motor. */

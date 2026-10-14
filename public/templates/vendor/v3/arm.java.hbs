@@ -149,7 +149,7 @@ public class {{className}} implements Mechanism {
   @Logged(name = "Angle")
 {{/if}}
   public Angle getAngle() {
-    return {{positionUnit}}.of(getMotorPosition().div(GEAR_RATIO).in({{positionUnit}}));
+    return getMotorPosition().div(GEAR_RATIO);
   }
 
   /** How fast the arm is turning. */

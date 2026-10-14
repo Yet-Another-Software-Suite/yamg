@@ -52,7 +52,6 @@ function form(
       voltage: everything,
       temperature: everything,
       current: everything,
-      positionUnit: everything ? "Degrees" : "Rotations",
     },
     armParams: { length: 0.6, hardLimitMin: -10, hardLimitMax: 100, startingPosition: 0, mass: 4, massUnit: "kg" },
     // Each variant lifts the carriage a different way: a chain cascade, a belt, or a drum.

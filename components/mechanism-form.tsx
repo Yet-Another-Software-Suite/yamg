@@ -709,29 +709,6 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="telemetry.positionUnit"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Position Unit</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select position unit" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Rotations">Rotations</SelectItem>
-                        <SelectItem value="Radians">Radians</SelectItem>
-                        <SelectItem value="Degrees">Degrees</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               <div className="space-y-2">
                 <Label>Telemetry Values</Label>
                 <div className="grid grid-cols-2 gap-4">

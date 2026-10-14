@@ -44,7 +44,6 @@ export interface FormValues {
     voltage: boolean
     temperature: boolean
     current: boolean
-    positionUnit: "Rotations" | "Radians" | "Degrees"
   }
   armParams?: {
     length?: number

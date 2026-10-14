@@ -22,7 +22,6 @@ function baseFormValues(overrides: Partial<FormValues> = {}): FormValues {
       voltage: true,
       temperature: false,
       current: false,
-      positionUnit: "Rotations",
     },
     ...overrides,
   } as FormValues

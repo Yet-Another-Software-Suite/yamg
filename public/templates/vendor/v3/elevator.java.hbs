@@ -12,6 +12,7 @@ import static org.wpilib.units.Units.MetersPerSecondPerSecond;
 import static org.wpilib.units.Units.RPM;
 import static org.wpilib.units.Units.Rotations;
 import static org.wpilib.units.Units.RotationsPerSecond;
+import static org.wpilib.units.Units.Second;
 import static org.wpilib.units.Units.Seconds;
 import static org.wpilib.units.Units.Volts;
 
@@ -144,9 +145,9 @@ public class {{className}} implements Mechanism {
     }
   }
 
-  /** Where the motor's rotor is for a height. */
+  /** Where the motor's rotor is for a height: GEAR_RATIO motor turns for each turn of the {{driveNoun}}. */
   private static Angle toMotorPosition(Distance height) {
-    return Rotations.of(height.in(Meters) * MOTOR_ROTATIONS_PER_GAIN_UNIT);
+    return Rotations.of(GEAR_RATIO).times(height.div(TRAVEL_PER_ROTATION));
   }
 
   private Angle getMotorPosition() {
@@ -162,7 +163,7 @@ public class {{className}} implements Mechanism {
   @Logged(name = "Height")
 {{/if}}
   public Distance getHeight() {
-    return Meters.of(getMotorPosition().in(Rotations) / MOTOR_ROTATIONS_PER_GAIN_UNIT);
+    return TRAVEL_PER_ROTATION.times(getMotorPosition().div(Rotations.of(GEAR_RATIO)));
   }
 
   /** How fast the elevator is moving. */
@@ -170,7 +171,7 @@ public class {{className}} implements Mechanism {
   @Logged(name = "Velocity")
 {{/if}}
   public LinearVelocity getVelocity() {
-    return MetersPerSecond.of(getMotorVelocity().in(RotationsPerSecond) / MOTOR_ROTATIONS_PER_GAIN_UNIT);
+    return TRAVEL_PER_ROTATION.per(Second).times(getMotorVelocity().div(RotationsPerSecond.of(GEAR_RATIO)));
   }
 
   /** The voltage the motor controller is applying to the motor. */
@@ -288,7 +289,8 @@ public class {{className}} implements Mechanism {
 {{> simPrepare}}
     elevatorSim.setInputVoltage({{> simAppliedVoltage}}.in(Volts));
     elevatorSim.update(LOOP_PERIOD.in(Seconds));
-    AngularVelocity motorVelocity = RotationsPerSecond.of(elevatorSim.getVelocity() * MOTOR_ROTATIONS_PER_GAIN_UNIT);
+    AngularVelocity motorVelocity =
+        RotationsPerSecond.of(GEAR_RATIO).times(MetersPerSecond.of(elevatorSim.getVelocity()).div(TRAVEL_PER_ROTATION.per(Second)));
 {{> simUpdate}}
   }
 }

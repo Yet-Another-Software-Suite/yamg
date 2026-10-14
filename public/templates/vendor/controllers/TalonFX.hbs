@@ -78,5 +78,5 @@ import org.wpilib.hardware.bus.CANPort;
 {{#*inline "simUpdate"}}
     // Move the Talon's simulated rotor by what the motor turned this loop.
     motor.getSimState().setRotorVelocity(motorVelocity);
-    motor.getSimState().addRotorPosition(Rotations.of(motorVelocity.in(RotationsPerSecond) * LOOP_PERIOD.in(Seconds)));
+    motor.getSimState().addRotorPosition(motorVelocity.times(LOOP_PERIOD));
 {{/inline}}
