@@ -1,11 +1,11 @@
 name: YAMG Deploy
 
 # The site serves the YAMG for each WPILib season:
-#   https://yamg.yassrobotics.com/       the 2026 branch
-#   https://yamg.yassrobotics.com/2027/  the main branch
+#   https://yamg.yassrobotics.com/       the main branch (2027)
+#   https://yamg.yassrobotics.com/2026/  the 2026 branch
 # It deploys after main builds and passes its tests. After pushing to the 2026 branch, run this
 # workflow by hand (Actions > YAMG Deploy > Run workflow) to publish it.
-# When 2027 becomes the default, swap the two paths here and in components/season-switch.tsx.
+# For a new season, add its path here and in components/season-switch.tsx.
 
 on:
   workflow_run:
@@ -60,14 +60,14 @@ jobs:
 
       - name: Build 2026
         working-directory: site-2026
+        env:
+          NEXT_PUBLIC_BASE_PATH: /2026
         run: |
           pnpm install --no-frozen-lockfile
           pnpm run build
 
       - name: Build 2027
         working-directory: site-2027
-        env:
-          NEXT_PUBLIC_BASE_PATH: /2027
         run: |
           pnpm install --no-frozen-lockfile
           pnpm run build
@@ -75,9 +75,9 @@ jobs:
       - name: Put the seasons together
         run: |
           mkdir site
-          cp -r site-2026/out/. site/
-          mkdir site/2027
-          cp -r site-2027/out/. site/2027/
+          cp -r site-2027/out/. site/
+          mkdir site/2026
+          cp -r site-2026/out/. site/2026/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

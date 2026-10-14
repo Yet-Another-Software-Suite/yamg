@@ -1,10 +1,10 @@
 /**
  * Links between the YAMG for each WPILib season, at the top right of the page. The 2026 site is
- * served at the root, and the 2027 site under /2027, until 2027 becomes the default.
+ * served under /2026, and the 2027 site at the root.
  */
 const SEASONS = [
-  { year: "2026", href: "/" },
-  { year: "2027", href: "/2027/" },
+  { year: "2026", href: "/2026/" },
+  { year: "2027", href: "/" },
 ]
 
 export function SeasonSwitch({ current }: { current: string }) {
