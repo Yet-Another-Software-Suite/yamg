@@ -18,6 +18,7 @@ import {
   isMotorCompatibleWithController,
 } from "@/lib/config/hardware-config"
 import ReCalcIntegration from "./recalc-integration"
+import { renameForMechanism } from "@/lib/mechanism-name"
 
 export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
   const mechanismType = form.watch("mechanismType")
@@ -49,6 +50,30 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
     } else if (value === "TalonFX" && !isMotorCompatibleWithController(motorType, value)) {
       form.setValue("motorType", "Krakenx60")
     }
+  }
+
+  // When the mechanism type or the command framework changes, a name that was only the mechanism
+  // type follows it, with the framework's suffix, and so does a NetworkTables key that matched it.
+  const renameIfDefault = (from: string, to: string, commandsVersion: "v2" | "v3") => {
+    const name = form.getValues("subsystemName")
+    const renamed = renameForMechanism(name, from, to, commandsVersion)
+    if (renamed !== name) {
+      form.setValue("subsystemName", renamed)
+      if (form.getValues("telemetry.ntKey") === name) {
+        form.setValue("telemetry.ntKey", renamed)
+      }
+    }
+  }
+
+  const handleMechanismTypeChange = (value: string) => {
+    renameIfDefault(form.getValues("mechanismType"), value, form.getValues("commandsVersion"))
+    form.setValue("mechanismType", value)
+  }
+
+  const handleCommandsVersionChange = (value: "v2" | "v3") => {
+    const mechanism = form.getValues("mechanismType")
+    renameIfDefault(mechanism, mechanism, value)
+    form.setValue("commandsVersion", value)
   }
 
   // Handle motor type change
@@ -94,7 +119,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Mechanism Type</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={handleMechanismTypeChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select mechanism type" />
@@ -141,7 +166,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Command Framework</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={handleCommandsVersionChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a command framework" />

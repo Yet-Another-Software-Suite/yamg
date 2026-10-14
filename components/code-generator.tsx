@@ -24,10 +24,16 @@ export default function CodeGenerator() {
   const [error, setError] = useState<string | null>(null);
 
   const shouldRegenerateCode = useRef(true);
+  // Counts form changes, so that every change regenerates the code, including the ones the form
+  // makes itself with setValue, which do not always change the form state.
+  const [formChanges, setFormChanges] = useState(0);
 
   // Watch form changes → mark code for regeneration
   useEffect(() => {
-    const sub = form.watch(() => (shouldRegenerateCode.current = true));
+    const sub = form.watch(() => {
+      shouldRegenerateCode.current = true;
+      setFormChanges((count) => count + 1);
+    });
     return () => sub.unsubscribe();
   }, [form]);
 
@@ -58,7 +64,7 @@ export default function CodeGenerator() {
       }
     };
     generate();
-  }, [form, activeFileIndex, form.formState]);
+  }, [form, activeFileIndex, form.formState, formChanges]);
 
   // Responsive layout detection
   useEffect(() => {
