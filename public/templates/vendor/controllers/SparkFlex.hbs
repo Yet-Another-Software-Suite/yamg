@@ -6,13 +6,14 @@ import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.FeedbackSensor;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkClosedLoopController.ArbFFUnits;
-import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkLowLevel.ControlType;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkSim;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
 import org.wpilib.hardware.bus.CANPort;
+import static org.wpilib.units.Units.Milliseconds;
 {{/inline}}
 {{#*inline "fields"}}
   // The SPARK Flex, its built-in encoder and its closed loop controller.
@@ -26,58 +27,57 @@ import org.wpilib.hardware.bus.CANPort;
     double gainScale = 12.0 * {{#if velocityControl}}GEAR_RATIO * 60.0{{else}}MOTOR_ROTATIONS_PER_GAIN_UNIT{{/if}};
     // A SPARK runs its closed loop every millisecond, and its kI and kD are per loop.
     // REVLib's simulated SPARK applies them per second instead.
-    double loopPeriod = RobotBase.isSimulation() ? 1.0 : 0.001;
+    Time sparkLoopPeriod = RobotBase.isSimulation() ? Seconds.of(1) : Milliseconds.of(1);
 
     SparkFlexConfig config = new SparkFlexConfig();
     config.idleMode(BRAKE_MODE ? IdleMode.kBrake : IdleMode.kCoast);
     // Scale the duty cycle to a 12 volt battery, so that the gains act the same as the battery drains.
     config.voltageCompensation(12.0);
 {{#if enableStatorLimit}}
-    config.smartCurrentLimit((int) STATOR_CURRENT_LIMIT);
+    config.smartCurrentLimit((int) STATOR_CURRENT_LIMIT.in(Amps));
 {{/if}}
 {{#if enableOpenLoopRamp}}
-    config.openLoopRampRate(OPEN_LOOP_RAMP_SECONDS);
+    config.openLoopRampRate(OPEN_LOOP_RAMP.in(Seconds));
 {{/if}}
 {{#if enableClosedLoopRamp}}
-    config.closedLoopRampRate(CLOSED_LOOP_RAMP_SECONDS);
+    config.closedLoopRampRate(CLOSED_LOOP_RAMP.in(Seconds));
 {{/if}}
     config.closedLoop
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-        .pid(KP / gainScale, KI * loopPeriod / gainScale, KD / loopPeriod / gainScale);
+        .pid(KP / gainScale, KI * sparkLoopPeriod.in(Seconds) / gainScale, KD / sparkLoopPeriod.in(Seconds) / gainScale);
 {{#if enableSoftLimits}}
     config.softLimit
-        .forwardSoftLimit(FORWARD_SOFT_LIMIT_MOTOR_ROTATIONS)
+        .forwardSoftLimit(FORWARD_SOFT_LIMIT.in(Rotations))
         .forwardSoftLimitEnabled(true)
-        .reverseSoftLimit(REVERSE_SOFT_LIMIT_MOTOR_ROTATIONS)
+        .reverseSoftLimit(REVERSE_SOFT_LIMIT.in(Rotations))
         .reverseSoftLimitEnabled(true);
 {{/if}}
     motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-    encoder.setPosition(STARTING_MOTOR_ROTATIONS);
+    encoder.setPosition(STARTING_MOTOR_POSITION.in(Rotations));
 {{/inline}}
-{{#*inline "getMotorRotations"}}
-    return encoder.getPosition().get();
+{{#*inline "getMotorPosition"}}
+    return Rotations.of(encoder.getPosition().get());
 {{/inline}}
-{{#*inline "getMotorRPS"}}
-    // The SPARK reports RPM.
-    return encoder.getVelocity().get() / 60.0;
+{{#*inline "getMotorVelocity"}}
+    return RPM.of(encoder.getVelocity().get());
 {{/inline}}
-{{#*inline "getAppliedVolts"}}
-    return motor.getAppliedOutput().get() * motor.getBusVoltage().get();
+{{#*inline "getVoltage"}}
+    return Volts.of(motor.getAppliedOutput().get() * motor.getBusVoltage().get());
 {{/inline}}
 {{#*inline "getCurrent"}}
-    return motor.getOutputCurrent().get();
+    return Amps.of(motor.getOutputCurrent().get());
 {{/inline}}
 {{#*inline "getTemperature"}}
-    return motor.getMotorTemperature().get();
+    return Celsius.of(motor.getMotorTemperature().get());
 {{/inline}}
 {{#*inline "setMotorPosition"}}
-    closedLoop.setSetpoint(motorRotations, ControlType.kPosition, ClosedLoopSlot.kSlot0, feedforwardVolts, ArbFFUnits.kVoltage);
+    closedLoop.setSetpoint(motorPosition.in(Rotations), ControlType.kPosition, ClosedLoopSlot.kSlot0, feedforward.in(Volts), ArbFFUnits.kVoltage);
 {{/inline}}
 {{#*inline "setMotorVelocity"}}
-    closedLoop.setSetpoint(motorRPS * 60.0, ControlType.kVelocity, ClosedLoopSlot.kSlot0, feedforwardVolts, ArbFFUnits.kVoltage);
+    closedLoop.setSetpoint(motorVelocity.in(RPM), ControlType.kVelocity, ClosedLoopSlot.kSlot0, feedforward.in(Volts), ArbFFUnits.kVoltage);
 {{/inline}}
 {{#*inline "setMotorVoltage"}}
-    motor.setVoltage(volts);
+    motor.setVoltage(voltage);
 {{/inline}}
 {{#*inline "simFields"}}
   // REVLib's simulated SPARK. It runs the closed loop in simulation.
@@ -87,8 +87,8 @@ import org.wpilib.hardware.bus.CANPort;
       motorSim = new SparkSim(motor, DC_MOTOR);
 {{/inline}}
 {{#*inline "simPrepare"}}{{/inline}}
-{{#*inline "simAppliedVolts"}}motorSim.getAppliedOutput() * batteryVolts{{/inline}}
+{{#*inline "simAppliedVoltage"}}batteryVoltage.times(motorSim.getAppliedOutput()){{/inline}}
 {{#*inline "simUpdate"}}
-    // Give the SPARK the motor's simulated speed in RPM, so that it updates its encoder.
-    motorSim.iterate(motorRPS * 60.0, batteryVolts, 0.020);
+    // Give the SPARK the motor's simulated speed, so that it updates its encoder.
+    motorSim.iterate(motorVelocity.in(RPM), batteryVoltage.in(Volts), LOOP_PERIOD.in(Seconds));
 {{/inline}}

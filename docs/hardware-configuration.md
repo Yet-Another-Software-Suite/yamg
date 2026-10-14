@@ -112,7 +112,7 @@ public/templates/vendor/controllers/NewController.hbs
 public/templates/yams/controllers/NewController.hbs
 ```
 
-The vendor file defines `imports`, `fields`, `configure`, `getMotorRotations`, `getMotorRPS`, `getAppliedVolts`, `getCurrent`, `getTemperature`, `setMotorPosition`, `setMotorVelocity`, `setMotorVoltage`, `simFields`, `simInit`, `simPrepare`, `simAppliedVolts` and `simUpdate`. Work in motor rotations, and convert the gains from the form's units with `MOTOR_ROTATIONS_PER_GAIN_UNIT`, as the existing controllers do:
+The vendor file defines `imports`, `fields`, `configure`, `getMotorPosition`, `getMotorVelocity`, `getVoltage`, `getCurrent`, `getTemperature`, `setMotorPosition`, `setMotorVelocity`, `setMotorVoltage`, `simFields`, `simInit`, `simPrepare`, `simAppliedVoltage` and `simUpdate`. Use WPILib units (`Angle`, `AngularVelocity`, `Voltage` and the rest) rather than `double`, work in the motor's rotor angle, and convert the gains from the form's units with `MOTOR_ROTATIONS_PER_GAIN_UNIT`, as the existing controllers do:
 
 ```handlebars
 {{#*inline "imports"}}
@@ -121,8 +121,8 @@ import com.example.NewController;
 {{#*inline "fields"}}
   private final NewController motor = new NewController(CAN_ID);
 {{/inline}}
-{{#*inline "getMotorRotations"}}
-    return motor.getRotorPosition();
+{{#*inline "getMotorPosition"}}
+    return Rotations.of(motor.getRotorPosition());
 {{/inline}}
 ```
 
