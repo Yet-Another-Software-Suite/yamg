@@ -1,0 +1,80 @@
+package first.robot;
+
+import static org.wpilib.units.Units.{{bindingUnit}};
+
+import first.robot.Constants.OperatorConstants;
+import first.robot.commands.Autos;
+import first.robot.commands.ExampleCommand;
+import first.robot.subsystems.ExampleSubsystem;
+import first.robot.subsystems.{{className}};
+import org.wpilib.command2.Command;
+import org.wpilib.command2.button.CommandGamepad;
+import org.wpilib.command2.button.Trigger;
+{{#if useEpilogue}}
+import org.wpilib.epilogue.Logged;
+{{/if}}
+
+/**
+ * The RobotContainer.java of the WPILib 2027 Command v2 Robot template, with the {{className}}
+ * added by YAMG. Replace your project's RobotContainer.java with it.
+ *
+ * <p>This class is where the bulk of the robot should be declared. Since Command-based is a
+ * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}
+ * periodic methods (other than the scheduler calls). Instead, the structure of the robot (including
+ * subsystems, commands, and trigger mappings) should be declared here.
+{{#if useEpilogue}}
+ *
+ * <p>Robot logs this class with Epilogue, and through it the {{className}}.
+{{/if}}
+ */
+{{#if useEpilogue}}
+@Logged
+{{/if}}
+public class RobotContainer {
+  // The robot's subsystems and commands are defined here...
+  private final ExampleSubsystem exampleSubsystem = new ExampleSubsystem();
+  // Added by YAMG.
+  private final {{className}} {{mechanismField}} = new {{className}}();
+
+  private final CommandGamepad driverController =
+      new CommandGamepad(OperatorConstants.DRIVER_CONTROLLER_PORT);
+
+  /** The container for the robot. Contains subsystems, OI devices, and commands. */
+  public RobotContainer() {
+    // When no other command is using the {{mechanismNoun}}, {{defaultDescription}}.
+    {{mechanismField}}.setDefaultCommand({{defaultCommand}});
+
+    // Configure the trigger bindings
+    configureBindings();
+  }
+
+  /**
+   * Use this method to define your trigger->command mappings. Triggers can be created via the
+   * {@link Trigger#Trigger(java.util.function.BooleanSupplier)} constructor with an arbitrary
+   * predicate, or via the named factories in {@link org.wpilib.command2.button.CommandGenericHID}'s
+   * subclasses for {@link CommandGamepad Gamepad} gamepads or {@link
+   * org.wpilib.command2.button.CommandJoystick Flight joysticks}.
+   */
+  private void configureBindings() {
+    // Schedule `ExampleCommand` when `exampleCondition` changes to `true`
+    new Trigger(exampleSubsystem::exampleCondition).onTrue(new ExampleCommand(exampleSubsystem));
+
+    // Added by YAMG, in place of the template's example on the right face button.
+    // {{targetDescription}}
+    driverController.faceDown().whileTrue({{mechanismField}}.{{targetA}});
+    driverController.faceRight().whileTrue({{mechanismField}}.{{targetB}});
+    // Drive the {{mechanismNoun}} with a duty cycle while the left (X) or top (Y) face button is held.
+    driverController.faceLeft().whileTrue({{mechanismField}}.set(0.3));
+    driverController.faceUp().whileTrue({{mechanismField}}.set(-0.3));
+  }
+
+  /**
+   * Use this to pass the autonomous command to the main {@link Robot} class.
+   *
+   * @return the command to run in autonomous
+   */
+  public Command getAutonomousCommand() {
+    // An example command will be run in autonomous
+    return Autos.exampleAuto(exampleSubsystem);
+  }
+}

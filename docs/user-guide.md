@@ -147,20 +147,20 @@ Flywheels are velocity-only mechanisms. There is no position control mode, soft 
 The code is automatically generated as you configure the mechanism:
 
 1. **View Generated Code**: Switch to the "Generated Code" tab to see the Java code
-2. **One File**: The mechanism is one file, with its physics simulation and its dashboard drawing inside it
-   - `subsystems/ElevatorSubsystem.java` for Commands v2
-   - `mechanisms/ElevatorSubsystem.java` for Commands v3
+2. **Switch Between Files**: Use the buttons above the code display. The mechanism is one file, with its physics simulation and its dashboard drawing inside it, and YAMG also generates the template files that use it:
+   - **Commands v2**: `subsystems/ElevatorSubsystem.java`, `Robot.java` and `RobotContainer.java`. `RobotContainer` creates the subsystem, gives it a default command and binds the face buttons. `Robot.java` is the template's own, and only changes to set up Epilogue
+   - **Commands v3**: `mechanisms/ElevatorSubsystem.java`, `Robot.java` and `ElevatorSubsystemTeleop.java`. `Robot` creates the mechanism and gives it a default command, calls its `periodic()` before the scheduler runs and its `simulationPeriodic()` in simulation, and publishes the scheduler. The teleop op mode binds the gamepad's face buttons; pick it on the driver station
+   - The robot files start from the WPILib 2027 templates, and keep the template's example code that its other files use
 
 3. **Download Code**: Use the buttons to download the code
    - **Copy**: Copy the current file to clipboard
    - **Save File**: Download the current file
    - **Download All**: Download a ZIP archive laid out like a robot project
 
-4. **Use in Your Project**: Add the downloaded file to your robot project
+4. **Use in Your Project**: Add the downloaded files to a project made from the WPILib 2027 Command v2 or Command v3 Robot template
    - Install the vendor library for your motor controller (REVLib, Phoenix 6 or ThriftyLib), and YAMS if you generated YAMS code
-   - Place the file in `src/main/java/first/robot/subsystems` (Commands v2) or `src/main/java/first/robot/mechanisms` (Commands v3)
-   - Commands v2: create the subsystem in `RobotContainer.java` and bind its commands
-   - Commands v3: create the mechanism in `Robot.java`, call its `periodic()` and `simulationPeriodic()` from `Robot`, and use its commands in your op modes
+   - Place the mechanism in `src/main/java/first/robot/subsystems` (Commands v2) or `src/main/java/first/robot/mechanisms` (Commands v3)
+   - Replace the template's `Robot.java`, and its `RobotContainer.java` for Commands v2, with the generated ones. For Commands v3, add the teleop op mode next to the template's `ExampleTeleop.java`. **Download All** lays the files out this way
 
 ## Step 7: Test with Simulation
 

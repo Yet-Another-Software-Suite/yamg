@@ -177,6 +177,17 @@ public class {{className}} implements Mechanism {
     return new Trigger(() -> getVelocity().isNear(velocity, tolerance));
   }
 
+  /** Let the flywheel coast at the lowest priority, so that any other command for this mechanism can interrupt it. */
+  public Command idle() {
+    return run(coroutine -> {
+      goalVelocity = null;
+      while (true) {
+        setMotorVoltage(Volts.of(0));
+        coroutine.yield();
+      }
+    }).withPriority(Command.LOWEST_PRIORITY).named("{{className}} Idle");
+  }
+
   /** Call this from Robot.robotPeriodic(), before the scheduler runs. */
   public void periodic() {
     if (goalVelocity != null) {

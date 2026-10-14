@@ -69,23 +69,43 @@ const CASES = OUTPUTS.flatMap((o) =>
 
 describe("generateFiles", () => {
   it.each(CASES.map((f) => [`${f.outputType}/${f.commandsVersion}/${f.subsystemName}`, f]))("renders %s", async (_, f) => {
-    const files = await generateFiles(f as FormValues);
-    expect(files).toHaveLength(1);
-    const [file] = files;
-    expect(file.filename).not.toBe("error.txt");
-    const v3 = (f as FormValues).commandsVersion === "v3";
-    expect(file.filename).toBe(`${v3 ? "mechanisms" : "subsystems"}/${(f as FormValues).subsystemName}.java`);
-    expect(file.content).toContain(`package first.robot.${v3 ? "mechanisms" : "subsystems"};`);
-    expect(file.content).toContain(v3 ? "implements Mechanism" : "extends SubsystemBase");
-    // Only 2027 packages, no leftover Handlebars, no em dashes.
-    expect(file.content).not.toMatch(/edu\.wpi\.first|frc\.robot|\{\{|—/);
-    expect(file.content).not.toMatch(/\bRIO\b|roboRIO|RoboRio/);
+    const form = f as FormValues;
+    const v3 = form.commandsVersion === "v3";
+    const files = await generateFiles(form);
+    expect(files.map((file) => file.filename)).toEqual([
+      `${v3 ? "mechanisms" : "subsystems"}/${form.subsystemName}.java`,
+      "Robot.java",
+      v3 ? `${form.subsystemName}Teleop.java` : "RobotContainer.java",
+    ]);
+    const [mechanism, robot, other] = files;
+    expect(mechanism.content).toContain(`package first.robot.${v3 ? "mechanisms" : "subsystems"};`);
+    expect(mechanism.content).toContain(v3 ? "implements Mechanism" : "extends SubsystemBase");
+    expect(robot.content).toContain(v3 ? "extends OpModeRobot" : "extends TimedRobot");
+    // The robot creates the mechanism: Robot itself for Commands v3, RobotContainer for Commands v2.
+    expect((v3 ? robot : other).content).toContain(`new ${form.subsystemName}()`);
+    if (v3) {
+      // A Commands v3 mechanism has no periodic methods of its own, so Robot calls them.
+      expect(robot.content).toMatch(/\.periodic\(\);\s+scheduler\.run\(\);/);
+      expect(robot.content).toContain(".simulationPeriodic();");
+    }
+    // WPILib allows op mode names of at most 32 characters.
+    const opModeName = other.content.match(/@Teleop\(name = "([^"]*)"/);
+    if (v3) expect(opModeName?.[1].length).toBeLessThanOrEqual(32);
+    for (const file of files) {
+      // Only 2027 packages, no leftover Handlebars, no em dashes.
+      expect(file.content).not.toMatch(/edu\.wpi\.first|frc\.robot|\{\{|—/);
+      expect(file.content).not.toMatch(/RIO|roboRIO|RoboRio/);
+    }
 
     const out = process.env.YAMG_RENDER_DIR;
     if (out) {
-      const target = path.join(out, `${(f as FormValues).outputType}-${(f as FormValues).commandsVersion}`, file.filename);
-      fs.mkdirSync(path.dirname(target), { recursive: true });
-      fs.writeFileSync(target, file.content);
+      // The mechanisms share a project. Each combination's robot files get their own folder.
+      const project = path.join(out, `${form.outputType}-${form.commandsVersion}`);
+      for (const [i, file] of files.entries()) {
+        const target = i === 0 ? path.join(project, file.filename) : path.join(project, "robots", form.subsystemName, file.filename);
+        fs.mkdirSync(path.dirname(target), { recursive: true });
+        fs.writeFileSync(target, file.content);
+      }
     }
   });
 
