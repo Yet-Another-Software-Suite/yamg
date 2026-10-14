@@ -69,7 +69,7 @@ public class {{className}} extends SubsystemBase {
   /** How often the robot loop runs. */
   private static final Time LOOP_PERIOD = Seconds.of(0.020);
   /** The flywheel starts at rest, with its encoder at zero. */
-  private static final Angle STARTING_MOTOR_POSITION = Rotations.of(0);
+  private static final Angle STARTING_DRIVE_POSITION = Rotations.of(0);
 
   // Closed loop gains, in volts per {{gainUnit}} of error.
   private static final double KP = {{kP}};
@@ -103,12 +103,12 @@ public class {{className}} extends SubsystemBase {
     }
   }
 
-  private Angle getMotorPosition() {
-{{> getMotorPosition}}
+  private Angle getDrivePosition() {
+{{> getDrivePosition}}
   }
 
-  private AngularVelocity getMotorVelocity() {
-{{> getMotorVelocity}}
+  private AngularVelocity getDriveVelocity() {
+{{> getDriveVelocity}}
   }
 
   /** How fast the flywheel is spinning. */
@@ -116,7 +116,7 @@ public class {{className}} extends SubsystemBase {
   @Logged(name = "Velocity")
 {{/if}}
   public AngularVelocity getVelocity() {
-    return getMotorVelocity().div(GEAR_RATIO);
+    return getDriveVelocity();
   }
 
   /** The voltage the motor controller is applying to the motor. */
@@ -143,8 +143,8 @@ public class {{className}} extends SubsystemBase {
 {{> getTemperature}}
   }
 
-  private void setMotorVelocity(AngularVelocity motorVelocity, Voltage feedforward) {
-{{> setMotorVelocity}}
+  private void setDriveVelocity(AngularVelocity driveVelocity, Voltage feedforward) {
+{{> setDriveVelocity}}
   }
 
   private void setMotorVoltage(Voltage voltage) {
@@ -174,11 +174,11 @@ public class {{className}} extends SubsystemBase {
     if (goalVelocity != null) {
       // The feedforward does most of the work, and the closed loop corrects what is left.
       Voltage feedforwardVoltage = Volts.of(feedforward.calculate(goalVelocity.in(RotationsPerSecond)));
-      setMotorVelocity(goalVelocity.times(GEAR_RATIO), feedforwardVoltage);
+      setDriveVelocity(goalVelocity, feedforwardVoltage);
     }
 
     // Turn the spoke with the flywheel, so that the drawing shows it spinning.
-    spokeLigament.setAngle(getMotorPosition().div(GEAR_RATIO).in(Rotations) * 360 % 360);
+    spokeLigament.setAngle(getDrivePosition().in(Rotations) * 360 % 360);
 {{#unless useEpilogue}}
 {{#if logVelocity}}
     Telemetry.log("{{ntKey}}/Velocity", getVelocity());
@@ -202,7 +202,7 @@ public class {{className}} extends SubsystemBase {
 {{> simPrepare}}
     flywheelSim.setInputVoltage({{> simAppliedVoltage}}.in(Volts));
     flywheelSim.update(LOOP_PERIOD.in(Seconds));
-    AngularVelocity motorVelocity = RadiansPerSecond.of(flywheelSim.getAngularVelocity()).times(GEAR_RATIO);
+    AngularVelocity driveVelocity = RadiansPerSecond.of(flywheelSim.getAngularVelocity());
 {{> simUpdate}}
   }
 }

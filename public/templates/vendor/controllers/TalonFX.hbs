@@ -16,12 +16,17 @@ import org.wpilib.hardware.bus.CANPort;
   private final VoltageOut voltageRequest = new VoltageOut(0);
 {{/inline}}
 {{#*inline "configure"}}
-    // The Talon works in motor rotations here, and its closed loop outputs volts,
-    // so the gains are converted from volts per {{gainUnit}}.
-    double gainScale = {{#if velocityControl}}GEAR_RATIO{{else}}MOTOR_ROTATIONS_PER_GAIN_UNIT{{/if}};
-
     TalonFXConfiguration config = new TalonFXConfiguration();
-    config.Slot0.withKP(KP / gainScale).withKI(KI / gainScale).withKD(KD / gainScale);
+    // Phoenix applies the gearing, so positions, speeds, soft limits and gains are all in turns of
+    // the {{driveNoun}}, and its closed loop outputs volts.
+    config.Feedback.withSensorToMechanismRatio(GEAR_RATIO);
+{{#if linear}}
+    // Phoenix has no linear units, so the gains go from volts per meter to volts per turn.
+    double metersPerRotation = TRAVEL_PER_ROTATION.in(Meters);
+    config.Slot0.withKP(KP * metersPerRotation).withKI(KI * metersPerRotation).withKD(KD * metersPerRotation);
+{{else}}
+    config.Slot0.withKP(KP).withKI(KI).withKD(KD);
+{{/if}}
     config.MotorOutput.withNeutralMode(BRAKE_MODE ? NeutralModeValue.Brake : NeutralModeValue.Coast);
 {{#if enableStatorLimit}}
     config.CurrentLimits.withStatorCurrentLimit(STATOR_CURRENT_LIMIT).withStatorCurrentLimitEnable(true);
@@ -43,12 +48,12 @@ import org.wpilib.hardware.bus.CANPort;
         .withReverseSoftLimitEnable(true);
 {{/if}}
     motor.getConfigurator().apply(config);
-    motor.setPosition(STARTING_MOTOR_POSITION);
+    motor.setPosition(STARTING_DRIVE_POSITION);
 {{/inline}}
-{{#*inline "getMotorPosition"}}
+{{#*inline "getDrivePosition"}}
     return motor.getPosition().getValue();
 {{/inline}}
-{{#*inline "getMotorVelocity"}}
+{{#*inline "getDriveVelocity"}}
     return motor.getVelocity().getValue();
 {{/inline}}
 {{#*inline "getVoltage"}}
@@ -60,11 +65,11 @@ import org.wpilib.hardware.bus.CANPort;
 {{#*inline "getTemperature"}}
     return motor.getDeviceTemp().getValue();
 {{/inline}}
-{{#*inline "setMotorPosition"}}
-    motor.setControl(positionRequest.withPosition(motorPosition).withFeedForward(feedforward));
+{{#*inline "setDrivePosition"}}
+    motor.setControl(positionRequest.withPosition(drivePosition).withFeedForward(feedforward));
 {{/inline}}
-{{#*inline "setMotorVelocity"}}
-    motor.setControl(velocityRequest.withVelocity(motorVelocity).withFeedForward(feedforward));
+{{#*inline "setDriveVelocity"}}
+    motor.setControl(velocityRequest.withVelocity(driveVelocity).withFeedForward(feedforward));
 {{/inline}}
 {{#*inline "setMotorVoltage"}}
     motor.setControl(voltageRequest.withOutput(voltage));
@@ -76,7 +81,8 @@ import org.wpilib.hardware.bus.CANPort;
 {{/inline}}
 {{#*inline "simAppliedVoltage"}}motor.getSimState().getMotorVoltageMeasure(){{/inline}}
 {{#*inline "simUpdate"}}
-    // Move the Talon's simulated rotor by what the motor turned this loop.
-    motor.getSimState().setRotorVelocity(motorVelocity);
-    motor.getSimState().addRotorPosition(motorVelocity.times(LOOP_PERIOD));
+    // The simulated rotor is the motor's, before the gearing.
+    AngularVelocity rotorVelocity = driveVelocity.times(GEAR_RATIO);
+    motor.getSimState().setRotorVelocity(rotorVelocity);
+    motor.getSimState().addRotorPosition(rotorVelocity.times(LOOP_PERIOD));
 {{/inline}}

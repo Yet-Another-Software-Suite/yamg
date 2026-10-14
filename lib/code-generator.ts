@@ -143,6 +143,8 @@ export function buildTemplateData(data: FormValues) {
     // The unit the PID gains are per: YAMS uses mechanism rotations, or meters for an elevator.
     gainUnit: isElevator ? "meter" : isFlywheel ? "rotation per second" : "rotation",
     velocityControl: isFlywheel,
+    // Gains per meter, which the motor controller code converts to per turn of the drive.
+    linear: isElevator,
     statorCurrentLimit: num(data.currentLimits?.stator, 40),
     supplyCurrentLimit: num(data.currentLimits?.supply, 40),
     enableStatorLimit: (data.currentLimits?.stator ?? 0) > 0,

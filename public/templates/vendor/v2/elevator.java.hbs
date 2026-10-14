@@ -94,19 +94,17 @@ public class {{className}} extends SubsystemBase {
   private static final double KP = {{kP}};
   private static final double KI = {{kI}};
   private static final double KD = {{kD}};
-  /** Motor rotations per meter of travel, to convert heights and gains for the motor controller. */
-  private static final double MOTOR_ROTATIONS_PER_GAIN_UNIT = GEAR_RATIO / TRAVEL_PER_ROTATION.in(Meters);
 
   // The carriage, the elevator's physical limits, and where it is when the robot turns on.
   private static final Mass CARRIAGE_MASS = Kilograms.of({{mass}});
   private static final Distance MIN_HEIGHT = Meters.of({{hardLimitMin}});
   private static final Distance MAX_HEIGHT = Meters.of({{hardLimitMax}});
   private static final Distance STARTING_HEIGHT = Meters.of({{startingHeight}});
-  private static final Angle STARTING_MOTOR_POSITION = toMotorPosition(STARTING_HEIGHT);
+  private static final Angle STARTING_DRIVE_POSITION = toDrivePosition(STARTING_HEIGHT);
 {{#if enableSoftLimits}}
   // The motor controller will not drive the elevator past these heights.
-  private static final Angle FORWARD_SOFT_LIMIT = toMotorPosition(Meters.of({{forwardSoftLimit}}));
-  private static final Angle REVERSE_SOFT_LIMIT = toMotorPosition(Meters.of({{reverseSoftLimit}}));
+  private static final Angle FORWARD_SOFT_LIMIT = toDrivePosition(Meters.of({{forwardSoftLimit}}));
+  private static final Angle REVERSE_SOFT_LIMIT = toDrivePosition(Meters.of({{reverseSoftLimit}}));
 {{/if}}
 
   // The fastest the closed loop moves the elevator.
@@ -145,17 +143,17 @@ public class {{className}} extends SubsystemBase {
     }
   }
 
-  /** Where the motor's rotor is for a height: GEAR_RATIO motor turns for each turn of the {{driveNoun}}. */
-  private static Angle toMotorPosition(Distance height) {
-    return Rotations.of(GEAR_RATIO).times(height.div(TRAVEL_PER_ROTATION));
+  /** How far the {{driveNoun}} has turned for a height. */
+  private static Angle toDrivePosition(Distance height) {
+    return Rotations.one().times(height.div(TRAVEL_PER_ROTATION));
   }
 
-  private Angle getMotorPosition() {
-{{> getMotorPosition}}
+  private Angle getDrivePosition() {
+{{> getDrivePosition}}
   }
 
-  private AngularVelocity getMotorVelocity() {
-{{> getMotorVelocity}}
+  private AngularVelocity getDriveVelocity() {
+{{> getDriveVelocity}}
   }
 
   /** The elevator's height. */
@@ -163,7 +161,7 @@ public class {{className}} extends SubsystemBase {
   @Logged(name = "Height")
 {{/if}}
   public Distance getHeight() {
-    return TRAVEL_PER_ROTATION.times(getMotorPosition().div(Rotations.of(GEAR_RATIO)));
+    return TRAVEL_PER_ROTATION.times(getDrivePosition().div(Rotations.one()));
   }
 
   /** How fast the elevator is moving. */
@@ -171,7 +169,7 @@ public class {{className}} extends SubsystemBase {
   @Logged(name = "Velocity")
 {{/if}}
   public LinearVelocity getVelocity() {
-    return TRAVEL_PER_ROTATION.per(Second).times(getMotorVelocity().div(RotationsPerSecond.of(GEAR_RATIO)));
+    return TRAVEL_PER_ROTATION.per(Second).times(getDriveVelocity().div(RotationsPerSecond.one()));
   }
 
   /** The voltage the motor controller is applying to the motor. */
@@ -198,8 +196,8 @@ public class {{className}} extends SubsystemBase {
 {{> getTemperature}}
   }
 
-  private void setMotorPosition(Angle motorPosition, Voltage feedforward) {
-{{> setMotorPosition}}
+  private void setDrivePosition(Angle drivePosition, Voltage feedforward) {
+{{> setDrivePosition}}
   }
 
   private void setMotorVoltage(Voltage voltage) {
@@ -241,7 +239,7 @@ public class {{className}} extends SubsystemBase {
       TrapezoidProfile.State next = profile.calculate(LOOP_PERIOD.in(Seconds), setpoint, goal);
       Voltage feedforwardVoltage = Volts.of(feedforward.calculate(setpoint.velocity, next.velocity));
       setpoint = next;
-      setMotorPosition(toMotorPosition(Meters.of(next.position)), feedforwardVoltage);
+      setDrivePosition(toDrivePosition(Meters.of(next.position)), feedforwardVoltage);
     }
 
     carriageLigament.setLength(getHeight().in(Meters));
@@ -271,8 +269,8 @@ public class {{className}} extends SubsystemBase {
 {{> simPrepare}}
     elevatorSim.setInputVoltage({{> simAppliedVoltage}}.in(Volts));
     elevatorSim.update(LOOP_PERIOD.in(Seconds));
-    AngularVelocity motorVelocity =
-        RotationsPerSecond.of(GEAR_RATIO).times(MetersPerSecond.of(elevatorSim.getVelocity()).div(TRAVEL_PER_ROTATION.per(Second)));
+    AngularVelocity driveVelocity =
+        RotationsPerSecond.one().times(MetersPerSecond.of(elevatorSim.getVelocity()).div(TRAVEL_PER_ROTATION.per(Second)));
 {{> simUpdate}}
   }
 }
