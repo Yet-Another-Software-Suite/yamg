@@ -64,7 +64,7 @@ Configure the motor and motor controller settings:
 
 7. **Current Limits**: (Optional) Set current limits to protect your motors
    - **Stator Current Limit**: Current limit for the motor stator (typically 40A for NEO)
-   - **Supply Current Limit**: Current limit from the power supply (TalonFX/TalonFXS only)
+   - **Supply Current Limit**: Current limit from the power supply (TalonFX, TalonFXS and ThriftyNova)
 
 ## Step 3: Control Configuration
 
