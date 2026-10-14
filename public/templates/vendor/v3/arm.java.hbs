@@ -23,7 +23,9 @@ import org.wpilib.framework.RobotBase;
 import org.wpilib.math.controller.ArmFeedforward;
 {{/if}}
 import org.wpilib.math.system.DCMotor;
+{{#if systemCoreProfile}}
 import org.wpilib.math.trajectory.TrapezoidProfile;
+{{/if}}
 import org.wpilib.simulation.SingleJointedArmSim;
 import org.wpilib.smartdashboard.Mechanism2d;
 import org.wpilib.smartdashboard.MechanismLigament2d;
@@ -111,11 +113,12 @@ public class {{className}} implements Mechanism {
 
 {{> fields}}
 
-  // Where the closed loop is going, and where it is now, in radians. A null goal means the closed loop is off.
 {{#if systemCoreProfile}}
+  // Where WPILib's profile is now, in radians.
   private TrapezoidProfile.State setpoint = new TrapezoidProfile.State(STARTING_ANGLE.in(Radians), 0);
 {{/if}}
-  private TrapezoidProfile.State goal = null;
+  // Where the closed loop is going. Null means the closed loop is off.
+  private Angle goal = null;
 
   // The physics simulation of the arm, and a drawing of it for a dashboard.
   private final SingleJointedArmSim armSim = new SingleJointedArmSim(
@@ -212,7 +215,7 @@ public class {{className}} implements Mechanism {
     }
 {{/if}}
     Angle clamped = angle.lt(MIN_ANGLE) ? MIN_ANGLE : angle.gt(MAX_ANGLE) ? MAX_ANGLE : angle;
-    goal = new TrapezoidProfile.State(clamped.in(Radians), 0);
+    goal = clamped;
   }
 
   /** Go to an angle and hold it. This command does not end on its own. */
@@ -260,21 +263,21 @@ public class {{className}} implements Mechanism {
         // REVLib's simulated SPARK runs neither the onboard profile nor the onboard feedforward,
         // so in simulation they run here instead.
         // Step the profile one loop, and give the motor controller the next setpoint and feedforward.
-        TrapezoidProfile.State next = profile.calculate(LOOP_PERIOD.in(Seconds), setpoint, goal);
+        TrapezoidProfile.State next = profile.calculate(LOOP_PERIOD.in(Seconds), setpoint, new TrapezoidProfile.State(goal.in(Radians), 0));
         Voltage feedforwardVoltage = Volts.of(feedforward.calculate(setpoint.position, setpoint.velocity, next.velocity));
         setpoint = next;
         setMechanismPosition(Radians.of(next.position), feedforwardVoltage);
       } else {
         // The motor controller runs the trapezoidal profile and the feedforward itself.
-        setMechanismGoal(Radians.of(goal.position));
+        setMechanismGoal(goal);
       }
 {{else}}
       // The motor controller runs the trapezoidal profile and the feedforward itself.
-      setMechanismGoal(Radians.of(goal.position));
+      setMechanismGoal(goal);
 {{/if}}
 {{else}}
       // Step the profile one loop, and give the motor controller the next setpoint and feedforward.
-      TrapezoidProfile.State next = profile.calculate(LOOP_PERIOD.in(Seconds), setpoint, goal);
+      TrapezoidProfile.State next = profile.calculate(LOOP_PERIOD.in(Seconds), setpoint, new TrapezoidProfile.State(goal.in(Radians), 0));
       Voltage feedforwardVoltage = Volts.of(feedforward.calculate(setpoint.position, setpoint.velocity, next.velocity));
       setpoint = next;
       setMechanismPosition(Radians.of(next.position), feedforwardVoltage);
