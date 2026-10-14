@@ -19,7 +19,9 @@ import org.wpilib.command2.Command;
 import org.wpilib.command2.SubsystemBase;
 import org.wpilib.command2.button.Trigger;
 import org.wpilib.framework.RobotBase;
+{{#if systemCoreProfile}}
 import org.wpilib.math.controller.SimpleMotorFeedforward;
+{{/if}}
 import org.wpilib.math.system.DCMotor;
 import org.wpilib.math.trajectory.TrapezoidProfile;
 import org.wpilib.simulation.SingleJointedArmSim;
@@ -80,8 +82,6 @@ public class {{className}} extends SubsystemBase {
   private static final double KP = {{kP}};
   private static final double KI = {{kI}};
   private static final double KD = {{kD}};
-  /** Motor rotations per {{gainUnit}} of the pivot, to convert the gains for the motor controller. */
-  private static final double MOTOR_ROTATIONS_PER_GAIN_UNIT = GEAR_RATIO;
 
   // The pivot's size, its physical limits, and where it is when the robot turns on.
   private static final Distance PIVOT_LENGTH = Meters.of({{armLength}});
@@ -89,26 +89,32 @@ public class {{className}} extends SubsystemBase {
   private static final Angle MIN_ANGLE = Degrees.of({{hardLimitMin}});
   private static final Angle MAX_ANGLE = Degrees.of({{hardLimitMax}});
   private static final Angle STARTING_ANGLE = Degrees.of({{startingPosition}});
-  private static final Angle STARTING_MOTOR_POSITION = toMotorPosition(STARTING_ANGLE);
+  private static final Angle STARTING_MECHANISM_POSITION = STARTING_ANGLE;
 {{#if enableSoftLimits}}
   // The motor controller will not drive the pivot past these angles.
-  private static final Angle FORWARD_SOFT_LIMIT = toMotorPosition(Degrees.of({{forwardSoftLimit}}));
-  private static final Angle REVERSE_SOFT_LIMIT = toMotorPosition(Degrees.of({{reverseSoftLimit}}));
+  private static final Angle FORWARD_SOFT_LIMIT = Degrees.of({{forwardSoftLimit}});
+  private static final Angle REVERSE_SOFT_LIMIT = Degrees.of({{reverseSoftLimit}});
 {{/if}}
 
   // The fastest the closed loop moves the pivot.
   private static final AngularVelocity MAX_VELOCITY = RadiansPerSecond.of({{maxVelocity}});
   private static final AngularAcceleration MAX_ACCELERATION = RadiansPerSecondPerSecond.of({{maxAcceleration}});
+{{#if systemCoreProfile}}
   private final TrapezoidProfile profile = new TrapezoidProfile(
       new TrapezoidProfile.Constraints(MAX_VELOCITY.in(RadiansPerSecond), MAX_ACCELERATION.in(RadiansPerSecondPerSecond)));
+{{/if}}
 
+{{#if systemCoreProfile}}
   // Feedforward gains, in volts per rotation per second (kV) and per rotation per second squared (kA).
   private final SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward({{kS}}, {{kV}}, {{kA}});
+{{/if}}
 
 {{> fields}}
 
-  // Where the closed loop is now, and where it is going, in radians. A null goal means the closed loop is off.
+  // Where the closed loop is going, and where it is now, in radians. A null goal means the closed loop is off.
+{{#if systemCoreProfile}}
   private TrapezoidProfile.State setpoint = new TrapezoidProfile.State(STARTING_ANGLE.in(Radians), 0);
+{{/if}}
   private TrapezoidProfile.State goal = null;
 
   // The physics simulation of the pivot, and a drawing of it for a dashboard.
@@ -116,6 +122,8 @@ public class {{className}} extends SubsystemBase {
       DC_MOTOR, GEAR_RATIO, SingleJointedArmSim.estimateMOI(PIVOT_LENGTH.in(Meters), PIVOT_MASS.in(Kilograms)),
       PIVOT_LENGTH.in(Meters), MIN_ANGLE.in(Radians), MAX_ANGLE.in(Radians), false, STARTING_ANGLE.in(Radians));
 {{> simFields}}
+  // The simulated speed last loop, to work out the acceleration.
+  private AngularVelocity lastMechanismVelocity = RotationsPerSecond.of(0);
 {{#if useEpilogue}}
   @Logged(name = "Mechanism")
 {{/if}}
@@ -131,17 +139,12 @@ public class {{className}} extends SubsystemBase {
     }
   }
 
-  /** Where the motor's rotor is for a pivot angle. */
-  private static Angle toMotorPosition(Angle pivotAngle) {
-    return pivotAngle.times(GEAR_RATIO);
+  private Angle getMechanismPosition() {
+{{> getMechanismPosition}}
   }
 
-  private Angle getMotorPosition() {
-{{> getMotorPosition}}
-  }
-
-  private AngularVelocity getMotorVelocity() {
-{{> getMotorVelocity}}
+  private AngularVelocity getMechanismVelocity() {
+{{> getMechanismVelocity}}
   }
 
   /** The pivot's angle. */
@@ -149,7 +152,7 @@ public class {{className}} extends SubsystemBase {
   @Logged(name = "Angle")
 {{/if}}
   public Angle getAngle() {
-    return getMotorPosition().div(GEAR_RATIO);
+    return getMechanismPosition();
   }
 
   /** How fast the pivot is turning. */
@@ -157,7 +160,7 @@ public class {{className}} extends SubsystemBase {
   @Logged(name = "Velocity")
 {{/if}}
   public AngularVelocity getVelocity() {
-    return getMotorVelocity().div(GEAR_RATIO);
+    return getMechanismVelocity();
   }
 
   /** The voltage the motor controller is applying to the motor. */
@@ -184,9 +187,17 @@ public class {{className}} extends SubsystemBase {
 {{> getTemperature}}
   }
 
-  private void setMotorPosition(Angle motorPosition, Voltage feedforward) {
-{{> setMotorPosition}}
+{{#if onboardControl}}
+  /** Send the motor controller the goal. It runs the profile and the feedforward itself. */
+  private void setMechanismGoal(Angle goal) {
+{{> setMechanismGoal}}
   }
+{{/if}}
+{{#if systemCoreProfile}}
+  private void setMechanismPosition(Angle mechanismPosition, Voltage feedforward) {
+{{> setMechanismPosition}}
+  }
+{{/if}}
 
   private void setMotorVoltage(Voltage voltage) {
 {{> setMotorVoltage}}
@@ -194,10 +205,12 @@ public class {{className}} extends SubsystemBase {
 
   /** Start moving the pivot to an angle with the closed loop. */
   private void setGoal(Angle angle) {
+{{#if systemCoreProfile}}
     if (goal == null) {
       // Start the profile from where the pivot is now.
       setpoint = new TrapezoidProfile.State(getAngle().in(Radians), getVelocity().in(RadiansPerSecond));
     }
+{{/if}}
     Angle clamped = angle.lt(MIN_ANGLE) ? MIN_ANGLE : angle.gt(MAX_ANGLE) ? MAX_ANGLE : angle;
     goal = new TrapezoidProfile.State(clamped.in(Radians), 0);
   }
@@ -223,12 +236,33 @@ public class {{className}} extends SubsystemBase {
   @Override
   public void periodic() {
     if (goal != null) {
+{{#if onboardControl}}
+{{#if systemCoreProfile}}
+      if (RobotBase.isSimulation()) {
+        // REVLib's simulated SPARK runs neither the onboard profile nor the onboard feedforward,
+        // so in simulation they run here instead.
+        // Step the profile one loop, and give the motor controller the next setpoint and feedforward.
+        TrapezoidProfile.State next = profile.calculate(LOOP_PERIOD.in(Seconds), setpoint, goal);
+        Voltage feedforwardVoltage = Volts.of(feedforward.calculate(
+            RadiansPerSecond.of(setpoint.velocity).in(RotationsPerSecond), RadiansPerSecond.of(next.velocity).in(RotationsPerSecond)));
+        setpoint = next;
+        setMechanismPosition(Radians.of(next.position), feedforwardVoltage);
+      } else {
+        // The motor controller runs the trapezoidal profile and the feedforward itself.
+        setMechanismGoal(Radians.of(goal.position));
+      }
+{{else}}
+      // The motor controller runs the trapezoidal profile and the feedforward itself.
+      setMechanismGoal(Radians.of(goal.position));
+{{/if}}
+{{else}}
       // Step the profile one loop, and give the motor controller the next setpoint and feedforward.
       TrapezoidProfile.State next = profile.calculate(LOOP_PERIOD.in(Seconds), setpoint, goal);
       Voltage feedforwardVoltage = Volts.of(feedforward.calculate(
           RadiansPerSecond.of(setpoint.velocity).in(RotationsPerSecond), RadiansPerSecond.of(next.velocity).in(RotationsPerSecond)));
       setpoint = next;
-      setMotorPosition(toMotorPosition(Radians.of(next.position)), feedforwardVoltage);
+      setMechanismPosition(Radians.of(next.position), feedforwardVoltage);
+{{/if}}
     }
 
     pivotLigament.setAngle(getAngle().in(Degrees));
@@ -258,7 +292,10 @@ public class {{className}} extends SubsystemBase {
 {{> simPrepare}}
     pivotSim.setInputVoltage({{> simAppliedVoltage}}.in(Volts));
     pivotSim.update(LOOP_PERIOD.in(Seconds));
-    AngularVelocity motorVelocity = RadiansPerSecond.of(pivotSim.getVelocity()).times(GEAR_RATIO);
+    Angle mechanismPosition = Radians.of(pivotSim.getAngle());
+    AngularVelocity mechanismVelocity = RadiansPerSecond.of(pivotSim.getVelocity());
+    AngularAcceleration mechanismAcceleration = mechanismVelocity.minus(lastMechanismVelocity).div(LOOP_PERIOD);
+    lastMechanismVelocity = mechanismVelocity;
 {{> simUpdate}}
   }
 }

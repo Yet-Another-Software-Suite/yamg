@@ -143,6 +143,14 @@ export function buildTemplateData(data: FormValues) {
     // The unit the PID gains are per: YAMS uses mechanism rotations, or meters for an elevator.
     gainUnit: isElevator ? "meter" : isFlywheel ? "rotation per second" : "rotation",
     velocityControl: isFlywheel,
+    // A Talon or a SPARK runs the trapezoidal profile, the PID and the feedforward itself. A Nova's
+    // closed loop runs on the SystemCore, with WPILib's profile and feedforward.
+    onboardControl: data.motorControllerType !== "ThriftyNova",
+    // WPILib's profile and feedforward: for a Nova, and for a SPARK in simulation, since REVLib's
+    // simulated SPARK runs neither MAXMotion nor the onboard feedforward.
+    systemCoreProfile: ["ThriftyNova", "SparkMAX", "SparkFlex"].includes(data.motorControllerType),
+    // Gains per meter, which the motor controller code converts to per turn of the drive.
+    linear: isElevator,
     statorCurrentLimit: num(data.currentLimits?.stator, 40),
     supplyCurrentLimit: num(data.currentLimits?.supply, 40),
     enableStatorLimit: (data.currentLimits?.stator ?? 0) > 0,
@@ -166,6 +174,8 @@ export function buildTemplateData(data: FormValues) {
     useEpilogue: data.telemetry.logger === "epilogue" && output !== "yams",
     thriftyMotorType: THRIFTY_MOTOR_TYPES[data.motorType] ?? "NEO",
     talonFXSArrangement: TALON_FXS_ARRANGEMENTS[data.motorType] ?? "NEO_JST",
+    // The motor a simulated Talon FX models.
+    talonSimMotorType: data.motorType === "Krakenx44" ? "KrakenX44" : "KrakenX60",
   };
 
   if (data.mechanismType === "Arm" || data.mechanismType === "Pivot") {

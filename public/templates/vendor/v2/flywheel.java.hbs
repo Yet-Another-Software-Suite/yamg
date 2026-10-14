@@ -15,7 +15,9 @@ import org.wpilib.command2.Command;
 import org.wpilib.command2.SubsystemBase;
 import org.wpilib.command2.button.Trigger;
 import org.wpilib.framework.RobotBase;
+{{#if systemCoreProfile}}
 import org.wpilib.math.controller.SimpleMotorFeedforward;
+{{/if}}
 import org.wpilib.math.system.DCMotor;
 import org.wpilib.math.system.Models;
 import org.wpilib.simulation.FlywheelSim;
@@ -28,6 +30,7 @@ import org.wpilib.epilogue.Logged;
 import org.wpilib.telemetry.Telemetry;
 {{/if}}
 import org.wpilib.units.measure.Angle;
+import org.wpilib.units.measure.AngularAcceleration;
 import org.wpilib.units.measure.AngularVelocity;
 import org.wpilib.units.measure.Current;
 import org.wpilib.units.measure.MomentOfInertia;
@@ -69,15 +72,17 @@ public class {{className}} extends SubsystemBase {
   /** How often the robot loop runs. */
   private static final Time LOOP_PERIOD = Seconds.of(0.020);
   /** The flywheel starts at rest, with its encoder at zero. */
-  private static final Angle STARTING_MOTOR_POSITION = Rotations.of(0);
+  private static final Angle STARTING_MECHANISM_POSITION = Rotations.of(0);
 
   // Closed loop gains, in volts per {{gainUnit}} of error.
   private static final double KP = {{kP}};
   private static final double KI = {{kI}};
   private static final double KD = {{kD}};
 
+{{#if systemCoreProfile}}
   // Feedforward gains, in volts per rotation per second (kV) and per rotation per second squared (kA).
   private final SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward({{kS}}, {{kV}}, {{kA}});
+{{/if}}
 
 {{> fields}}
 
@@ -88,6 +93,10 @@ public class {{className}} extends SubsystemBase {
   private final FlywheelSim flywheelSim = new FlywheelSim(
       Models.flywheelFromPhysicalConstants(DC_MOTOR, MOMENT_OF_INERTIA.in(KilogramSquareMeters), GEAR_RATIO), DC_MOTOR);
 {{> simFields}}
+  // The simulated speed last loop, to work out the acceleration.
+  private AngularVelocity lastMechanismVelocity = RotationsPerSecond.of(0);
+  // Where the simulated flywheel has turned to.
+  private Angle simulatedPosition = STARTING_MECHANISM_POSITION;
 {{#if useEpilogue}}
   @Logged(name = "Mechanism")
 {{/if}}
@@ -103,12 +112,12 @@ public class {{className}} extends SubsystemBase {
     }
   }
 
-  private Angle getMotorPosition() {
-{{> getMotorPosition}}
+  private Angle getMechanismPosition() {
+{{> getMechanismPosition}}
   }
 
-  private AngularVelocity getMotorVelocity() {
-{{> getMotorVelocity}}
+  private AngularVelocity getMechanismVelocity() {
+{{> getMechanismVelocity}}
   }
 
   /** How fast the flywheel is spinning. */
@@ -116,7 +125,7 @@ public class {{className}} extends SubsystemBase {
   @Logged(name = "Velocity")
 {{/if}}
   public AngularVelocity getVelocity() {
-    return getMotorVelocity().div(GEAR_RATIO);
+    return getMechanismVelocity();
   }
 
   /** The voltage the motor controller is applying to the motor. */
@@ -143,9 +152,17 @@ public class {{className}} extends SubsystemBase {
 {{> getTemperature}}
   }
 
-  private void setMotorVelocity(AngularVelocity motorVelocity, Voltage feedforward) {
-{{> setMotorVelocity}}
+{{#if onboardControl}}
+  /** Send the motor controller the speed. It runs the feedforward itself. */
+  private void setMechanismGoalVelocity(AngularVelocity goal) {
+{{> setMechanismGoalVelocity}}
   }
+{{/if}}
+{{#if systemCoreProfile}}
+  private void setMechanismVelocity(AngularVelocity mechanismVelocity, Voltage feedforward) {
+{{> setMechanismVelocity}}
+  }
+{{/if}}
 
   private void setMotorVoltage(Voltage voltage) {
 {{> setMotorVoltage}}
@@ -172,13 +189,31 @@ public class {{className}} extends SubsystemBase {
   @Override
   public void periodic() {
     if (goalVelocity != null) {
+{{#if onboardControl}}
+{{#if systemCoreProfile}}
+      if (RobotBase.isSimulation()) {
+        // REVLib's simulated SPARK runs neither the onboard profile nor the onboard feedforward,
+        // so in simulation they run here instead.
+        // The feedforward does most of the work, and the closed loop corrects what is left.
+        Voltage feedforwardVoltage = Volts.of(feedforward.calculate(goalVelocity.in(RotationsPerSecond)));
+        setMechanismVelocity(goalVelocity, feedforwardVoltage);
+      } else {
+        // The motor controller runs the feedforward and the closed loop itself.
+        setMechanismGoalVelocity(goalVelocity);
+      }
+{{else}}
+      // The motor controller runs the feedforward and the closed loop itself.
+      setMechanismGoalVelocity(goalVelocity);
+{{/if}}
+{{else}}
       // The feedforward does most of the work, and the closed loop corrects what is left.
       Voltage feedforwardVoltage = Volts.of(feedforward.calculate(goalVelocity.in(RotationsPerSecond)));
-      setMotorVelocity(goalVelocity.times(GEAR_RATIO), feedforwardVoltage);
+      setMechanismVelocity(goalVelocity, feedforwardVoltage);
+{{/if}}
     }
 
     // Turn the spoke with the flywheel, so that the drawing shows it spinning.
-    spokeLigament.setAngle(getMotorPosition().div(GEAR_RATIO).in(Rotations) * 360 % 360);
+    spokeLigament.setAngle(getMechanismPosition().in(Rotations) * 360 % 360);
 {{#unless useEpilogue}}
 {{#if logVelocity}}
     Telemetry.log("{{ntKey}}/Velocity", getVelocity());
@@ -202,7 +237,12 @@ public class {{className}} extends SubsystemBase {
 {{> simPrepare}}
     flywheelSim.setInputVoltage({{> simAppliedVoltage}}.in(Volts));
     flywheelSim.update(LOOP_PERIOD.in(Seconds));
-    AngularVelocity motorVelocity = RadiansPerSecond.of(flywheelSim.getAngularVelocity()).times(GEAR_RATIO);
+    AngularVelocity mechanismVelocity = RadiansPerSecond.of(flywheelSim.getAngularVelocity());
+    // The flywheel simulation has no position, so it is added up from the speed.
+    simulatedPosition = simulatedPosition.plus(mechanismVelocity.times(LOOP_PERIOD));
+    Angle mechanismPosition = simulatedPosition;
+    AngularAcceleration mechanismAcceleration = mechanismVelocity.minus(lastMechanismVelocity).div(LOOP_PERIOD);
+    lastMechanismVelocity = mechanismVelocity;
 {{> simUpdate}}
   }
 }

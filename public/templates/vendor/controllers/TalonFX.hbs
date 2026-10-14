@@ -1,27 +1,67 @@
 {{#*inline "imports"}}
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
-import com.ctre.phoenix6.controls.PositionVoltage;
+import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+import com.ctre.phoenix6.sim.TalonFXSimState;
 import org.wpilib.hardware.bus.CANPort;
+import static org.wpilib.units.Units.RotationsPerSecondPerSecond;
 {{/inline}}
 {{#*inline "fields"}}
   // The Talon FX, and the requests that control it.
   private final TalonFX motor = new TalonFX(CAN_ID, new CANBus(CANPort.CAN_S0));
-  private final PositionVoltage positionRequest = new PositionVoltage(0);
+{{#if velocityControl}}
   private final VelocityVoltage velocityRequest = new VelocityVoltage(0);
+{{else}}
+  // Motion Magic runs a trapezoidal profile to the goal.
+  private final MotionMagicVoltage profileRequest = new MotionMagicVoltage(0);
+{{/if}}
   private final VoltageOut voltageRequest = new VoltageOut(0);
 {{/inline}}
 {{#*inline "configure"}}
-    // The Talon works in motor rotations here, and its closed loop outputs volts,
-    // so the gains are converted from volts per {{gainUnit}}.
-    double gainScale = {{#if velocityControl}}GEAR_RATIO{{else}}MOTOR_ROTATIONS_PER_GAIN_UNIT{{/if}};
-
     TalonFXConfiguration config = new TalonFXConfiguration();
-    config.Slot0.withKP(KP / gainScale).withKI(KI / gainScale).withKD(KD / gainScale);
+    // Phoenix applies the gearing, so positions, speeds, soft limits and gains are all in turns of
+    // the mechanism, and its closed loop outputs volts.
+    config.Feedback.withSensorToMechanismRatio(GEAR_RATIO);
+{{#if linear}}
+    // Phoenix has no linear units, so the gains go from per meter to per turn.
+    double metersPerRotation = TRAVEL_PER_ROTATION.in(Meters);
+    config.Slot0.withKP(KP * metersPerRotation).withKI(KI * metersPerRotation).withKD(KD * metersPerRotation);
+{{else}}
+    config.Slot0.withKP(KP).withKI(KI).withKD(KD);
+{{/if}}
+    // The Talon runs the feedforward itself, with its gains per turn of the mechanism.
+{{#if (eq mechanismType "Arm")}}
+    // Arm_Cosine scales kG by the cosine of the arm's angle, which is 0 when the arm points straight out.
+    // kV and kA are per radian, so they go to per turn.
+    config.Slot0.withGravityType(GravityTypeValue.Arm_Cosine).withKG({{kG}});
+    config.Slot0.withKS({{kS}}).withKV({{kV}} * 2 * Math.PI).withKA({{kA}} * 2 * Math.PI);
+{{/if}}
+{{#if (eq mechanismType "Elevator")}}
+    // Elevator_Static applies kG all the time. kV and kA are per meter, so they go to per turn.
+    config.Slot0.withGravityType(GravityTypeValue.Elevator_Static).withKG({{kG}});
+    config.Slot0.withKS({{kS}}).withKV({{kV}} * metersPerRotation).withKA({{kA}} * metersPerRotation);
+{{/if}}
+{{#if (eq mechanismType "Pivot")}}
+    config.Slot0.withKS({{kS}}).withKV({{kV}}).withKA({{kA}});
+{{/if}}
+{{#if (eq mechanismType "Flywheel")}}
+    config.Slot0.withKS({{kS}}).withKV({{kV}}).withKA({{kA}});
+{{/if}}
+{{#unless velocityControl}}
+    // Motion Magic: the fastest the profile moves and accelerates the mechanism.
+{{#if linear}}
+    config.MotionMagic
+        .withMotionMagicCruiseVelocity(RotationsPerSecond.one().times(MAX_VELOCITY.div(TRAVEL_PER_ROTATION.per(Second))))
+        .withMotionMagicAcceleration(RotationsPerSecondPerSecond.one().times(MAX_ACCELERATION.div(TRAVEL_PER_ROTATION.per(Second).per(Second))));
+{{else}}
+    config.MotionMagic.withMotionMagicCruiseVelocity(MAX_VELOCITY).withMotionMagicAcceleration(MAX_ACCELERATION);
+{{/if}}
+{{/unless}}
     config.MotorOutput.withNeutralMode(BRAKE_MODE ? NeutralModeValue.Brake : NeutralModeValue.Coast);
 {{#if enableStatorLimit}}
     config.CurrentLimits.withStatorCurrentLimit(STATOR_CURRENT_LIMIT).withStatorCurrentLimitEnable(true);
@@ -43,12 +83,19 @@ import org.wpilib.hardware.bus.CANPort;
         .withReverseSoftLimitEnable(true);
 {{/if}}
     motor.getConfigurator().apply(config);
-    motor.setPosition(STARTING_MOTOR_POSITION);
+    if (RobotBase.isSimulation()) {
+      // Simulate the motor the Talon FX really drives.
+      motor.getSimState().setMotorType(TalonFXSimState.MotorType.{{talonSimMotorType}});
+      // Start the simulated rotor where the mechanism starts, so that the Talon's position does
+      // not count the starting position twice.
+      motor.getSimState().setRawRotorPosition(STARTING_MECHANISM_POSITION.times(GEAR_RATIO));
+    }
+    motor.setPosition(STARTING_MECHANISM_POSITION);
 {{/inline}}
-{{#*inline "getMotorPosition"}}
+{{#*inline "getMechanismPosition"}}
     return motor.getPosition().getValue();
 {{/inline}}
-{{#*inline "getMotorVelocity"}}
+{{#*inline "getMechanismVelocity"}}
     return motor.getVelocity().getValue();
 {{/inline}}
 {{#*inline "getVoltage"}}
@@ -60,11 +107,11 @@ import org.wpilib.hardware.bus.CANPort;
 {{#*inline "getTemperature"}}
     return motor.getDeviceTemp().getValue();
 {{/inline}}
-{{#*inline "setMotorPosition"}}
-    motor.setControl(positionRequest.withPosition(motorPosition).withFeedForward(feedforward));
+{{#*inline "setMechanismGoal"}}
+    motor.setControl(profileRequest.withPosition(goal));
 {{/inline}}
-{{#*inline "setMotorVelocity"}}
-    motor.setControl(velocityRequest.withVelocity(motorVelocity).withFeedForward(feedforward));
+{{#*inline "setMechanismGoalVelocity"}}
+    motor.setControl(velocityRequest.withVelocity(goal));
 {{/inline}}
 {{#*inline "setMotorVoltage"}}
     motor.setControl(voltageRequest.withOutput(voltage));
@@ -76,7 +123,8 @@ import org.wpilib.hardware.bus.CANPort;
 {{/inline}}
 {{#*inline "simAppliedVoltage"}}motor.getSimState().getMotorVoltageMeasure(){{/inline}}
 {{#*inline "simUpdate"}}
-    // Move the Talon's simulated rotor by what the motor turned this loop.
-    motor.getSimState().setRotorVelocity(motorVelocity);
-    motor.getSimState().addRotorPosition(motorVelocity.times(LOOP_PERIOD));
+    // Give the Talon the simulated rotor, which is the motor's, before the gearing.
+    motor.getSimState().setRawRotorPosition(mechanismPosition.times(GEAR_RATIO));
+    motor.getSimState().setRotorVelocity(mechanismVelocity.times(GEAR_RATIO));
+    motor.getSimState().setRotorAcceleration(mechanismAcceleration.times(GEAR_RATIO));
 {{/inline}}

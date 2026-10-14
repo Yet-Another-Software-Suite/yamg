@@ -10,9 +10,12 @@ import com.revrobotics.spark.SparkLowLevel.ControlType;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkSim;
+import com.revrobotics.spark.config.MAXMotionConfig.MAXMotionPositionMode;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import org.wpilib.hardware.bus.CANPort;
+import static org.wpilib.units.Units.RotationsPerSecondPerSecond;
+import static org.wpilib.units.Units.Second;
 import static org.wpilib.units.Units.Milliseconds;
 {{/inline}}
 {{#*inline "fields"}}
@@ -24,7 +27,7 @@ import static org.wpilib.units.Units.Milliseconds;
 {{#*inline "configure"}}
     // REVLib 2027 has no conversion factors. The SPARK works in motor rotations and RPM, and its
     // closed loop outputs a duty cycle, so the gains are converted from volts per {{gainUnit}} here.
-    double gainScale = 12.0 * {{#if velocityControl}}GEAR_RATIO * 60.0{{else}}MOTOR_ROTATIONS_PER_GAIN_UNIT{{/if}};
+    double gainScale = 12.0 * GEAR_RATIO{{#if velocityControl}} * 60.0{{/if}}{{#if linear}} / TRAVEL_PER_ROTATION.in(Meters){{/if}};
     // A SPARK runs its closed loop every millisecond, and its kI and kD are per loop.
     // REVLib's simulated SPARK applies them per second instead.
     Time sparkLoopPeriod = RobotBase.isSimulation() ? Seconds.of(1) : Milliseconds.of(1);
@@ -45,21 +48,49 @@ import static org.wpilib.units.Units.Milliseconds;
     config.closedLoop
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
         .pid(KP / gainScale, KI * sparkLoopPeriod.in(Seconds) / gainScale, KD / sparkLoopPeriod.in(Seconds) / gainScale);
+    if (!RobotBase.isSimulation()) {
+      // In simulation the feedforward and the profile run on the SystemCore instead.
+      // The SPARK runs the feedforward itself. Its kS and kG are in volts, and its kV and kA per
+      // motor RPM, so they are converted from per {{gainUnit}}.
+      double rpmPerGainUnit = GEAR_RATIO * 60.0{{#if linear}} / TRAVEL_PER_ROTATION.in(Meters){{/if}}{{#if (eq mechanismType "Arm")}} / (2 * Math.PI){{/if}};
+      config.closedLoop.feedForward.kS({{kS}}).kV({{kV}} / rpmPerGainUnit).kA({{kA}} / rpmPerGainUnit);
+{{#if (eq mechanismType "Arm")}}
+      // kCos scales kG by the cosine of the arm's angle, which is 0 when the arm points straight out.
+      // kCosRatio turns the encoder's motor rotations into arm rotations.
+      config.closedLoop.feedForward.kCos({{kG}}).kCosRatio(1.0 / GEAR_RATIO);
+{{/if}}
+{{#if (eq mechanismType "Elevator")}}
+      config.closedLoop.feedForward.kG({{kG}});
+{{/if}}
+{{#unless velocityControl}}
+      // MAXMotion runs a trapezoidal profile to the goal, in motor RPM and RPM per second.
+      config.closedLoop.maxMotion
+          .positionMode(MAXMotionPositionMode.kMAXMotionTrapezoidal)
+{{#if linear}}
+          .cruiseVelocity(RotationsPerSecond.of(GEAR_RATIO).times(MAX_VELOCITY.div(TRAVEL_PER_ROTATION.per(Second))).in(RPM))
+          .maxAcceleration(RotationsPerSecondPerSecond.of(GEAR_RATIO).times(MAX_ACCELERATION.div(TRAVEL_PER_ROTATION.per(Second).per(Second))).in(RPM.per(Second)));
+{{else}}
+          .cruiseVelocity(MAX_VELOCITY.times(GEAR_RATIO).in(RPM))
+          .maxAcceleration(MAX_ACCELERATION.times(GEAR_RATIO).in(RPM.per(Second)));
+{{/if}}
+{{/unless}}
+    }
 {{#if enableSoftLimits}}
     config.softLimit
-        .forwardSoftLimit(FORWARD_SOFT_LIMIT.in(Rotations))
+        .forwardSoftLimit(FORWARD_SOFT_LIMIT.times(GEAR_RATIO).in(Rotations))
         .forwardSoftLimitEnabled(true)
-        .reverseSoftLimit(REVERSE_SOFT_LIMIT.in(Rotations))
+        .reverseSoftLimit(REVERSE_SOFT_LIMIT.times(GEAR_RATIO).in(Rotations))
         .reverseSoftLimitEnabled(true);
 {{/if}}
     motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-    encoder.setPosition(STARTING_MOTOR_POSITION.in(Rotations));
+    encoder.setPosition(STARTING_MECHANISM_POSITION.times(GEAR_RATIO).in(Rotations));
 {{/inline}}
-{{#*inline "getMotorPosition"}}
-    return Rotations.of(encoder.getPosition().get());
+{{#*inline "getMechanismPosition"}}
+    // The encoder counts motor rotations.
+    return Rotations.of(encoder.getPosition().get()).div(GEAR_RATIO);
 {{/inline}}
-{{#*inline "getMotorVelocity"}}
-    return RPM.of(encoder.getVelocity().get());
+{{#*inline "getMechanismVelocity"}}
+    return RPM.of(encoder.getVelocity().get()).div(GEAR_RATIO);
 {{/inline}}
 {{#*inline "getVoltage"}}
     return Volts.of(motor.getAppliedOutput().get() * motor.getBusVoltage().get());
@@ -70,11 +101,17 @@ import static org.wpilib.units.Units.Milliseconds;
 {{#*inline "getTemperature"}}
     return Celsius.of(motor.getMotorTemperature().get());
 {{/inline}}
-{{#*inline "setMotorPosition"}}
-    closedLoop.setSetpoint(motorPosition.in(Rotations), ControlType.kPosition, ClosedLoopSlot.kSlot0, feedforward.in(Volts), ArbFFUnits.kVoltage);
+{{#*inline "setMechanismGoal"}}
+    closedLoop.setSetpoint(goal.times(GEAR_RATIO).in(Rotations), ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0);
 {{/inline}}
-{{#*inline "setMotorVelocity"}}
-    closedLoop.setSetpoint(motorVelocity.in(RPM), ControlType.kVelocity, ClosedLoopSlot.kSlot0, feedforward.in(Volts), ArbFFUnits.kVoltage);
+{{#*inline "setMechanismGoalVelocity"}}
+    closedLoop.setSetpoint(goal.times(GEAR_RATIO).in(RPM), ControlType.kVelocity, ClosedLoopSlot.kSlot0);
+{{/inline}}
+{{#*inline "setMechanismPosition"}}
+    closedLoop.setSetpoint(mechanismPosition.times(GEAR_RATIO).in(Rotations), ControlType.kPosition, ClosedLoopSlot.kSlot0, feedforward.in(Volts), ArbFFUnits.kVoltage);
+{{/inline}}
+{{#*inline "setMechanismVelocity"}}
+    closedLoop.setSetpoint(mechanismVelocity.times(GEAR_RATIO).in(RPM), ControlType.kVelocity, ClosedLoopSlot.kSlot0, feedforward.in(Volts), ArbFFUnits.kVoltage);
 {{/inline}}
 {{#*inline "setMotorVoltage"}}
     motor.setVoltage(voltage);
@@ -90,5 +127,5 @@ import static org.wpilib.units.Units.Milliseconds;
 {{#*inline "simAppliedVoltage"}}batteryVoltage.times(motorSim.getAppliedOutput()){{/inline}}
 {{#*inline "simUpdate"}}
     // Give the SPARK the motor's simulated speed, so that it updates its encoder.
-    motorSim.iterate(motorVelocity.in(RPM), batteryVoltage.in(Volts), LOOP_PERIOD.in(Seconds));
+    motorSim.iterate(mechanismVelocity.times(GEAR_RATIO).in(RPM), batteryVoltage.in(Volts), LOOP_PERIOD.in(Seconds));
 {{/inline}}
