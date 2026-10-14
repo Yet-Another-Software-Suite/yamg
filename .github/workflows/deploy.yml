@@ -1,16 +1,23 @@
 name: YAMG Deploy
 
+# The site serves the YAMG for each WPILib season:
+#   https://yamg.yassrobotics.com/       the 2026 branch
+#   https://yamg.yassrobotics.com/2027/  the main branch
+# It deploys after main builds and passes its tests. After pushing to the 2026 branch, run this
+# workflow by hand (Actions > YAMG Deploy > Run workflow) to publish it.
+# When 2027 becomes the default, swap the two paths here and in components/season-switch.tsx.
+
 on:
   workflow_run:
     workflows: ["YAMG Build & Test"]
     types: [completed]
     branches: ["main"]
+  workflow_dispatch:
 
 permissions:
   contents: read
   pages: write
   id-token: write
-  actions: read
 
 concurrency:
   group: "pages-deploy"
@@ -19,26 +26,63 @@ concurrency:
 jobs:
   deploy:
     if: >
-      ${{ 
-          github.event.workflow_run.conclusion == 'success' &&
-          github.event.workflow_run.event == 'push'
+      ${{
+          github.event_name == 'workflow_dispatch' ||
+          (github.event.workflow_run.conclusion == 'success' &&
+           github.event.workflow_run.event == 'push')
       }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
+      - name: Check out 2026
+        uses: actions/checkout@v4
         with:
-          name: nextjs-build
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          path: ./out
+          ref: "2026"
+          path: site-2026
+
+      - name: Check out 2027
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          path: site-2027
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build 2026
+        working-directory: site-2026
+        run: |
+          pnpm install --no-frozen-lockfile
+          pnpm run build
+
+      - name: Build 2027
+        working-directory: site-2027
+        env:
+          NEXT_PUBLIC_BASE_PATH: /2027
+        run: |
+          pnpm install --no-frozen-lockfile
+          pnpm run build
+
+      - name: Put the seasons together
+        run: |
+          mkdir site
+          cp -r site-2026/out/. site/
+          mkdir site/2027
+          cp -r site-2027/out/. site/2027/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./out
+          path: ./site
 
       - name: Deploy to GitHub Pages
         id: deployment

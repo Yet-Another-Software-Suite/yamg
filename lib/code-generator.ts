@@ -19,9 +19,9 @@ import { formatJava } from "./format-java";
  */
 export type TemplateLoader = (path: string) => Promise<string>;
 
-// In the browser, templates are fetched from the site.
+// In the browser, templates are fetched from the site, which may be served under a base path.
 let loadTemplate: TemplateLoader = async (path) => {
-  const response = await fetch(`templates/${path}`);
+  const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/templates/${path}`);
   if (!response.ok) {
     throw new Error(`Failed to fetch template: ${path}`);
   }

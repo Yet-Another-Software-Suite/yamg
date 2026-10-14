@@ -48,6 +48,16 @@ This tool helps FRC teams quickly generate well-structured, command-based Java c
 
 4. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+## Seasons
+
+[yamg.yassrobotics.com](https://yamg.yassrobotics.com) serves the 2026 YAMG from the `2026` branch, and
+[yamg.yassrobotics.com/2027](https://yamg.yassrobotics.com/2027/) serves the 2027 YAMG from `main`. The
+`YAMG Deploy` workflow builds both after `main` passes its tests. After pushing to `2026`, run it by hand
+from the Actions tab. To build the 2027 site for its path locally, set `NEXT_PUBLIC_BASE_PATH=/2027`.
+
+When 2027 becomes the default, swap the paths in `.github/workflows/deploy.yml` and
+`components/season-switch.tsx`.
+
 ## Deployment to GitHub Pages
 
 This project is configured for easy deployment to GitHub Pages:
