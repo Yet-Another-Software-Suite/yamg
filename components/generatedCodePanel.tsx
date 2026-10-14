@@ -2,12 +2,12 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ClipboardCopy, FilePlus2, Download } from "lucide-react";
+import { ClipboardCopy, FilePlus2, Download, Link } from "lucide-react";
 import JSZip from "jszip";
 import FileSaver from "file-saver";
 import CodeDisplay from "@/components/code-display";
 import type { FileOutput } from "@/lib/types";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 interface Props {
   files: FileOutput[];
@@ -15,6 +15,8 @@ interface Props {
   onSelect: (i: number) => void;
   isGenerating: boolean;
   error: string | null;
+  /** Copy a link that loads the form as it is now. */
+  onCopyLink?: () => Promise<void>;
 }
 
 export default function GeneratedCodePanel({
@@ -23,7 +25,15 @@ export default function GeneratedCodePanel({
   onSelect,
   isGenerating,
   error,
+  onCopyLink,
 }: Props) {
+  const [linkCopied, setLinkCopied] = useState(false);
+  const copyLink = async () => {
+    if (!onCopyLink) return;
+    await onCopyLink();
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  };
   const copyToClipboard = (content: string) =>
     navigator.clipboard.writeText(content);
   // Filenames are relative to src/main/java/first/robot, for example "subsystems/Arm.java".
@@ -98,6 +108,11 @@ export default function GeneratedCodePanel({
           >
             <FilePlus2 className="h-4 w-4 mr-1" /> Save File
           </Button>
+          {onCopyLink && (
+            <Button variant="outline" size="sm" onClick={copyLink} title="Copy a link that opens YAMG with this form filled in">
+              <Link className="h-4 w-4 mr-1" /> {linkCopied ? "Link Copied" : "Copy Link"}
+            </Button>
+          )}
           <Button variant="default" size="sm" onClick={downloadAll}>
             <Download className="h-4 w-4 mr-1" /> Download All
           </Button>
