@@ -21,7 +21,9 @@ import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Trigger;
 import org.wpilib.framework.RobotBase;
+{{#if systemCoreProfile}}
 import org.wpilib.math.controller.ElevatorFeedforward;
+{{/if}}
 import org.wpilib.math.system.DCMotor;
 import org.wpilib.math.trajectory.TrapezoidProfile;
 import org.wpilib.simulation.ElevatorSim;
@@ -111,16 +113,22 @@ public class {{className}} implements Mechanism {
   // The fastest the closed loop moves the elevator.
   private static final LinearVelocity MAX_VELOCITY = MetersPerSecond.of({{maxVelocity}});
   private static final LinearAcceleration MAX_ACCELERATION = MetersPerSecondPerSecond.of({{maxAcceleration}});
+{{#if systemCoreProfile}}
   private final TrapezoidProfile profile = new TrapezoidProfile(
       new TrapezoidProfile.Constraints(MAX_VELOCITY.in(MetersPerSecond), MAX_ACCELERATION.in(MetersPerSecondPerSecond)));
+{{/if}}
 
+{{#if systemCoreProfile}}
   // Feedforward gains, in volts per meter per second (kV) and per meter per second squared (kA).
   private final ElevatorFeedforward feedforward = new ElevatorFeedforward({{kS}}, {{kG}}, {{kV}}, {{kA}});
+{{/if}}
 
 {{> fields}}
 
-  // Where the closed loop is now, and where it is going, in meters. A null goal means the closed loop is off.
+  // Where the closed loop is going, and where it is now, in meters. A null goal means the closed loop is off.
+{{#if systemCoreProfile}}
   private TrapezoidProfile.State setpoint = new TrapezoidProfile.State(STARTING_HEIGHT.in(Meters), 0);
+{{/if}}
   private TrapezoidProfile.State goal = null;
 
   // The physics simulation of the elevator, and a drawing of it for a dashboard. The simulation
@@ -199,9 +207,17 @@ public class {{className}} implements Mechanism {
 {{> getTemperature}}
   }
 
+{{#if onboardControl}}
+  /** Send the motor controller the goal. It runs the profile and the feedforward itself. */
+  private void setMechanismGoal(Angle goal) {
+{{> setMechanismGoal}}
+  }
+{{/if}}
+{{#if systemCoreProfile}}
   private void setMechanismPosition(Angle mechanismPosition, Voltage feedforward) {
 {{> setMechanismPosition}}
   }
+{{/if}}
 
   private void setMotorVoltage(Voltage voltage) {
 {{> setMotorVoltage}}
@@ -209,10 +225,12 @@ public class {{className}} implements Mechanism {
 
   /** Start moving the elevator to a height with the closed loop. */
   private void setGoal(Distance height) {
+{{#if systemCoreProfile}}
     if (goal == null) {
       // Start the profile from where the elevator is now.
       setpoint = new TrapezoidProfile.State(getHeight().in(Meters), getVelocity().in(MetersPerSecond));
     }
+{{/if}}
     Distance clamped = height.lt(MIN_HEIGHT) ? MIN_HEIGHT : height.gt(MAX_HEIGHT) ? MAX_HEIGHT : height;
     goal = new TrapezoidProfile.State(clamped.in(Meters), 0);
   }
@@ -256,11 +274,31 @@ public class {{className}} implements Mechanism {
   /** Call this from Robot.robotPeriodic(), before the scheduler runs. */
   public void periodic() {
     if (goal != null) {
+{{#if onboardControl}}
+{{#if systemCoreProfile}}
+      if (RobotBase.isSimulation()) {
+        // REVLib's simulated SPARK runs neither the onboard profile nor the onboard feedforward,
+        // so in simulation they run here instead.
+        // Step the profile one loop, and give the motor controller the next setpoint and feedforward.
+        TrapezoidProfile.State next = profile.calculate(LOOP_PERIOD.in(Seconds), setpoint, goal);
+        Voltage feedforwardVoltage = Volts.of(feedforward.calculate(setpoint.velocity, next.velocity));
+        setpoint = next;
+        setMechanismPosition(toMechanismPosition(Meters.of(next.position)), feedforwardVoltage);
+      } else {
+        // The motor controller runs the trapezoidal profile and the feedforward itself.
+        setMechanismGoal(toMechanismPosition(Meters.of(goal.position)));
+      }
+{{else}}
+      // The motor controller runs the trapezoidal profile and the feedforward itself.
+      setMechanismGoal(toMechanismPosition(Meters.of(goal.position)));
+{{/if}}
+{{else}}
       // Step the profile one loop, and give the motor controller the next setpoint and feedforward.
       TrapezoidProfile.State next = profile.calculate(LOOP_PERIOD.in(Seconds), setpoint, goal);
       Voltage feedforwardVoltage = Volts.of(feedforward.calculate(setpoint.velocity, next.velocity));
       setpoint = next;
       setMechanismPosition(toMechanismPosition(Meters.of(next.position)), feedforwardVoltage);
+{{/if}}
     }
 
     carriageLigament.setLength(getHeight().in(Meters));

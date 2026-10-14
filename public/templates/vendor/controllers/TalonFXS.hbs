@@ -1,19 +1,25 @@
 {{#*inline "imports"}}
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.TalonFXSConfiguration;
-import com.ctre.phoenix6.controls.PositionVoltage;
+import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFXS;
 import com.ctre.phoenix6.signals.MotorArrangementValue;
+import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import org.wpilib.hardware.bus.CANPort;
+import static org.wpilib.units.Units.RotationsPerSecondPerSecond;
 {{/inline}}
 {{#*inline "fields"}}
   // The Talon FXS, and the requests that control it.
   private final TalonFXS motor = new TalonFXS(CAN_ID, new CANBus(CANPort.CAN_S0));
-  private final PositionVoltage positionRequest = new PositionVoltage(0);
+{{#if velocityControl}}
   private final VelocityVoltage velocityRequest = new VelocityVoltage(0);
+{{else}}
+  // Motion Magic runs a trapezoidal profile to the goal.
+  private final MotionMagicVoltage profileRequest = new MotionMagicVoltage(0);
+{{/if}}
   private final VoltageOut voltageRequest = new VoltageOut(0);
 {{/inline}}
 {{#*inline "configure"}}
@@ -24,12 +30,40 @@ import org.wpilib.hardware.bus.CANPort;
     // the mechanism, and its closed loop outputs volts.
     config.ExternalFeedback.withSensorToMechanismRatio(GEAR_RATIO);
 {{#if linear}}
-    // Phoenix has no linear units, so the gains go from volts per meter to volts per turn.
+    // Phoenix has no linear units, so the gains go from per meter to per turn.
     double metersPerRotation = TRAVEL_PER_ROTATION.in(Meters);
     config.Slot0.withKP(KP * metersPerRotation).withKI(KI * metersPerRotation).withKD(KD * metersPerRotation);
 {{else}}
     config.Slot0.withKP(KP).withKI(KI).withKD(KD);
 {{/if}}
+    // The Talon runs the feedforward itself, with its gains per turn of the mechanism.
+{{#if (eq mechanismType "Arm")}}
+    // Arm_Cosine scales kG by the cosine of the arm's angle, which is 0 when the arm points straight out.
+    // kV and kA are per radian, so they go to per turn.
+    config.Slot0.withGravityType(GravityTypeValue.Arm_Cosine).withKG({{kG}});
+    config.Slot0.withKS({{kS}}).withKV({{kV}} * 2 * Math.PI).withKA({{kA}} * 2 * Math.PI);
+{{/if}}
+{{#if (eq mechanismType "Elevator")}}
+    // Elevator_Static applies kG all the time. kV and kA are per meter, so they go to per turn.
+    config.Slot0.withGravityType(GravityTypeValue.Elevator_Static).withKG({{kG}});
+    config.Slot0.withKS({{kS}}).withKV({{kV}} * metersPerRotation).withKA({{kA}} * metersPerRotation);
+{{/if}}
+{{#if (eq mechanismType "Pivot")}}
+    config.Slot0.withKS({{kS}}).withKV({{kV}}).withKA({{kA}});
+{{/if}}
+{{#if (eq mechanismType "Flywheel")}}
+    config.Slot0.withKS({{kS}}).withKV({{kV}}).withKA({{kA}});
+{{/if}}
+{{#unless velocityControl}}
+    // Motion Magic: the fastest the profile moves and accelerates the mechanism.
+{{#if linear}}
+    config.MotionMagic
+        .withMotionMagicCruiseVelocity(RotationsPerSecond.one().times(MAX_VELOCITY.div(TRAVEL_PER_ROTATION.per(Second))))
+        .withMotionMagicAcceleration(RotationsPerSecondPerSecond.one().times(MAX_ACCELERATION.div(TRAVEL_PER_ROTATION.per(Second).per(Second))));
+{{else}}
+    config.MotionMagic.withMotionMagicCruiseVelocity(MAX_VELOCITY).withMotionMagicAcceleration(MAX_ACCELERATION);
+{{/if}}
+{{/unless}}
     config.MotorOutput.withNeutralMode(BRAKE_MODE ? NeutralModeValue.Brake : NeutralModeValue.Coast);
 {{#if enableStatorLimit}}
     config.CurrentLimits.withStatorCurrentLimit(STATOR_CURRENT_LIMIT).withStatorCurrentLimitEnable(true);
@@ -73,11 +107,11 @@ import org.wpilib.hardware.bus.CANPort;
 {{#*inline "getTemperature"}}
     return motor.getDeviceTemp().getValue();
 {{/inline}}
-{{#*inline "setMechanismPosition"}}
-    motor.setControl(positionRequest.withPosition(mechanismPosition).withFeedForward(feedforward));
+{{#*inline "setMechanismGoal"}}
+    motor.setControl(profileRequest.withPosition(goal));
 {{/inline}}
-{{#*inline "setMechanismVelocity"}}
-    motor.setControl(velocityRequest.withVelocity(mechanismVelocity).withFeedForward(feedforward));
+{{#*inline "setMechanismGoalVelocity"}}
+    motor.setControl(velocityRequest.withVelocity(goal));
 {{/inline}}
 {{#*inline "setMotorVoltage"}}
     motor.setControl(voltageRequest.withOutput(voltage));

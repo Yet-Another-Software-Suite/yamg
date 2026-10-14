@@ -10,9 +10,12 @@ import com.revrobotics.spark.SparkLowLevel.ControlType;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkSim;
+import com.revrobotics.spark.config.MAXMotionConfig.MAXMotionPositionMode;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
 import org.wpilib.hardware.bus.CANPort;
+import static org.wpilib.units.Units.RotationsPerSecondPerSecond;
+import static org.wpilib.units.Units.Second;
 import static org.wpilib.units.Units.Milliseconds;
 {{/inline}}
 {{#*inline "fields"}}
@@ -45,6 +48,33 @@ import static org.wpilib.units.Units.Milliseconds;
     config.closedLoop
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
         .pid(KP / gainScale, KI * sparkLoopPeriod.in(Seconds) / gainScale, KD / sparkLoopPeriod.in(Seconds) / gainScale);
+    if (!RobotBase.isSimulation()) {
+      // In simulation the feedforward and the profile run on the SystemCore instead.
+      // The SPARK runs the feedforward itself. Its kS and kG are in volts, and its kV and kA per
+      // motor RPM, so they are converted from per {{gainUnit}}.
+      double rpmPerGainUnit = GEAR_RATIO * 60.0{{#if linear}} / TRAVEL_PER_ROTATION.in(Meters){{/if}}{{#if (eq mechanismType "Arm")}} / (2 * Math.PI){{/if}};
+      config.closedLoop.feedForward.kS({{kS}}).kV({{kV}} / rpmPerGainUnit).kA({{kA}} / rpmPerGainUnit);
+{{#if (eq mechanismType "Arm")}}
+      // kCos scales kG by the cosine of the arm's angle, which is 0 when the arm points straight out.
+      // kCosRatio turns the encoder's motor rotations into arm rotations.
+      config.closedLoop.feedForward.kCos({{kG}}).kCosRatio(1.0 / GEAR_RATIO);
+{{/if}}
+{{#if (eq mechanismType "Elevator")}}
+      config.closedLoop.feedForward.kG({{kG}});
+{{/if}}
+{{#unless velocityControl}}
+      // MAXMotion runs a trapezoidal profile to the goal, in motor RPM and RPM per second.
+      config.closedLoop.maxMotion
+          .positionMode(MAXMotionPositionMode.kMAXMotionTrapezoidal)
+{{#if linear}}
+          .cruiseVelocity(RotationsPerSecond.of(GEAR_RATIO).times(MAX_VELOCITY.div(TRAVEL_PER_ROTATION.per(Second))).in(RPM))
+          .maxAcceleration(RotationsPerSecondPerSecond.of(GEAR_RATIO).times(MAX_ACCELERATION.div(TRAVEL_PER_ROTATION.per(Second).per(Second))).in(RPM.per(Second)));
+{{else}}
+          .cruiseVelocity(MAX_VELOCITY.times(GEAR_RATIO).in(RPM))
+          .maxAcceleration(MAX_ACCELERATION.times(GEAR_RATIO).in(RPM.per(Second)));
+{{/if}}
+{{/unless}}
+    }
 {{#if enableSoftLimits}}
     config.softLimit
         .forwardSoftLimit(FORWARD_SOFT_LIMIT.times(GEAR_RATIO).in(Rotations))
@@ -70,6 +100,12 @@ import static org.wpilib.units.Units.Milliseconds;
 {{/inline}}
 {{#*inline "getTemperature"}}
     return Celsius.of(motor.getMotorTemperature().get());
+{{/inline}}
+{{#*inline "setMechanismGoal"}}
+    closedLoop.setSetpoint(goal.times(GEAR_RATIO).in(Rotations), ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0);
+{{/inline}}
+{{#*inline "setMechanismGoalVelocity"}}
+    closedLoop.setSetpoint(goal.times(GEAR_RATIO).in(RPM), ControlType.kVelocity, ClosedLoopSlot.kSlot0);
 {{/inline}}
 {{#*inline "setMechanismPosition"}}
     closedLoop.setSetpoint(mechanismPosition.times(GEAR_RATIO).in(Rotations), ControlType.kPosition, ClosedLoopSlot.kSlot0, feedforward.in(Volts), ArbFFUnits.kVoltage);
