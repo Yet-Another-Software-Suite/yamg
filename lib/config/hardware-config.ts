@@ -168,7 +168,7 @@ export const MOTOR_CONTROLLERS: Record<string, MotorControllerDefinition> = {
     name: "ThriftyNova",
     displayName: "ThriftyNova",
     supportsCurrentLimit: true,
-    supportsSupplyCurrentLimit: false,
+    supportsSupplyCurrentLimit: true,
     supportsBrakeMode: true,
     supportsRampRate: true,
     supportsSoftLimits: true,

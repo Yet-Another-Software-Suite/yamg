@@ -166,6 +166,13 @@ describe("generateFiles", () => {
     expect(vendor.content).toContain("TRAVEL_PER_ROTATION = DRIVE_CIRCUMFERENCE.times(CASCADE_STAGES);");
   });
 
+  it("gives a Thrifty Nova a supply current limit", async () => {
+    const [vendor] = await generateFiles(form("Arm", "ThriftyNova", "vendor", "v2", true));
+    expect(vendor.content).toContain("NovaConfig.supplyCurrent(SUPPLY_CURRENT_LIMIT.in(Amps))");
+    const [yams] = await generateFiles(form("Arm", "ThriftyNova", "yams", "v2", true));
+    expect(yams.content).toContain(".withSupplyCurrentLimit(Amps.of(30.0))");
+  });
+
   it("uses one template per output, Commands version and mechanism", () => {
     const paths = templatePaths(form("Arm", "TalonFX", "yams", "v3", true));
     expect(paths).toEqual({ controller: "yams/controllers/TalonFX.hbs", mechanism: "yams/v3/arm.java.hbs" });

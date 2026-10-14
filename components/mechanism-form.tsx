@@ -391,7 +391,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                               onChange={(e) => handleNumberChange(e, field.onChange)}
                             />
                           </FormControl>
-                          <FormDescription>Only for TalonFX/TalonFXS</FormDescription>
+                          <FormDescription>Current drawn from the battery</FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
