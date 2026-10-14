@@ -1,0 +1,13 @@
+{{#*inline "imports"}}
+import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.SparkMax;
+import org.wpilib.hardware.bus.CANPort;
+import yams.core.motorcontrollers.local.SparkWrapper;
+{{/inline}}
+{{#*inline "fields"}}
+  // The vendor motor controller object: a SPARK MAX with CAN ID {{canId}}.
+  private final SparkMax spark = new SparkMax(CANPort.CAN_S0, {{canId}}, MotorType.kBrushless);
+
+  // The SmartMotorController applies the config to the SPARK MAX, which drives one {{motorDisplayName}}.
+  private final SmartMotorController motor = new SparkWrapper(spark, {{dcMotor}}, smcConfig);
+{{/inline}}

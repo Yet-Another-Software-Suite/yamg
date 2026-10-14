@@ -6,6 +6,8 @@ import * as z from "zod";
 
 export const formSchema = z.object({
   subsystemName: z.string().min(1, "Subsystem name is required"),
+  outputType: z.enum(["vendor", "yams"]),
+  commandsVersion: z.enum(["v2", "v3"]),
   mechanismType: z.enum(["Elevator", "Arm", "Pivot", "Flywheel"]),
   motorControllerType: z.enum([
     "ThriftyNova",
@@ -14,7 +16,7 @@ export const formSchema = z.object({
     "TalonFX",
     "TalonFXS",
   ]),
-  motorType: z.enum(["NEO", "NEO550", "Minion", "Krakenx44", "Krakenx60"]),
+  motorType: z.enum(["NEO", "NEO550", "Minion", "Vortex", "Krakenx44", "Krakenx60"]),
   canId: z.number().int().min(0).max(62),
   pidValues: z.object({
     kP: z.number().min(0.0),
@@ -84,6 +86,7 @@ export const formSchema = z.object({
   flywheelParams: z
     .object({
       momentOfInertia: z.number().optional(),
+      diameter: z.number().optional(),
     })
     .optional(),
 });
@@ -95,6 +98,8 @@ export function useCodeGeneratorForm() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       subsystemName: "ElevatorSubsystem",
+      outputType: "vendor",
+      commandsVersion: "v2",
       mechanismType: "Elevator",
       motorControllerType: "SparkMAX",
       motorType: "NEO",
@@ -135,6 +140,7 @@ export function useCodeGeneratorForm() {
       },
       flywheelParams: {
         momentOfInertia: 0.0025,
+        diameter: 0.1016,
       },
     },
   });

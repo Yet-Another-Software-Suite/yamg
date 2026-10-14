@@ -1,5 +1,9 @@
 export interface FormValues {
   subsystemName: string
+  /** Plain vendor code, or code that uses YAMS. */
+  outputType?: "vendor" | "yams"
+  /** WPILib Commands v2 (subsystems) or Commands v3 (mechanisms). */
+  commandsVersion?: "v2" | "v3"
   mechanismType: "Elevator" | "Arm" | "Pivot" | "Flywheel"
   motorControllerType: "ThriftyNova" | "SparkMAX" | "SparkFlex" | "TalonFX" | "TalonFXS" 
   motorType: "NEO" | "NEO550" | "Minion" | "Krakenx44" | "Krakenx60" | "Vortex"
@@ -59,6 +63,7 @@ export interface FormValues {
   }
   flywheelParams?: {
     momentOfInertia?: number
+    diameter?: number
   }
 }
 

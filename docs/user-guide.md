@@ -21,6 +21,16 @@ Start by configuring the basic parameters of your mechanism:
    - **Pivot**: For rotational motion without significant gravity effects (e.g., turrets, wrists)
    - **Flywheel**: For high-speed rotational inertia mechanisms with velocity-only control (e.g., shooters, launchers)
 
+3. **Use YAMS**: Choose what the generated code is built on
+   - **Off**: Plain code that uses WPILib and your motor controller's vendor library
+   - **On**: Code that uses [YAMS](https://yams.yassrobotics.com). YAMS handles the closed loop, the simulation and the telemetry, and lets you tune the mechanism live
+
+4. **Command Framework**: Match the WPILib 2027 template your project was made from
+   - **Commands v2**: Generates a subsystem in `subsystems/`
+   - **Commands v3**: Generates a mechanism in `mechanisms/`. Call its `periodic()` from `Robot.robotPeriodic()` and its `simulationPeriodic()` from `Robot.simulationPeriodic()`
+
+The code targets WPILib 2027 and the 2027 vendor libraries, and runs on the SystemCore.
+
 ## Step 2: Motor Configuration
 
 Configure the motor and motor controller settings:
@@ -35,7 +45,8 @@ Configure the motor and motor controller settings:
 2. **Motor Type**: Select your motor
    - **NEO**: REV Robotics NEO brushless motor
    - **NEO550**: REV Robotics NEO 550 brushless motor
-   - **Minion**: REV Robotics Minion motor
+   - **Minion**: CTRE Minion motor
+   - **Vortex**: REV Robotics NEO Vortex motor
    - **Krakenx44**: CTRE Kraken X44 motor (only with TalonFX)
    - **Krakenx60**: CTRE Kraken X60 motor (only with TalonFX)
 
@@ -59,24 +70,25 @@ Configure the motor and motor controller settings:
 
 Configure the control system parameters:
 
-1. **PID Values**: Set the PID controller gains
+1. **PID Values**: Set the PID controller gains, in volts per rotation of error (per meter for an elevator, and per rotation per second for a flywheel). These are the units YAMS uses, and the generated code converts them for your motor controller
    - **kP**: Proportional gain (start with a small value like 0.1)
    - **kI**: Integral gain (typically start with 0)
    - **kD**: Derivative gain (typically start with 0)
 
 2. **Max Velocity/Acceleration**: (Optional) Set maximum velocity and acceleration
    - For position control profiles
-   - Units are rotations per second (or meters per second for elevators)
+   - Units are radians per second (or meters per second for elevators)
 
 3. **Feedforward**: (Optional) Configure feedforward constants
    - **kS**: Static friction compensation (volts)
-   - **kV**: Velocity feedforward (volts per rotation per second)
-   - **kA**: Acceleration feedforward (volts per rotation per second squared)
+   - **kV**: Velocity feedforward (volts per radian per second for an arm, per meter per second for an elevator, and per rotation per second for a pivot or flywheel)
+   - **kA**: Acceleration feedforward (in the same units, per second squared)
    - **kG**: Gravity compensation (volts, for arms and elevators)
 
 4. **Soft Limits**: (Optional) Set position limits in software
-   - **Forward Limit**: Maximum position (rotations or meters)
-   - **Reverse Limit**: Minimum position (rotations or meters)
+   - **Forward Limit**: Maximum position (degrees, or meters for an elevator)
+   - **Reverse Limit**: Minimum position (degrees, or meters for an elevator)
+   - Set both to use them
 
 ## Step 4: Telemetry Configuration
 
@@ -118,27 +130,29 @@ Depending on the mechanism type, configure additional parameters:
 ### For Flywheels:
 
 1. **Moment of Inertia**: Rotational inertia of the flywheel in kg·m² (from CAD or ReCalc)
+2. **Wheel Diameter**: Diameter of the wheel in meters
 
-Flywheels are velocity-only mechanisms — there is no position control mode, soft limits, or gravity compensation, and the simulation only offers a Velocity Control view.
+Flywheels are velocity-only mechanisms. There is no position control mode, soft limits, or gravity compensation, and the simulation only offers a Velocity Control view.
 
 ## Step 6: Generate and Use Code
 
 The code is automatically generated as you configure the mechanism:
 
 1. **View Generated Code**: Switch to the "Generated Code" tab to see the Java code
-2. **Switch Between Files**: Use the buttons above the code display to switch between files
-   - The main subsystem file (e.g., `ElevatorSubsystem.java`)
-   - The simulation visualization file (e.g., `ElevatorSubsystemSim.java`)
+2. **One File**: The mechanism is one file, with its physics simulation and its dashboard drawing inside it
+   - `subsystems/ElevatorSubsystem.java` for Commands v2
+   - `mechanisms/ElevatorSubsystem.java` for Commands v3
 
 3. **Download Code**: Use the buttons to download the code
    - **Copy**: Copy the current file to clipboard
    - **Save File**: Download the current file
-   - **Download All**: Download all files as a ZIP archive
+   - **Download All**: Download a ZIP archive laid out like a robot project
 
-4. **Use in Your Project**: Add the downloaded files to your robot project
-   - Place them in the `src/main/java/frc/robot/subsystems` directory
-   - Import the subsystem in your `RobotContainer.java` file
-   - Create commands that use the subsystem
+4. **Use in Your Project**: Add the downloaded file to your robot project
+   - Install the vendor library for your motor controller (REVLib, Phoenix 6 or ThriftyLib), and YAMS if you generated YAMS code
+   - Place the file in `src/main/java/first/robot/subsystems` (Commands v2) or `src/main/java/first/robot/mechanisms` (Commands v3)
+   - Commands v2: create the subsystem in `RobotContainer.java` and bind its commands
+   - Commands v3: create the mechanism in `Robot.java`, call its `periodic()` and `simulationPeriodic()` from `Robot`, and use its commands in your op modes
 
 ## Step 7: Test with Simulation
 

@@ -9,7 +9,8 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  //basePath: '/yamg',  // important if your repo is not served from root
+  // The deploy workflow builds the 2026 site, on the 2026 branch, under /2026. This site is at the root.
+  basePath: process.env.NEXT_PUBLIC_BASE_PATH || '',
   //trailingSlash: false,          // helps with routing in static export
   output: 'export', // Enable static export
   distDir: 'out', // Output directory for the static build
