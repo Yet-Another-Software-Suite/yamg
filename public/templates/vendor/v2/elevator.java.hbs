@@ -156,7 +156,7 @@ public class {{className}} extends SubsystemBase {
 
   /** How far the {{driveNoun}} has turned for a height. */
   private static Angle toMechanismPosition(Distance height) {
-    return Rotations.one().times(height.div(TRAVEL_PER_ROTATION));
+    return Rotations.of(height.div(TRAVEL_PER_ROTATION).baseUnitMagnitude());
   }
 
   private Angle getMechanismPosition() {
@@ -172,7 +172,7 @@ public class {{className}} extends SubsystemBase {
   @Logged(name = "Height")
 {{/if}}
   public Distance getHeight() {
-    return TRAVEL_PER_ROTATION.times(getMechanismPosition().div(Rotations.one()));
+    return TRAVEL_PER_ROTATION.times(getMechanismPosition().in(Rotations));
   }
 
   /** How fast the elevator is moving. */
@@ -180,7 +180,7 @@ public class {{className}} extends SubsystemBase {
   @Logged(name = "Velocity")
 {{/if}}
   public LinearVelocity getVelocity() {
-    return TRAVEL_PER_ROTATION.per(Second).times(getMechanismVelocity().div(RotationsPerSecond.one()));
+    return TRAVEL_PER_ROTATION.times(getMechanismVelocity().in(RotationsPerSecond)).per(Second);
   }
 
   /** The voltage the motor controller is applying to the motor. */
@@ -312,7 +312,7 @@ public class {{className}} extends SubsystemBase {
     elevatorSim.update(LOOP_PERIOD.in(Seconds));
     Angle mechanismPosition = toMechanismPosition(Meters.of(elevatorSim.getPosition()));
     AngularVelocity mechanismVelocity =
-        RotationsPerSecond.one().times(MetersPerSecond.of(elevatorSim.getVelocity()).div(TRAVEL_PER_ROTATION.per(Second)));
+        RotationsPerSecond.of(MetersPerSecond.of(elevatorSim.getVelocity()).div(TRAVEL_PER_ROTATION).baseUnitMagnitude());
     AngularAcceleration mechanismAcceleration = mechanismVelocity.minus(lastMechanismVelocity).div(LOOP_PERIOD);
     lastMechanismVelocity = mechanismVelocity;
 {{> simUpdate}}
