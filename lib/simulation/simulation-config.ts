@@ -1,4 +1,5 @@
 import { getSimMotorType } from "@/lib/config/hardware-config"
+import { elevatorDrive } from "@/lib/elevator-drive"
 import type { FormValues } from "@/lib/types"
 import type { ArmSimOptions } from "./arm-sim"
 import type { ElevatorSimOptions } from "./elevator-sim"
@@ -67,7 +68,8 @@ export function createSimulationOptions(
       const elevatorOptions: ElevatorSimOptions = {
         ...commonOptions,
         mass: mass,
-        drumRadius: formValues.elevatorParams?.drumRadius || 0.0254,
+        // A chain, belt or cascade moves the carriage like a drum of this radius would.
+        drumRadius: elevatorDrive(formValues.elevatorParams).effectiveRadiusMeters,
         minHeight: formValues.elevatorParams?.hardLimitMin || 0,
         maxHeight: formValues.elevatorParams?.hardLimitMax || 1.0,
         startingHeight: formValues.elevatorParams?.startingHeight || 0,

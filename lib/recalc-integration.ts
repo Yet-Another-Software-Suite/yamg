@@ -1,3 +1,5 @@
+import { elevatorDrive } from "@/lib/elevator-drive"
+
 // Motor name mapping from our system to ReCalc's motor names
 const RECALC_MOTOR_MAPPING: Record<string, string> = {
   NEO: "NEO",
@@ -151,7 +153,8 @@ export function formValuesToReCalcElevatorParams(formValues: any, motorCount = 1
     load: elevatorParams.mass || 5.0,
     loadUnit: elevatorParams.massUnit || "lbs",
     travelDistance: (elevatorParams.hardLimitMax || 2.0) - (elevatorParams.hardLimitMin || 0.0),
-    spoolDiameter: (elevatorParams.drumRadius || 0.025) * 2, // Convert radius to diameter
+    // A chain, belt or cascade moves the carriage like a spool of this diameter would.
+    spoolDiameter: elevatorDrive(elevatorParams).effectiveRadiusMeters * 2,
     currentLimit: formValues.currentLimits?.stator || 40,
     motorType: formValues.motorType,
     motorCount,

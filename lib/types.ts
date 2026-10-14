@@ -62,6 +62,18 @@ export interface FormValues {
     mass?: number
     massUnit?: "kg" | "lbs"
     drumRadius?: number
+    /** What the gearbox output turns: a drum (spool), a chain sprocket or a belt pulley. */
+    driveType?: "drum" | "chain" | "belt"
+    /** #25 or #35 roller chain. */
+    chainPitch?: "25" | "35"
+    /** The belt's pitch, in millimeters. */
+    beltPitchMm?: number
+    /** Teeth on the sprocket or pulley the gearbox turns. */
+    sprocketTeeth?: number
+    /** A cascade elevator, whose carriage moves the stage count times as far as the chain or belt. */
+    cascade?: boolean
+    /** Moving stages in the cascade, counting the carriage. */
+    cascadeStages?: number
   }
   flywheelParams?: {
     momentOfInertia?: number

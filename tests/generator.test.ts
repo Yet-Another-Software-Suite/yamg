@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { generateFiles, setTemplateLoader, templatePaths } from "@/lib/code-generator";
 import { getCompatibleMotors } from "@/lib/config/hardware-config";
+import { elevatorDrive } from "@/lib/elevator-drive";
 import type { FormValues } from "@/lib/types";
 
 // Prettier's Java plugin is an ES module, which Jest cannot load. The Gradle check compiles the output.
@@ -54,7 +55,20 @@ function form(
       positionUnit: everything ? "Degrees" : "Rotations",
     },
     armParams: { length: 0.6, hardLimitMin: -10, hardLimitMax: 100, startingPosition: 0, mass: 4, massUnit: "kg" },
-    elevatorParams: { startingHeight: 0, hardLimitMin: 0, hardLimitMax: 1.5, mass: 12, massUnit: "lbs", drumRadius: 0.025 },
+    // Each variant lifts the carriage a different way: a chain cascade, a belt, or a drum.
+    elevatorParams: {
+      startingHeight: 0,
+      hardLimitMin: 0,
+      hardLimitMax: 1.5,
+      mass: 12,
+      massUnit: "lbs",
+      drumRadius: 0.025,
+      ...(logger === "epilogue"
+        ? { driveType: "belt" as const, beltPitchMm: 5, sprocketTeeth: 30 }
+        : everything
+          ? { driveType: "chain" as const, chainPitch: "25" as const, sprocketTeeth: 22, cascade: true, cascadeStages: 3 }
+          : { driveType: "drum" as const }),
+    },
     flywheelParams: { momentOfInertia: 0.002, diameter: 0.1 },
   };
 }
@@ -132,6 +146,24 @@ describe("generateFiles", () => {
     const [yams] = await generateFiles(form("Arm", "SparkMAX", "yams", "v2", true, "epilogue"));
     expect(yams.content).not.toMatch(/@Logged|Telemetry\.log/);
     expect(yams.content).toContain('.withTelemetry("ArmSparkMAXEpilogue", TelemetryVerbosity.HIGH)');
+  });
+
+  it("works out an elevator's travel from its chain, belt or drum, and its cascade", () => {
+    const chain = elevatorDrive({ driveType: "chain", chainPitch: "35", sprocketTeeth: 16, cascade: true, cascadeStages: 3 });
+    expect(chain.travelPerRotationMeters).toBeCloseTo(0.375 * 0.0254 * 16 * 3);
+    expect(elevatorDrive({ driveType: "belt", beltPitchMm: 5, sprocketTeeth: 30 }).travelPerRotationMeters).toBeCloseTo(0.15);
+    expect(elevatorDrive({ driveType: "drum", drumRadius: 0.02 }).travelPerRotationMeters).toBeCloseTo(2 * Math.PI * 0.02);
+    // Without the cascade switch, the stage count is ignored.
+    expect(elevatorDrive({ driveType: "belt", sprocketTeeth: 30, cascadeStages: 3 }).stages).toBe(1);
+  });
+
+  it("gives YAMS the chain pitch and teeth, and the cascade after the gearing", async () => {
+    const [yams] = await generateFiles(form("Elevator", "SparkMAX", "yams", "v2", true));
+    expect(yams.content).toContain(".withDrumRadius(Inches.of(0.25), 22)");
+    expect(yams.content).toMatch(/\.withGearing\([^)]*\)\)\s*(\/\/.*\s*)*\.withCascadingElevatorStages\(3\)/);
+    const [vendor] = await generateFiles(form("Elevator", "SparkMAX", "vendor", "v2", true));
+    expect(vendor.content).toContain("DRIVE_CIRCUMFERENCE = Inches.of(0.25).times(22);");
+    expect(vendor.content).toContain("TRAVEL_PER_ROTATION = DRIVE_CIRCUMFERENCE.times(CASCADE_STAGES);");
   });
 
   it("uses one template per output, Commands version and mechanism", () => {

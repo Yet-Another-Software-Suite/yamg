@@ -82,6 +82,12 @@ export const formSchema = z.object({
       mass: z.number().optional(),
       massUnit: z.enum(["kg", "lbs"]).optional(),
       drumRadius: z.number().optional(),
+      driveType: z.enum(["drum", "chain", "belt"]).optional(),
+      chainPitch: z.enum(["25", "35"]).optional(),
+      beltPitchMm: z.number().positive().optional(),
+      sprocketTeeth: z.number().int().positive().optional(),
+      cascade: z.boolean().optional(),
+      cascadeStages: z.number().int().min(2).max(5).optional(),
     })
     .optional(),
   flywheelParams: z
@@ -139,6 +145,12 @@ export function useCodeGeneratorForm() {
         mass: 5,
         massUnit: "kg",
         drumRadius: 0.0254,
+        driveType: "drum",
+        chainPitch: "25",
+        beltPitchMm: 5,
+        sprocketTeeth: 22,
+        cascade: false,
+        cascadeStages: 2,
       },
       flywheelParams: {
         momentOfInertia: 0.0025,

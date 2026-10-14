@@ -25,6 +25,8 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
   const motorType = form.watch("motorType", "NEO")
   // YAMS publishes its own telemetry, so the Telemetry section is only for plain vendor code.
   const usesYams = form.watch("outputType") === "yams"
+  const elevatorDriveType = form.watch("elevatorParams.driveType") ?? "drum"
+  const elevatorCascade = form.watch("elevatorParams.cascade") ?? false
 
   // The units the generated code uses, which are also the units YAMS uses.
   const isElevator = mechanismType === "Elevator"
@@ -909,26 +911,188 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
 
                 <FormField
                   control={form.control}
-                  name="elevatorParams.drumRadius"
+                  name="elevatorParams.driveType"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Drum Radius (m)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.001"
-                          {...field}
-                          value={field.value ?? ""}
-                          onChange={(e) => handleNumberChange(e, field.onChange)}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Drum/sprocket radius for converting rotations to linear distance
-                      </FormDescription>
+                      <FormLabel>Drive</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value ?? "drum"}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select what lifts the carriage" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="drum">Drum (spool and rope)</SelectItem>
+                          <SelectItem value="chain">Chain</SelectItem>
+                          <SelectItem value="belt">Belt</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>What the gearbox output turns to lift the carriage</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
+                {elevatorDriveType === "drum" && (
+                  <div className="grid grid-cols-1 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="elevatorParams.drumRadius"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Drum Radius (m)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="0.001"
+                              {...field}
+                              value={field.value ?? ""}
+                              onChange={(e) => handleNumberChange(e, field.onChange)}
+                            />
+                          </FormControl>
+                          <FormDescription>Radius of the drum the rope winds onto</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
+
+                {elevatorDriveType === "chain" && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="elevatorParams.chainPitch"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Chain</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value ?? "25"}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select the chain" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="25">#25 (0.25 in pitch)</SelectItem>
+                              <SelectItem value="35">#35 (0.375 in pitch)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>The two chains FRC robots use</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="elevatorParams.sprocketTeeth"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Sprocket Teeth</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="1"
+                              {...field}
+                              value={field.value ?? ""}
+                              onChange={(e) => handleNumberChange(e, field.onChange)}
+                            />
+                          </FormControl>
+                          <FormDescription>Teeth on the sprocket the gearbox turns</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
+
+                {elevatorDriveType === "belt" && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="elevatorParams.beltPitchMm"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Belt Pitch (mm)</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="1"
+                              {...field}
+                              value={field.value ?? ""}
+                              onChange={(e) => handleNumberChange(e, field.onChange)}
+                            />
+                          </FormControl>
+                          <FormDescription>5 mm for HTD belts, 3 mm for GT2 belts</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="elevatorParams.sprocketTeeth"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Pulley Teeth</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="1"
+                              {...field}
+                              value={field.value ?? ""}
+                              onChange={(e) => handleNumberChange(e, field.onChange)}
+                            />
+                          </FormControl>
+                          <FormDescription>Teeth on the pulley the gearbox turns</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
+
+                <FormField
+                  control={form.control}
+                  name="elevatorParams.cascade"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                      <div className="space-y-0.5">
+                        <FormLabel>Cascade</FormLabel>
+                        <FormDescription>
+                          Each stage moves as far again as the one below it, so the carriage moves the stage count times as
+                          far as the chain or belt
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                {elevatorCascade && (
+                  <div className="grid grid-cols-1 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="elevatorParams.cascadeStages"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Moving Stages</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="1"
+                              {...field}
+                              value={field.value ?? ""}
+                              onChange={(e) => handleNumberChange(e, field.onChange)}
+                            />
+                          </FormControl>
+                          <FormDescription>Stages that move, counting the carriage, for example 2 or 3</FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
               </div>
             </AccordionContent>
           </AccordionItem>
