@@ -73,7 +73,7 @@ export const MOTORS: Record<string, MotorDefinition> = {
     resistance: 0.060,
     mass: 0.4399846,
     compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova"],
-    description: "REV Robotics Minion Brushless Motor",
+    description: "CTRE Minion Brushless Motor",
   },
   Vortex: {
     name: "Vortex",
@@ -184,8 +184,6 @@ export interface MechanismDefinition {
   name: string
   displayName: string
   description: string
-  templateName: string
-  simTemplateName: string
   simClassName: string
   requiresGravityCompensation: boolean
 }
@@ -195,8 +193,6 @@ export const MECHANISMS: Record<string, MechanismDefinition> = {
     name: "Elevator",
     displayName: "Elevator",
     description: "Linear vertical mechanism",
-    templateName: "elevator-subsystem",
-    simTemplateName: "elevator-sim",
     simClassName: "ElevatorSim",
     requiresGravityCompensation: true,
   },
@@ -204,8 +200,6 @@ export const MECHANISMS: Record<string, MechanismDefinition> = {
     name: "Arm",
     displayName: "Arm",
     description: "Rotational mechanism with gravity effects",
-    templateName: "arm-subsystem",
-    simTemplateName: "arm-sim",
     simClassName: "ArmSim",
     requiresGravityCompensation: true,
   },
@@ -213,8 +207,6 @@ export const MECHANISMS: Record<string, MechanismDefinition> = {
     name: "Pivot",
     displayName: "Pivot (Turret/Wrist)",
     description: "Rotational mechanism without significant gravity effects",
-    templateName: "pivot-subsystem",
-    simTemplateName: "pivot-sim",
     simClassName: "ArmSim",
     requiresGravityCompensation: false,
   },
@@ -222,8 +214,6 @@ export const MECHANISMS: Record<string, MechanismDefinition> = {
     name: "Flywheel",
     displayName: "Flywheel (Shooter)",
     description: "High-speed rotational inertia mechanism for shooters and launchers",
-    templateName: "flywheel-subsystem",
-    simTemplateName: "flywheel-sim",
     simClassName: "FlywheelSim",
     requiresGravityCompensation: false,
   },
@@ -292,16 +282,14 @@ export function getWPILibMotorType(motorName: string): string {
       return "DCMotor.getNEO(1)"
     case "NEO550":
       return "DCMotor.getNeo550(1)"
+    case "Minion":
+      return "DCMotor.getMinion(1)"
+    case "Vortex":
+      return "DCMotor.getNeoVortex(1)"
+    case "Krakenx44":
+      return "DCMotor.getKrakenX44(1)"
     case "Krakenx60":
       return "DCMotor.getKrakenX60(1)"
-    case "Minion":
-      // From https://store.ctr-electronics.com/products/minion-brushless-motor
-      return customDCMotor(3.1, 200.46, 1.43, 7200) + "; // Minion Motor"
-    case "Krakenx44":
-      // From https://wcproducts.com/blogs/wcp-blog/kraken-x44
-      return customDCMotor(4.05, 275, 1.4, 7530) + "; // Kraken X44"
-    case "Vortex":
-      return "DCMotor.getNEOVortex(1)"
     default:
       return "DCMotor.getNEO(1)"
   }
@@ -327,16 +315,4 @@ export function getSimMotorType(motorName: string): string {
     default:
       return "NEO"
   }
-}
-
-/**
- * Helper function to create a custom DCMotor
- */
-function customDCMotor(
-  stallTorqueNewtonMeters: number,
-  stallCurrentAmps: number,
-  freeCurrentAmps: number,
-  freeSpeedRPM: number,
-): string {
-  return `new DCMotor(12, ${stallTorqueNewtonMeters}, ${stallCurrentAmps}, ${freeCurrentAmps}, Units.rotationsPerMinuteToRadiansPerSecond(${freeSpeedRPM}), 1)`
 }

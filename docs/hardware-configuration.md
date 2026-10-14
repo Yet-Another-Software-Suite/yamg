@@ -105,58 +105,41 @@ MOTOR_CONTROLLERS: Record<string, MotorControllerDefinition> = {
 }
 ```
 
-3. Create a new file in the `lib/motor-controllers` directory:
+3. Write the controller's partials. Each output has its own file, which defines Handlebars inline partials that the mechanism templates use:
 
 ```
-lib/motor-controllers/new-controller.ts
+public/templates/vendor/controllers/NewController.hbs
+public/templates/yams/controllers/NewController.hbs
 ```
 
-4. Implement the required functions in the new file:
+The vendor file defines `imports`, `fields`, `configure`, `getMotorRotations`, `getMotorRPS`, `getAppliedVolts`, `getCurrent`, `getTemperature`, `setMotorPosition`, `setMotorVelocity`, `setMotorVoltage`, `simFields`, `simInit`, `simPrepare`, `simAppliedVolts` and `simUpdate`. Work in motor rotations, and convert the gains from the form's units with `MOTOR_ROTATIONS_PER_GAIN_UNIT`, as the existing controllers do:
 
-```typescript
-export const getImports = () => `import com.example.NewController;
-import com.example.NewController.Mode;
-// Add other necessary imports`
-
-export const getDeclaration = () => `private final NewController motor;
-private final NewEncoder encoder;
-// Add other necessary declarations`
-
-export const getInitialization = () => `motor = new NewController(canID);
-motor.setMode(brakeMode ? Mode.Brake : Mode.Coast);
-// Add other initialization code`
-
-export const getMethods = () => ({
-  getPositionMethod: `return motor.getPosition() / gearRatio;`,
-  getVelocityMethod: `return motor.getVelocity() / gearRatio;`,
-  setPositionMethod: `double adjustedPosition = position * gearRatio;
-motor.setPosition(adjustedPosition, feedforward.calculate(getVelocity(), acceleration));`,
-  setVelocityMethod: `double adjustedVelocity = velocity * gearRatio;
-motor.setVelocity(adjustedVelocity, feedforward.calculate(velocity, acceleration));`,
-  setVoltageMethod: `motor.setVoltage(voltage);`,
-  getVoltageMethod: `return motor.getVoltage();`,
-  getCurrentMethod: `return motor.getCurrent();`,
-  getTemperatureMethod: `return motor.getTemperature();`,
-})
+```handlebars
+{{#*inline "imports"}}
+import com.example.NewController;
+{{/inline}}
+{{#*inline "fields"}}
+  private final NewController motor = new NewController(CAN_ID);
+{{/inline}}
+{{#*inline "getMotorRotations"}}
+    return motor.getRotorPosition();
+{{/inline}}
 ```
 
-5. Update the `lib/motor-controllers/index.ts` file to include your new controller:
+The YAMS file defines `imports` and `fields`. `fields` creates the vendor object and the YAMS `SmartMotorController` named `motor`:
 
-```typescript
-import * as NewController from "./new-controller"
-
-export const getMotorControllerModule = (type: string) => {
-  switch (type) {
-    // Existing cases...
-    
-    case "NewController":
-      return NewController
-    
-    default:
-      throw new Error(`Unknown motor controller type: ${type}`)
-  }
-}
+```handlebars
+{{#*inline "imports"}}
+import com.example.NewController;
+import yams.core.motorcontrollers.local.NewControllerWrapper;
+{{/inline}}
+{{#*inline "fields"}}
+  private final NewController controller = new NewController({{canId}});
+  private final SmartMotorController motor = new NewControllerWrapper(controller, {{dcMotor}}, smcConfig);
+{{/inline}}
 ```
+
+4. Add the controller to `CONTROLLERS` in `tests/generator.test.ts`, and run the tests. To compile what they render, set `YAMG_RENDER_DIR` and copy the files into a WPILib 2027 project.
 
 ## Adding a New Mechanism Type
 
@@ -174,24 +157,24 @@ MECHANISMS: Record<string, MechanismDefinition> = {
     name: "NewMechanism",
     displayName: "New Mechanism",
     description: "Description of the new mechanism",
-    templateName: "new-mechanism-subsystem",
     simClassName: "NewMechanismSim",
     requiresGravityCompensation: true
   },
 }
 ```
 
-3. Create a new template file in the `public/templates` directory:
+3. Create one template for each output and command framework:
 
 ```
-public/templates/new-mechanism-subsystem.java.hbs
+public/templates/vendor/v2/new-mechanism.java.hbs
+public/templates/vendor/v3/new-mechanism.java.hbs
+public/templates/yams/v2/new-mechanism.java.hbs
+public/templates/yams/v3/new-mechanism.java.hbs
 ```
 
-4. Create a new simulation file in the `public/templates` directory:
+Add the mechanism to `MECHANISM_FILES` in `lib/code-generator.ts`.
 
-```
-public/templates/new-mechanism-sim.java.hbs
-```
+4. Add the mechanism to `MECHANISMS` in `tests/generator.test.ts`, and run the tests.
 
 5. Update the `lib/simulation/simulation-config.ts` file to include your new mechanism:
 

@@ -1,0 +1,88 @@
+{{#*inline "imports"}}
+import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.configs.TalonFXSConfiguration;
+import com.ctre.phoenix6.controls.PositionVoltage;
+import com.ctre.phoenix6.controls.VelocityVoltage;
+import com.ctre.phoenix6.controls.VoltageOut;
+import com.ctre.phoenix6.hardware.TalonFXS;
+import com.ctre.phoenix6.signals.MotorArrangementValue;
+import com.ctre.phoenix6.signals.NeutralModeValue;
+import org.wpilib.hardware.bus.CANPort;
+{{/inline}}
+{{#*inline "fields"}}
+  // The Talon FXS, and the requests that control it.
+  private final TalonFXS motor = new TalonFXS(CAN_ID, new CANBus(CANPort.CAN_S0));
+  private final PositionVoltage positionRequest = new PositionVoltage(0);
+  private final VelocityVoltage velocityRequest = new VelocityVoltage(0);
+  private final VoltageOut voltageRequest = new VoltageOut(0);
+{{/inline}}
+{{#*inline "configure"}}
+    // The Talon works in motor rotations here, and its closed loop outputs volts,
+    // so the gains are converted from volts per {{gainUnit}}.
+    double gainScale = {{#if velocityControl}}GEAR_RATIO{{else}}MOTOR_ROTATIONS_PER_GAIN_UNIT{{/if}};
+
+    TalonFXSConfiguration config = new TalonFXSConfiguration();
+    // The motor the Talon FXS drives.
+    config.Commutation.MotorArrangement = MotorArrangementValue.{{talonFXSArrangement}};
+    config.Slot0.kP = KP / gainScale;
+    config.Slot0.kI = KI / gainScale;
+    config.Slot0.kD = KD / gainScale;
+    config.MotorOutput.NeutralMode = BRAKE_MODE ? NeutralModeValue.Brake : NeutralModeValue.Coast;
+{{#if enableStatorLimit}}
+    config.CurrentLimits.StatorCurrentLimit = STATOR_CURRENT_LIMIT;
+    config.CurrentLimits.StatorCurrentLimitEnable = true;
+{{/if}}
+{{#if enableSupplyLimit}}
+    config.CurrentLimits.SupplyCurrentLimit = SUPPLY_CURRENT_LIMIT;
+    config.CurrentLimits.SupplyCurrentLimitEnable = true;
+{{/if}}
+{{#if enableOpenLoopRamp}}
+    config.OpenLoopRamps.VoltageOpenLoopRampPeriod = OPEN_LOOP_RAMP_SECONDS;
+{{/if}}
+{{#if enableClosedLoopRamp}}
+    config.ClosedLoopRamps.VoltageClosedLoopRampPeriod = CLOSED_LOOP_RAMP_SECONDS;
+{{/if}}
+{{#if enableSoftLimits}}
+    config.SoftwareLimitSwitch.ForwardSoftLimitThreshold = FORWARD_SOFT_LIMIT_MOTOR_ROTATIONS;
+    config.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
+    config.SoftwareLimitSwitch.ReverseSoftLimitThreshold = REVERSE_SOFT_LIMIT_MOTOR_ROTATIONS;
+    config.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
+{{/if}}
+    motor.getConfigurator().apply(config);
+    motor.setPosition(STARTING_MOTOR_ROTATIONS);
+{{/inline}}
+{{#*inline "getMotorRotations"}}
+    return motor.getPosition().getValueAsDouble();
+{{/inline}}
+{{#*inline "getMotorRPS"}}
+    return motor.getVelocity().getValueAsDouble();
+{{/inline}}
+{{#*inline "getAppliedVolts"}}
+    return motor.getMotorVoltage().getValueAsDouble();
+{{/inline}}
+{{#*inline "getCurrent"}}
+    return motor.getStatorCurrent().getValueAsDouble();
+{{/inline}}
+{{#*inline "getTemperature"}}
+    return motor.getDeviceTemp().getValueAsDouble();
+{{/inline}}
+{{#*inline "setMotorPosition"}}
+    motor.setControl(positionRequest.withPosition(motorRotations).withFeedForward(feedforwardVolts));
+{{/inline}}
+{{#*inline "setMotorVelocity"}}
+    motor.setControl(velocityRequest.withVelocity(motorRPS).withFeedForward(feedforwardVolts));
+{{/inline}}
+{{#*inline "setMotorVoltage"}}
+    motor.setControl(voltageRequest.withOutput(volts));
+{{/inline}}
+{{#*inline "simFields"}}{{/inline}}
+{{#*inline "simInit"}}{{/inline}}
+{{#*inline "simAppliedVolts"}}motor.getSimState().getMotorVoltage(){{/inline}}
+{{#*inline "simPrepare"}}
+    motor.getSimState().setSupplyVoltage(batteryVolts);
+{{/inline}}
+{{#*inline "simUpdate"}}
+    // Move the Talon's simulated rotor by what the motor turned this loop.
+    motor.getSimState().setRotorVelocity(motorRPS);
+    motor.getSimState().addRotorPosition(motorRPS * 0.020);
+{{/inline}}

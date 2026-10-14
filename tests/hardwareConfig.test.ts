@@ -97,13 +97,12 @@ describe("Hardware Configuration", () => {
     it("returns correct WPILib string for known motors", () => {
       expect(getWPILibMotorType("NEO")).toBe("DCMotor.getNEO(1)")
       expect(getWPILibMotorType("NEO550")).toBe("DCMotor.getNeo550(1)")
-      expect(getWPILibMotorType("Vortex")).toBe("DCMotor.getNEOVortex(1)")
+      expect(getWPILibMotorType("Vortex")).toBe("DCMotor.getNeoVortex(1)")
     })
 
-    it("returns custom DCMotor definition for Minion", () => {
-      const result = getWPILibMotorType("Minion")
-      expect(result).toContain("new DCMotor")
-      expect(result).toContain("Minion Motor")
+    it("uses the 2027 DCMotor models for the Minion and Kraken X44", () => {
+      expect(getWPILibMotorType("Minion")).toBe("DCMotor.getMinion(1)")
+      expect(getWPILibMotorType("Krakenx44")).toBe("DCMotor.getKrakenX44(1)")
     })
 
     it("falls back to NEO for unknown motor", () => {
@@ -143,8 +142,6 @@ describe("Hardware Configuration", () => {
 
     it("all mechanisms have templates defined", () => {
       for (const mech of Object.values(MECHANISMS)) {
-        expect(mech.templateName).toBeTruthy()
-        expect(mech.simTemplateName).toBeTruthy()
         expect(mech.simClassName).toBeTruthy()
       }
     })

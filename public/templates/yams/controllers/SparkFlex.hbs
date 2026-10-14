@@ -1,0 +1,13 @@
+{{#*inline "imports"}}
+import com.revrobotics.spark.SparkFlex;
+import com.revrobotics.spark.SparkLowLevel.MotorType;
+import org.wpilib.hardware.bus.CANPort;
+import yams.core.motorcontrollers.local.SparkWrapper;
+{{/inline}}
+{{#*inline "fields"}}
+  // The vendor motor controller object: a SPARK Flex with CAN ID {{canId}}.
+  private final SparkFlex spark = new SparkFlex(CANPort.CAN_S0, {{canId}}, MotorType.kBrushless);
+
+  // The SmartMotorController applies the config to the SPARK Flex, which drives one {{motorDisplayName}}.
+  private final SmartMotorController motor = new SparkWrapper(spark, {{dcMotor}}, smcConfig);
+{{/inline}}

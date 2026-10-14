@@ -24,6 +24,12 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
   const motorControllerType = form.watch("motorControllerType", "SparkMAX")
   const motorType = form.watch("motorType", "NEO")
 
+  // The units the generated code uses, which are also the units YAMS uses.
+  const isElevator = mechanismType === "Elevator"
+  const isFlywheel = mechanismType === "Flywheel"
+  const pidUnit = isElevator ? "meter" : isFlywheel ? "rotation per second" : "rotation"
+  const feedforwardUnit = isElevator ? "m" : mechanismType === "Arm" ? "rad" : "rot"
+
   // Get all available controllers and motors from the configuration
   const allControllers = Object.values(MOTOR_CONTROLLERS)
   const allMotors = Object.values(MOTORS)
@@ -100,6 +106,54 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="outputType"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                  <div className="space-y-0.5">
+                    <FormLabel>Use YAMS</FormLabel>
+                    <FormDescription>
+                      Generate code that uses the YAMS library, instead of code that only uses WPILib and the
+                      motor controller&apos;s vendor library.
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value === "yams"}
+                      onCheckedChange={(checked) => field.onChange(checked ? "yams" : "vendor")}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="commandsVersion"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Command Framework</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a command framework" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="v2">Commands v2 (a subsystem)</SelectItem>
+                      <SelectItem value="v3">Commands v3 (a mechanism)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Match the WPILib 2027 template your project was made from. A Commands v3 mechanism needs its
+                    periodic() and simulationPeriodic() called from Robot.java.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -243,6 +297,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                     )}
                   />
 
+                  {motorControllerType !== "ThriftyNova" && (
                   <FormField
                     control={form.control}
                     name="rampRates.closedLoop"
@@ -264,6 +319,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                       </FormItem>
                     )}
                   />
+                  )}
                 </div>
               </div>
 
@@ -323,10 +379,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
           <AccordionContent>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>
-                  PID Values (
-                  {mechanismType == "Elevator" ? "Meters" : mechanismType == "Flywheel" ? "Radians/Sec" : "Radians"})
-                </Label>
+                <Label>PID Values (volts per {pidUnit} of error)</Label>
                 <div className="grid grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
@@ -387,6 +440,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                 </div>
               </div>
 
+              {!isFlywheel && (
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -403,7 +457,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                           onChange={(e) => handleNumberChange(e, field.onChange)}
                         />
                       </FormControl>
-                      <FormDescription>Maximum velocity in {mechanismType == "Elevator" ? "meters" : "radians"} per second</FormDescription>
+                      <FormDescription>The fastest the closed loop moves the mechanism, in {isElevator ? "meters" : "radians"} per second</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -424,15 +478,17 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                           onChange={(e) => handleNumberChange(e, field.onChange)}
                         />
                       </FormControl>
-                      <FormDescription>Maximum acceleration in {mechanismType == "Elevator" ? "meters" : "radians"} per second²</FormDescription>
+                      <FormDescription>The fastest the closed loop accelerates the mechanism, in {isElevator ? "meters" : "radians"} per second²</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
+              )}
 
+              {!isFlywheel && (
               <div className="space-y-2">
-                <Label>Soft Limits</Label>
+                <Label>Soft Limits ({isElevator ? "meters" : "degrees"})</Label>
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -449,7 +505,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             onChange={(e) => handleNumberChange(e, field.onChange)}
                           />
                         </FormControl>
-                        <FormDescription>Maximum position limit</FormDescription>
+                        <FormDescription>The highest the closed loop will go. Set both limits to use them.</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -470,13 +526,14 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             onChange={(e) => handleNumberChange(e, field.onChange)}
                           />
                         </FormControl>
-                        <FormDescription>Minimum position limit</FormDescription>
+                        <FormDescription>The lowest the closed loop will go. Set both limits to use them.</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
               </div>
+              )}
 
               <div className="space-y-2">
                 <Label>Feedforward</Label>
@@ -496,7 +553,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             onChange={(e) => handleNumberChange(e, field.onChange)}
                           />
                         </FormControl>
-                        <FormDescription>Static feedforward in V*(s/({mechanismType == "Elevator" ? "m" : "rad"})</FormDescription>
+                        <FormDescription>Volts to overcome friction</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -517,7 +574,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             onChange={(e) => handleNumberChange(e, field.onChange)}
                           />
                         </FormControl>
-                        <FormDescription>Velocity feedforward in V*(s/{mechanismType == "Elevator" ? "m" : "rad"}) (auto-calculable with ReCalc)</FormDescription>
+                        <FormDescription>Velocity feedforward in V/({feedforwardUnit}/s){!isFlywheel && mechanismType !== "Pivot" ? " (auto-calculable with ReCalc)" : ""}</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -538,7 +595,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             onChange={(e) => handleNumberChange(e, field.onChange)}
                           />
                         </FormControl>
-                        <FormDescription>Acceleration feedforward in V*(s²/{mechanismType == "Elevator" ? "m" : "rad"}) (auto-calculable with ReCalc)</FormDescription>
+                        <FormDescription>Acceleration feedforward in V/({feedforwardUnit}/s²){!isFlywheel && mechanismType !== "Pivot" ? " (auto-calculable with ReCalc)" : ""}</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -1029,6 +1086,27 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                       <FormDescription>
                         Rotational inertia of the flywheel about its axis (from CAD or ReCalc)
                       </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="flywheelParams.diameter"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Wheel Diameter (m)</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.001"
+                          {...field}
+                          value={field.value ?? ""}
+                          onChange={(e) => handleNumberChange(e, field.onChange)}
+                        />
+                      </FormControl>
+                      <FormDescription>Used by YAMS to draw the flywheel and to convert to surface speed</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

@@ -26,25 +26,19 @@ export default function GeneratedCodePanel({
 }: Props) {
   const copyToClipboard = (content: string) =>
     navigator.clipboard.writeText(content);
+  // Filenames are relative to src/main/java/first/robot, for example "subsystems/Arm.java".
+  const baseName = (file: FileOutput) => file.filename.split("/").pop() ?? file.filename;
   const downloadFile = (file: FileOutput) =>
     FileSaver.saveAs(
       new Blob([file.content], { type: "text/plain" }),
-      file.filename,
+      baseName(file),
     );
   const downloadAll = () => {
     const zip = new JSZip();
-    const dir = zip
-      .folder("src")
-      ?.folder("main")
-      ?.folder("java")
-      ?.folder("frc")
-      ?.folder("robot")
-      ?.folder("subsystems");
-    if (!dir) return;
-    files.forEach((f) => dir.file(f.filename, f.content));
+    files.forEach((f) => zip.file(`src/main/java/first/robot/${f.filename}`, f.content));
     zip
       .generateAsync({ type: "blob" })
-      .then((content) => FileSaver.saveAs(content, "FRCSubsystem.zip"));
+      .then((content) => FileSaver.saveAs(content, `${baseName(files[0]).replace(/\.java$/, "")}.zip`));
   };
 
   if (isGenerating) {

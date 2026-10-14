@@ -1,0 +1,72 @@
+{{#*inline "imports"}}
+import com.thrifty.core.Motor.MotorType;
+import com.thrifty.nova.Nova;
+import com.thrifty.nova.NovaConfig;
+import org.wpilib.math.controller.PIDController;
+{{/inline}}
+{{#*inline "fields"}}
+  // The Thrifty Nova on CAN bus 0.
+  private final Nova motor = new Nova(0, CAN_ID, MotorType.{{thriftyMotorType}});
+  // The closed loop runs here, on the SystemCore, in volts per {{gainUnit}}.
+  private final PIDController pid = new PIDController(KP, KI, KD);
+  // The last voltage given to the Nova, which the simulation uses.
+  private double appliedVolts = 0.0;
+{{/inline}}
+{{#*inline "configure"}}
+    motor.configure(NovaConfig.brakeMode(BRAKE_MODE));
+{{#if enableStatorLimit}}
+    motor.configure(NovaConfig.statorCurrent(STATOR_CURRENT_LIMIT));
+{{/if}}
+{{#if enableSupplyLimit}}
+    motor.configure(NovaConfig.supplyCurrent(SUPPLY_CURRENT_LIMIT));
+{{/if}}
+{{#if enableOpenLoopRamp}}
+    motor.configure(NovaConfig.rampForward(OPEN_LOOP_RAMP_SECONDS), NovaConfig.rampReverse(OPEN_LOOP_RAMP_SECONDS));
+{{/if}}
+{{#if enableSoftLimits}}
+    motor.configure(
+        NovaConfig.softLimitForward(FORWARD_SOFT_LIMIT_MOTOR_ROTATIONS),
+        NovaConfig.softLimitReverse(REVERSE_SOFT_LIMIT_MOTOR_ROTATIONS),
+        NovaConfig.softLimitEnable(true));
+{{/if}}
+    motor.setIntPosition(STARTING_MOTOR_ROTATIONS);
+{{/inline}}
+{{#*inline "getMotorRotations"}}
+    return RobotBase.isSimulation() ? simMotorRotations : motor.status().getIntPosition();
+{{/inline}}
+{{#*inline "getMotorRPS"}}
+    return RobotBase.isSimulation() ? simMotorRPS : motor.status().getIntVelocity();
+{{/inline}}
+{{#*inline "getAppliedVolts"}}
+    return RobotBase.isSimulation() ? appliedVolts : motor.status().getAppliedVoltage();
+{{/inline}}
+{{#*inline "getCurrent"}}
+    return motor.status().getCurrentStator();
+{{/inline}}
+{{#*inline "getTemperature"}}
+    return motor.status().getTemperature();
+{{/inline}}
+{{#*inline "setMotorPosition"}}
+    double volts = pid.calculate(getMotorRotations() / MOTOR_ROTATIONS_PER_GAIN_UNIT, motorRotations / MOTOR_ROTATIONS_PER_GAIN_UNIT);
+    setMotorVoltage(volts + feedforwardVolts);
+{{/inline}}
+{{#*inline "setMotorVelocity"}}
+    double volts = pid.calculate(getMotorRPS() / GEAR_RATIO, motorRPS / GEAR_RATIO);
+    setMotorVoltage(volts + feedforwardVolts);
+{{/inline}}
+{{#*inline "setMotorVoltage"}}
+    appliedVolts = volts;
+    motor.setVoltage(volts);
+{{/inline}}
+{{#*inline "simFields"}}
+  // The simulated motor, in motor rotations and rotations per second.
+  private double simMotorRotations = STARTING_MOTOR_ROTATIONS;
+  private double simMotorRPS = 0.0;
+{{/inline}}
+{{#*inline "simInit"}}{{/inline}}
+{{#*inline "simPrepare"}}{{/inline}}
+{{#*inline "simAppliedVolts"}}Math.max(-batteryVolts, Math.min(batteryVolts, appliedVolts)){{/inline}}
+{{#*inline "simUpdate"}}
+    simMotorRPS = motorRPS;
+    simMotorRotations += motorRPS * 0.020;
+{{/inline}}

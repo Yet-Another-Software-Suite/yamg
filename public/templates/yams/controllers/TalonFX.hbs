@@ -1,0 +1,13 @@
+{{#*inline "imports"}}
+import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.hardware.TalonFX;
+import org.wpilib.hardware.bus.CANPort;
+import yams.core.motorcontrollers.remote.TalonFXWrapper;
+{{/inline}}
+{{#*inline "fields"}}
+  // The vendor motor controller object: a Talon FX with CAN ID {{canId}}.
+  private final TalonFX talon = new TalonFX({{canId}}, new CANBus(CANPort.CAN_S0));
+
+  // The SmartMotorController applies the config to the Talon FX, which drives one {{motorDisplayName}}.
+  private final SmartMotorController motor = new TalonFXWrapper(talon, {{dcMotor}}, smcConfig);
+{{/inline}}
