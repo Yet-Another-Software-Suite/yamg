@@ -1,7 +1,14 @@
 package first.robot.mechanisms;
 
+import static org.wpilib.units.Units.Amps;
+import static org.wpilib.units.Units.Celsius;
+import static org.wpilib.units.Units.KilogramSquareMeters;
 import static org.wpilib.units.Units.RPM;
+import static org.wpilib.units.Units.RadiansPerSecond;
+import static org.wpilib.units.Units.Rotations;
 import static org.wpilib.units.Units.RotationsPerSecond;
+import static org.wpilib.units.Units.Seconds;
+import static org.wpilib.units.Units.Volts;
 
 {{> imports}}
 import org.wpilib.command3.Command;
@@ -16,7 +23,13 @@ import org.wpilib.smartdashboard.Mechanism2d;
 import org.wpilib.smartdashboard.MechanismLigament2d;
 import org.wpilib.system.RobotController;
 import org.wpilib.telemetry.Telemetry;
+import org.wpilib.units.measure.Angle;
 import org.wpilib.units.measure.AngularVelocity;
+import org.wpilib.units.measure.Current;
+import org.wpilib.units.measure.MomentOfInertia;
+import org.wpilib.units.measure.Temperature;
+import org.wpilib.units.measure.Time;
+import org.wpilib.units.measure.Voltage;
 
 /**
  * A flywheel, such as a shooter, driven by a {{motorDisplayName}} through a
@@ -27,23 +40,24 @@ public class {{className}} implements Mechanism {
   private static final DCMotor DC_MOTOR = {{{dcMotor}}};
   /** Motor rotations per flywheel rotation. */
   private static final double GEAR_RATIO = {{gearRatio}};
-  /** The flywheel's moment of inertia, in kilogram square meters. */
-  private static final double MOMENT_OF_INERTIA = {{momentOfInertia}};
+  private static final MomentOfInertia MOMENT_OF_INERTIA = KilogramSquareMeters.of({{momentOfInertia}});
   private static final boolean BRAKE_MODE = {{brakeMode}};
 {{#if enableStatorLimit}}
-  private static final double STATOR_CURRENT_LIMIT = {{statorCurrentLimit}};
+  private static final Current STATOR_CURRENT_LIMIT = Amps.of({{statorCurrentLimit}});
 {{/if}}
 {{#if enableSupplyLimit}}
-  private static final double SUPPLY_CURRENT_LIMIT = {{supplyCurrentLimit}};
+  private static final Current SUPPLY_CURRENT_LIMIT = Amps.of({{supplyCurrentLimit}});
 {{/if}}
 {{#if enableOpenLoopRamp}}
-  private static final double OPEN_LOOP_RAMP_SECONDS = {{openLoopRampRate}};
+  private static final Time OPEN_LOOP_RAMP = Seconds.of({{openLoopRampRate}});
 {{/if}}
 {{#if enableClosedLoopRamp}}
-  private static final double CLOSED_LOOP_RAMP_SECONDS = {{closedLoopRampRate}};
+  private static final Time CLOSED_LOOP_RAMP = Seconds.of({{closedLoopRampRate}});
 {{/if}}
+  /** How often the robot loop runs. */
+  private static final Time LOOP_PERIOD = Seconds.of(0.020);
   /** The flywheel starts at rest, with its encoder at zero. */
-  private static final double STARTING_MOTOR_ROTATIONS = 0.0;
+  private static final Angle STARTING_MOTOR_POSITION = Rotations.of(0);
 
   // Closed loop gains, in volts per {{gainUnit}} of error.
   private static final double KP = {{kP}};
@@ -55,12 +69,12 @@ public class {{className}} implements Mechanism {
 
 {{> fields}}
 
-  // The speed the closed loop holds, in flywheel rotations per second. Null means the closed loop is off.
-  private Double goalRPS = null;
+  // The speed the closed loop holds. Null means the closed loop is off.
+  private AngularVelocity goalVelocity = null;
 
   // The physics simulation of the flywheel, and a drawing of it for a dashboard.
   private final FlywheelSim flywheelSim = new FlywheelSim(
-      Models.flywheelFromPhysicalConstants(DC_MOTOR, MOMENT_OF_INERTIA, GEAR_RATIO), DC_MOTOR);
+      Models.flywheelFromPhysicalConstants(DC_MOTOR, MOMENT_OF_INERTIA.in(KilogramSquareMeters), GEAR_RATIO), DC_MOTOR);
 {{> simFields}}
   private final Mechanism2d mechanism2d = new Mechanism2d(1, 1);
   private final MechanismLigament2d spokeLigament = mechanism2d
@@ -74,39 +88,39 @@ public class {{className}} implements Mechanism {
     }
   }
 
-  private double getMotorRotations() {
-{{> getMotorRotations}}
+  private Angle getMotorPosition() {
+{{> getMotorPosition}}
   }
 
-  private double getMotorRPS() {
-{{> getMotorRPS}}
+  private AngularVelocity getMotorVelocity() {
+{{> getMotorVelocity}}
   }
 
   /** How fast the flywheel is spinning. */
   public AngularVelocity getVelocity() {
-    return RotationsPerSecond.of(getMotorRPS() / GEAR_RATIO);
+    return getMotorVelocity().div(GEAR_RATIO);
   }
 
   /** The voltage the motor controller is applying to the motor. */
-  public double getAppliedVolts() {
-{{> getAppliedVolts}}
+  public Voltage getVoltage() {
+{{> getVoltage}}
   }
 
-  /** The motor's stator current, in amps. */
-  public double getCurrent() {
+  /** The motor's stator current. */
+  public Current getCurrent() {
 {{> getCurrent}}
   }
 
-  /** The motor's temperature, in degrees Celsius. */
-  public double getTemperature() {
+  /** The motor's temperature. */
+  public Temperature getTemperature() {
 {{> getTemperature}}
   }
 
-  private void setMotorVelocity(double motorRPS, double feedforwardVolts) {
+  private void setMotorVelocity(AngularVelocity motorVelocity, Voltage feedforward) {
 {{> setMotorVelocity}}
   }
 
-  private void setMotorVoltage(double volts) {
+  private void setMotorVoltage(Voltage voltage) {
 {{> setMotorVoltage}}
   }
 
@@ -114,7 +128,7 @@ public class {{className}} implements Mechanism {
   public Command setVelocity(AngularVelocity velocity) {
     return run(coroutine -> {
       while (true) {
-        goalRPS = velocity.in(RotationsPerSecond);
+        goalVelocity = velocity;
         coroutine.yield();
       }
     }).named("{{className}} Set Velocity");
@@ -123,9 +137,9 @@ public class {{className}} implements Mechanism {
   /** Drive the flywheel with a duty cycle from -1 to 1. The closed loop is not used. */
   public Command set(double dutyCycle) {
     return run(coroutine -> {
-      goalRPS = null;
+      goalVelocity = null;
       while (true) {
-        setMotorVoltage(dutyCycle * RobotController.getBatteryVoltage());
+        setMotorVoltage(RobotController.getMeasureBatteryVoltage().times(dutyCycle));
         coroutine.yield();
       }
     }).named("{{className}} Set Duty Cycle");
@@ -138,16 +152,17 @@ public class {{className}} implements Mechanism {
 
   /** Call this from Robot.robotPeriodic(), before the scheduler runs. */
   public void periodic() {
-    if (goalRPS != null) {
+    if (goalVelocity != null) {
       // The feedforward does most of the work, and the closed loop corrects what is left.
-      setMotorVelocity(goalRPS * GEAR_RATIO, feedforward.calculate(goalRPS));
+      Voltage feedforwardVoltage = Volts.of(feedforward.calculate(goalVelocity.in(RotationsPerSecond)));
+      setMotorVelocity(goalVelocity.times(GEAR_RATIO), feedforwardVoltage);
     }
 
 {{#if logVelocity}}
-    Telemetry.log("{{ntKey}}/Velocity (RPM)", getVelocity().in(RPM));
+    Telemetry.log("{{ntKey}}/Velocity", RPM.of(getVelocity().in(RPM)));
 {{/if}}
 {{#if logVoltage}}
-    Telemetry.log("{{ntKey}}/Applied Voltage", getAppliedVolts());
+    Telemetry.log("{{ntKey}}/Voltage", getVoltage());
 {{/if}}
 {{#if logCurrent}}
     Telemetry.log("{{ntKey}}/Current", getCurrent());
@@ -156,17 +171,17 @@ public class {{className}} implements Mechanism {
     Telemetry.log("{{ntKey}}/Temperature", getTemperature());
 {{/if}}
     // Turn the spoke with the flywheel, so that the drawing shows it spinning.
-    spokeLigament.setAngle(getMotorRotations() / GEAR_RATIO * 360 % 360);
+    spokeLigament.setAngle(getMotorPosition().div(GEAR_RATIO).in(Rotations) * 360 % 360);
     Telemetry.log("{{ntKey}}/Mechanism", mechanism2d);
   }
 
   /** Call this from Robot.simulationPeriodic(). */
   public void simulationPeriodic() {
-    double batteryVolts = RobotController.getBatteryVoltage();
+    Voltage batteryVoltage = RobotController.getMeasureBatteryVoltage();
 {{> simPrepare}}
-    flywheelSim.setInputVoltage({{> simAppliedVolts}});
-    flywheelSim.update(0.020);
-    double motorRPS = flywheelSim.getAngularVelocity() / (2 * Math.PI) * GEAR_RATIO;
+    flywheelSim.setInputVoltage({{> simAppliedVoltage}}.in(Volts));
+    flywheelSim.update(LOOP_PERIOD.in(Seconds));
+    AngularVelocity motorVelocity = RadiansPerSecond.of(flywheelSim.getAngularVelocity()).times(GEAR_RATIO);
 {{> simUpdate}}
   }
 }

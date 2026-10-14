@@ -23,66 +23,63 @@ import org.wpilib.hardware.bus.CANPort;
 
     TalonFXSConfiguration config = new TalonFXSConfiguration();
     // The motor the Talon FXS drives.
-    config.Commutation.MotorArrangement = MotorArrangementValue.{{talonFXSArrangement}};
-    config.Slot0.kP = KP / gainScale;
-    config.Slot0.kI = KI / gainScale;
-    config.Slot0.kD = KD / gainScale;
-    config.MotorOutput.NeutralMode = BRAKE_MODE ? NeutralModeValue.Brake : NeutralModeValue.Coast;
+    config.Commutation.withMotorArrangement(MotorArrangementValue.{{talonFXSArrangement}});
+    config.Slot0.withKP(KP / gainScale).withKI(KI / gainScale).withKD(KD / gainScale);
+    config.MotorOutput.withNeutralMode(BRAKE_MODE ? NeutralModeValue.Brake : NeutralModeValue.Coast);
 {{#if enableStatorLimit}}
-    config.CurrentLimits.StatorCurrentLimit = STATOR_CURRENT_LIMIT;
-    config.CurrentLimits.StatorCurrentLimitEnable = true;
+    config.CurrentLimits.withStatorCurrentLimit(STATOR_CURRENT_LIMIT).withStatorCurrentLimitEnable(true);
 {{/if}}
 {{#if enableSupplyLimit}}
-    config.CurrentLimits.SupplyCurrentLimit = SUPPLY_CURRENT_LIMIT;
-    config.CurrentLimits.SupplyCurrentLimitEnable = true;
+    config.CurrentLimits.withSupplyCurrentLimit(SUPPLY_CURRENT_LIMIT).withSupplyCurrentLimitEnable(true);
 {{/if}}
 {{#if enableOpenLoopRamp}}
-    config.OpenLoopRamps.VoltageOpenLoopRampPeriod = OPEN_LOOP_RAMP_SECONDS;
+    config.OpenLoopRamps.withVoltageOpenLoopRampPeriod(OPEN_LOOP_RAMP);
 {{/if}}
 {{#if enableClosedLoopRamp}}
-    config.ClosedLoopRamps.VoltageClosedLoopRampPeriod = CLOSED_LOOP_RAMP_SECONDS;
+    config.ClosedLoopRamps.withVoltageClosedLoopRampPeriod(CLOSED_LOOP_RAMP);
 {{/if}}
 {{#if enableSoftLimits}}
-    config.SoftwareLimitSwitch.ForwardSoftLimitThreshold = FORWARD_SOFT_LIMIT_MOTOR_ROTATIONS;
-    config.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
-    config.SoftwareLimitSwitch.ReverseSoftLimitThreshold = REVERSE_SOFT_LIMIT_MOTOR_ROTATIONS;
-    config.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
+    config.SoftwareLimitSwitch
+        .withForwardSoftLimitThreshold(FORWARD_SOFT_LIMIT)
+        .withForwardSoftLimitEnable(true)
+        .withReverseSoftLimitThreshold(REVERSE_SOFT_LIMIT)
+        .withReverseSoftLimitEnable(true);
 {{/if}}
     motor.getConfigurator().apply(config);
-    motor.setPosition(STARTING_MOTOR_ROTATIONS);
+    motor.setPosition(STARTING_MOTOR_POSITION);
 {{/inline}}
-{{#*inline "getMotorRotations"}}
-    return motor.getPosition().getValueAsDouble();
+{{#*inline "getMotorPosition"}}
+    return motor.getPosition().getValue();
 {{/inline}}
-{{#*inline "getMotorRPS"}}
-    return motor.getVelocity().getValueAsDouble();
+{{#*inline "getMotorVelocity"}}
+    return motor.getVelocity().getValue();
 {{/inline}}
-{{#*inline "getAppliedVolts"}}
-    return motor.getMotorVoltage().getValueAsDouble();
+{{#*inline "getVoltage"}}
+    return motor.getMotorVoltage().getValue();
 {{/inline}}
 {{#*inline "getCurrent"}}
-    return motor.getStatorCurrent().getValueAsDouble();
+    return motor.getStatorCurrent().getValue();
 {{/inline}}
 {{#*inline "getTemperature"}}
-    return motor.getDeviceTemp().getValueAsDouble();
+    return motor.getDeviceTemp().getValue();
 {{/inline}}
 {{#*inline "setMotorPosition"}}
-    motor.setControl(positionRequest.withPosition(motorRotations).withFeedForward(feedforwardVolts));
+    motor.setControl(positionRequest.withPosition(motorPosition).withFeedForward(feedforward));
 {{/inline}}
 {{#*inline "setMotorVelocity"}}
-    motor.setControl(velocityRequest.withVelocity(motorRPS).withFeedForward(feedforwardVolts));
+    motor.setControl(velocityRequest.withVelocity(motorVelocity).withFeedForward(feedforward));
 {{/inline}}
 {{#*inline "setMotorVoltage"}}
-    motor.setControl(voltageRequest.withOutput(volts));
+    motor.setControl(voltageRequest.withOutput(voltage));
 {{/inline}}
 {{#*inline "simFields"}}{{/inline}}
 {{#*inline "simInit"}}{{/inline}}
-{{#*inline "simAppliedVolts"}}motor.getSimState().getMotorVoltage(){{/inline}}
 {{#*inline "simPrepare"}}
-    motor.getSimState().setSupplyVoltage(batteryVolts);
+    motor.getSimState().setSupplyVoltage(batteryVoltage);
 {{/inline}}
+{{#*inline "simAppliedVoltage"}}motor.getSimState().getMotorVoltageMeasure(){{/inline}}
 {{#*inline "simUpdate"}}
     // Move the Talon's simulated rotor by what the motor turned this loop.
-    motor.getSimState().setRotorVelocity(motorRPS);
-    motor.getSimState().addRotorPosition(motorRPS * 0.020);
+    motor.getSimState().setRotorVelocity(motorVelocity);
+    motor.getSimState().addRotorPosition(Rotations.of(motorVelocity.in(RotationsPerSecond) * LOOP_PERIOD.in(Seconds)));
 {{/inline}}
