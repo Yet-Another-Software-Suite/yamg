@@ -80,6 +80,9 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
 
   // Handle motor type change
   const handleMotorTypeChange = (value: string) => {
+    // The motor list follows the controller. While both change at once, as when a share link loads,
+    // the list can briefly lack the new motor, and the select then reports an empty value.
+    if (!value) return
     form.setValue("motorType", value)
   }
 

@@ -16,6 +16,7 @@ interface Props {
   setActiveFileIndex: (i: number) => void;
   isGenerating: boolean;
   error: string | null;
+  onCopyLink: () => Promise<void>;
 }
 
 export default function MobileLayout({
@@ -27,6 +28,7 @@ export default function MobileLayout({
   setActiveFileIndex,
   isGenerating,
   error,
+  onCopyLink,
 }: Props) {
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -49,6 +51,7 @@ export default function MobileLayout({
           onSelect={setActiveFileIndex}
           isGenerating={isGenerating}
           error={error}
+          onCopyLink={onCopyLink}
         />
       </TabsContent>
       <TabsContent value="simulation" className="mt-4">

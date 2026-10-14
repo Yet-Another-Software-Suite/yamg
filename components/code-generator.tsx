@@ -8,7 +8,8 @@ import GeneratedCodePanel from "./generatedCodePanel";
 import MobileLayout from "./mobileLayout";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useCodeGeneratorForm } from "./useCodeGeneratorForm";
+import { DEFAULT_VALUES, formSchema, useCodeGeneratorForm } from "./useCodeGeneratorForm";
+import { SHARE_PARAM, decodeForm, encodeForm, shareParam } from "@/lib/share-link";
 import { generateFiles } from "@/lib/code-generator";
 import type { FormValues, FileOutput } from "@/lib/types";
 import ErrorBoundary from "@/components/error-boundary";
@@ -66,6 +67,31 @@ export default function CodeGenerator() {
     generate();
   }, [form, activeFileIndex, form.formState, formChanges]);
 
+  // Load the form from a share link, if the page was opened with one.
+  useEffect(() => {
+    const encoded = shareParam(window.location.hash);
+    if (!encoded) return;
+    decodeForm(encoded, DEFAULT_VALUES)
+      .then((values) => {
+        const parsed = formSchema.safeParse(values);
+        if (parsed.success) {
+          form.reset(parsed.data);
+        } else {
+          console.warn("The share link does not fit the form, so it was not loaded.", parsed.error);
+        }
+      })
+      .catch((e) => console.warn("The share link could not be read.", e));
+  }, [form]);
+
+  // Copy a link that loads this form, and show it in the address bar.
+  const copyLink = async () => {
+    const encoded = await encodeForm(form.getValues(), DEFAULT_VALUES);
+    const url = new URL(window.location.href);
+    url.hash = `${SHARE_PARAM}=${encoded}`;
+    window.history.replaceState(null, "", url);
+    await navigator.clipboard.writeText(url.toString());
+  };
+
   // Responsive layout detection
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 1024);
@@ -87,6 +113,7 @@ export default function CodeGenerator() {
             setActiveFileIndex={setActiveFileIndex}
             isGenerating={isGenerating}
             error={error}
+            onCopyLink={copyLink}
           />
         ) : (
           <>
@@ -111,6 +138,7 @@ export default function CodeGenerator() {
                     onSelect={setActiveFileIndex}
                     isGenerating={isGenerating}
                     error={error}
+                    onCopyLink={copyLink}
                   />
                 </TabsContent>
                 <TabsContent value="simulation">
