@@ -112,7 +112,9 @@ public/templates/vendor/controllers/NewController.hbs
 public/templates/yams/controllers/NewController.hbs
 ```
 
-The vendor file defines `imports`, `fields`, `configure`, `getMechanismPosition`, `getMechanismVelocity`, `getVoltage`, `getCurrent`, `getTemperature`, `setMechanismPosition`, `setMechanismVelocity`, `setMotorVoltage`, `simFields`, `simInit`, `simPrepare`, `simAppliedVoltage` and `simUpdate`. Use WPILib units (`Angle`, `AngularVelocity`, `Voltage` and the rest) rather than `double`, and work in turns of the mechanism. A controller that takes the gearing in its config, like a Talon's `SensorToMechanismRatio`, should use it; one that cannot, like a SPARK, multiplies by `GEAR_RATIO` itself. `simUpdate` is given the simulated `mechanismPosition`, `mechanismVelocity` and `mechanismAcceleration`:
+The vendor file defines `imports`, `fields`, `configure`, `getMechanismPosition`, `getMechanismVelocity`, `getVoltage`, `getCurrent`, `getTemperature`, `setMechanismPosition`, `setMechanismVelocity`, `setMotorVoltage`, `simFields`, `simInit`, `simPrepare`, `simAppliedVoltage` and `simUpdate`. Use WPILib units (`Angle`, `AngularVelocity`, `Voltage` and the rest) rather than `double`, and work in turns of the mechanism. A controller that takes the gearing in its config, like a Talon's `SensorToMechanismRatio`, should use it; one that cannot, like a SPARK, multiplies by `GEAR_RATIO` itself. `simUpdate` is given the simulated `mechanismPosition`, `mechanismVelocity` and `mechanismAcceleration`.
+
+A controller that can run the trapezoidal profile and the feedforward itself, like a Talon (Motion Magic) or a SPARK (MAXMotion), also defines `setMechanismGoal` and `setMechanismGoalVelocity`, and is listed in `onboardControl` in `lib/code-generator.ts`. One whose simulation cannot run them, like a SPARK, is also listed in `systemCoreProfile`, so that WPILib's profile and feedforward run in simulation instead:
 
 ```handlebars
 {{#*inline "imports"}}
