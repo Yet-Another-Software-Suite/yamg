@@ -6,6 +6,7 @@ import {
   getMotorController,
   getWPILibMotorType,
 } from "./config/hardware-config";
+import { elevatorDrive } from "./elevator-drive";
 import { formatJava } from "./format-java";
 
 /**
@@ -187,6 +188,7 @@ export function buildTemplateData(data: FormValues) {
       hardLimitMax: num(p.hardLimitMax, 1),
       mass: num(kg(p.mass, p.massUnit), 5),
       drumRadius: num(p.drumRadius, 0.0254),
+      ...elevatorTemplateData(p),
     });
   }
 
@@ -266,6 +268,23 @@ function robotFiles(data: FormValues): { template: string; filename: string }[] 
     { template: "robot/v2/Robot.java.hbs", filename: "Robot.java" },
     { template: "robot/v2/RobotContainer.java.hbs", filename: "RobotContainer.java" },
   ];
+}
+
+/** The elevator's drive and cascade, for the templates. */
+function elevatorTemplateData(params: FormValues["elevatorParams"]) {
+  const drive = elevatorDrive(params);
+  return {
+    circumferenceJava: drive.circumferenceJava,
+    circumferenceUnit: drive.circumferenceUnit,
+    driveDescription: drive.description,
+    driveNoun: drive.kind === "chain" ? "sprocket" : drive.kind === "belt" ? "pulley" : "drum",
+    cascade: drive.stages > 1,
+    cascadeStages: drive.stages,
+    // YAMS takes a chain or belt as its pitch and teeth, and a drum as its circumference.
+    yamsDriveCall: drive.pitchJava
+      ? `.withDrumRadius(${drive.pitchJava}, ${drive.teeth})`
+      : `.withMechanismCircumference(${drive.circumferenceJava})`,
+  };
 }
 
 /** The template paths for a form: the controller partials, then the mechanism file. */

@@ -1,6 +1,9 @@
 package first.robot.mechanisms;
 
 import static org.wpilib.units.Units.Amps;
+{{#unless (eq circumferenceUnit "Meters")}}
+import static org.wpilib.units.Units.{{circumferenceUnit}};
+{{/unless}}
 import static org.wpilib.units.Units.Kilograms;
 import static org.wpilib.units.Units.Meters;
 import static org.wpilib.units.Units.MetersPerSecond;
@@ -32,9 +35,9 @@ public class {{className}} implements Mechanism {
   // What the motor controller should do: its control mode, gains, gearing and limits.
   private final SmartMotorControllerConfig smcConfig = new SmartMotorControllerConfig(this)
       .withControlMode(ControlMode.CLOSED_LOOP)
-      // How far the carriage moves for each turn of the drum, or the sprocket or pulley that lifts it.
+      // How far the chain, belt or rope moves for each turn of the {{driveNoun}}: {{driveDescription}}.
       // With this set, the gains and limits are in meters.
-      .withMechanismCircumference(Meters.of(2 * Math.PI * {{drumRadius}}))
+      {{yamsDriveCall}}
       // Feedback constants (PID), in volts per meter of error, on the real robot and in simulation.
       .withClosedLoopController({{kP}}, {{kI}}, {{kD}})
       .withSimClosedLoopController({{kP}}, {{kI}}, {{kD}})
@@ -43,8 +46,14 @@ public class {{className}} implements Mechanism {
       // Feedforward constants, in volts per meter per second, on the real robot and in simulation.
       .withFeedforward(new ElevatorFeedforward({{kS}}, {{kG}}, {{kV}}, {{kA}}))
       .withSimFeedforward(new ElevatorFeedforward({{kS}}, {{kG}}, {{kV}}, {{kA}}))
-      // Gearing from the motor rotor to the drum: {{gearRatio}} motor rotations per drum rotation.
+      // Gearing from the motor rotor to the {{driveNoun}}: {{gearRatio}} motor rotations per turn of it.
       .withGearing(new MechanismGearing({{gearRatio}}))
+{{#if cascade}}
+      // The elevator is a {{cascadeStages}} stage cascade: each stage moves as far again as the one below
+      // it, so the carriage moves {{cascadeStages}} times as far as the chain or belt. This divides the
+      // gearing above by the stages, so it has to come after it.
+      .withCascadingElevatorStages({{cascadeStages}})
+{{/if}}
       .withMotorInverted(false)
       .withZeroPower(MotorMode.{{#if brakeMode}}BRAKE{{else}}COAST{{/if}})
 {{#if enableStatorLimit}}

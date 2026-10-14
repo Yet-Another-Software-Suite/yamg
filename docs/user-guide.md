@@ -126,7 +126,13 @@ Depending on the mechanism type, configure additional parameters:
 1. **Starting Height**: Initial height in meters
 2. **Hard Limits**: Minimum and maximum heights in meters
 3. **Mass**: Mass of the elevator carriage in kg or lbs
-4. **Drum Radius**: Radius of the drum/sprocket in meters
+4. **Drive**: What the gearbox output turns to lift the carriage
+   - **Drum**: a spool the rope winds onto. Give its **Drum Radius** in meters
+   - **Chain**: a sprocket on **#25** (0.25 in pitch) or **#35** (0.375 in pitch) chain. Give the **Sprocket Teeth**
+   - **Belt**: a pulley on a timing belt. Give the **Belt Pitch** (5 mm for HTD, 3 mm for GT2) and the **Pulley Teeth**
+
+   A chain or belt moves one pitch per tooth, so the carriage moves the pitch times the teeth for each turn.
+5. **Cascade**: Turn this on for a cascade elevator, and give the **Moving Stages**, counting the carriage. Each stage moves as far again as the one below it, so the carriage moves the stage count times as far as the chain or belt. The generated code corrects the gearing for it: YAMS code calls `withCascadingElevatorStages`, and plain code multiplies the travel per turn
 
 ### For Arms:
 
