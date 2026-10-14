@@ -19,13 +19,50 @@ import { formatJava } from "./format-java";
  */
 export type TemplateLoader = (path: string) => Promise<string>;
 
-// In the browser, templates are fetched from the site, which may be served under a base path.
-let loadTemplate: TemplateLoader = async (path) => {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/templates/${path}`);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch template: ${path}`);
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace NodeJS {
+    // webpack's require.context, which Jest does not have.
+    interface Require {
+      context?: (directory: string, subdirectories: boolean, filter: RegExp) => {
+        keys(): string[];
+        (key: string): unknown;
+      };
+    }
   }
-  return response.text();
+}
+
+/**
+ * Every template, bundled into the site when it is built, keyed by its path in public/templates.
+ * The generator and its templates then always come from the same build: fetching the templates
+ * separately let a page from one deploy load templates from another.
+ */
+function bundledTemplates(): Record<string, string> {
+  // webpack only bundles a literal require.context call, so it is called directly rather than
+  // checked first. Under Jest, which has no require.context, the call fails and the tests load the
+  // templates themselves.
+  let context;
+  try {
+    context = require.context!("../public/templates", true, /\.hbs$/);
+  } catch {
+    return {};
+  }
+  return Object.fromEntries(
+    context.keys().map((key) => {
+      const source = context(key) as string | { default: string };
+      return [key.replace(/^\.\//, ""), typeof source === "string" ? source : source.default];
+    }),
+  );
+}
+
+const BUNDLED_TEMPLATES = bundledTemplates();
+
+let loadTemplate: TemplateLoader = async (path) => {
+  const source = BUNDLED_TEMPLATES[path];
+  if (source === undefined) {
+    throw new Error(`Missing template: ${path}`);
+  }
+  return source;
 };
 
 /** Load templates some other way, for example from disk in tests. */
