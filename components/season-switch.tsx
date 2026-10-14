@@ -1,6 +1,6 @@
 /**
- * Links between the YAMG for each WPILib season. The 2026 site is served at the root, and the 2027
- * site under /2027, until 2027 becomes the default.
+ * Links between the YAMG for each WPILib season, at the top right of the page. The 2026 site is
+ * served at the root, and the 2027 site under /2027, until 2027 becomes the default.
  */
 const SEASONS = [
   { year: "2026", href: "/" },
@@ -9,7 +9,7 @@ const SEASONS = [
 
 export function SeasonSwitch({ current }: { current: string }) {
   return (
-    <nav aria-label="WPILib season" className="flex justify-center mb-6">
+    <nav aria-label="WPILib season" className="flex justify-center pt-4 md:absolute md:right-4 md:top-4 md:z-10 md:pt-0">
       <div className="inline-flex rounded-lg border p-1 text-sm">
         {SEASONS.map(({ year, href }) =>
           year === current ? (
