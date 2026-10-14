@@ -6,6 +6,8 @@ import static org.wpilib.units.Units.Celsius;
 import static org.wpilib.units.Units.{{circumferenceUnit}};
 {{/unless}}
 import static org.wpilib.units.Units.Kilograms;
+import static org.wpilib.units.Units.Value;
+import static org.wpilib.units.Units.Meter;
 import static org.wpilib.units.Units.Meters;
 import static org.wpilib.units.Units.MetersPerSecond;
 import static org.wpilib.units.Units.MetersPerSecondPerSecond;
@@ -156,7 +158,7 @@ public class {{className}} extends SubsystemBase {
 
   /** How far the {{driveNoun}} has turned for a height. */
   private static Angle toMechanismPosition(Distance height) {
-    return Rotations.of(height.div(TRAVEL_PER_ROTATION).baseUnitMagnitude());
+    return Rotations.of(height.div(TRAVEL_PER_ROTATION).in(Value));
   }
 
   private Angle getMechanismPosition() {
@@ -312,7 +314,7 @@ public class {{className}} extends SubsystemBase {
     elevatorSim.update(LOOP_PERIOD.in(Seconds));
     Angle mechanismPosition = toMechanismPosition(Meters.of(elevatorSim.getPosition()));
     AngularVelocity mechanismVelocity =
-        RotationsPerSecond.of(MetersPerSecond.of(elevatorSim.getVelocity()).div(TRAVEL_PER_ROTATION).baseUnitMagnitude());
+        RotationsPerSecond.of(MetersPerSecond.of(elevatorSim.getVelocity()).div(TRAVEL_PER_ROTATION).in(MetersPerSecond.per(Meter)));
     AngularAcceleration mechanismAcceleration = mechanismVelocity.minus(lastMechanismVelocity).div(LOOP_PERIOD);
     lastMechanismVelocity = mechanismVelocity;
 {{> simUpdate}}

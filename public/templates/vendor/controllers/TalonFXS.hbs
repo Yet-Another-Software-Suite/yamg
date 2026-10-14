@@ -59,8 +59,8 @@ import static org.wpilib.units.Units.RotationsPerSecondPerSecond;
     // Motion Magic: the fastest the profile moves and accelerates the mechanism.
 {{#if linear}}
     config.MotionMagic
-        .withMotionMagicCruiseVelocity(RotationsPerSecond.of(MAX_VELOCITY.div(TRAVEL_PER_ROTATION).baseUnitMagnitude()))
-        .withMotionMagicAcceleration(RotationsPerSecondPerSecond.of(MAX_ACCELERATION.div(TRAVEL_PER_ROTATION).baseUnitMagnitude()));
+        .withMotionMagicCruiseVelocity(RotationsPerSecond.of(MAX_VELOCITY.div(TRAVEL_PER_ROTATION).in(MetersPerSecond.per(Meter))))
+        .withMotionMagicAcceleration(RotationsPerSecondPerSecond.of(MAX_ACCELERATION.div(TRAVEL_PER_ROTATION).in(MetersPerSecondPerSecond.per(Meter))));
 {{else}}
     config.MotionMagic.withMotionMagicCruiseVelocity(MAX_VELOCITY).withMotionMagicAcceleration(MAX_ACCELERATION);
 {{/if}}

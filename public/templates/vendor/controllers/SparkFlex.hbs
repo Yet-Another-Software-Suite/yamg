@@ -67,8 +67,8 @@ import static org.wpilib.units.Units.Milliseconds;
       config.closedLoop.maxMotion
           .positionMode(MAXMotionPositionMode.kMAXMotionTrapezoidal)
 {{#if linear}}
-          .cruiseVelocity(RotationsPerSecond.of(MAX_VELOCITY.div(TRAVEL_PER_ROTATION).baseUnitMagnitude()).times(GEAR_RATIO).in(RPM))
-          .maxAcceleration(RotationsPerSecondPerSecond.of(MAX_ACCELERATION.div(TRAVEL_PER_ROTATION).baseUnitMagnitude()).times(GEAR_RATIO).in(RPM.per(Second)));
+          .cruiseVelocity(RotationsPerSecond.of(MAX_VELOCITY.div(TRAVEL_PER_ROTATION).in(MetersPerSecond.per(Meter))).times(GEAR_RATIO).in(RPM))
+          .maxAcceleration(RotationsPerSecondPerSecond.of(MAX_ACCELERATION.div(TRAVEL_PER_ROTATION).in(MetersPerSecondPerSecond.per(Meter))).times(GEAR_RATIO).in(RPM.per(Second)));
 {{else}}
           .cruiseVelocity(MAX_VELOCITY.times(GEAR_RATIO).in(RPM))
           .maxAcceleration(MAX_ACCELERATION.times(GEAR_RATIO).in(RPM.per(Second)));
