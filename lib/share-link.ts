@@ -9,13 +9,6 @@
 /** The hash parameter that holds the form, as in `#config=...`. */
 export const SHARE_PARAM = "config";
 
-/**
- * The share link version, kept in the link as `v`. A link only holds what differs from the defaults,
- * so when the defaults change, older links have to be read against the defaults they were made with.
- * Links without a version are version 1.
- */
-export const SHARE_VERSION = 2;
-
 type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -70,21 +63,14 @@ function fromBase64Url(text: string): Uint8Array<ArrayBuffer> {
 
 /** The form as share link text: its changes from the defaults, compressed and base64url encoded. */
 export async function encodeForm(values: unknown, defaults: unknown): Promise<string> {
-  const diff = diffFromDefaults(values, defaults) ?? {};
-  const json = JSON.stringify({ ...(diff as Record<string, Json>), v: SHARE_VERSION });
+  const json = JSON.stringify(diffFromDefaults(values, defaults) ?? {});
   return toBase64Url(await transform(new TextEncoder().encode(json), new CompressionStream("deflate-raw")));
 }
 
-/**
- * The form from share link text, laid over the defaults it was made with. Throws if the text is not
- * a share link.
- *
- * @param versionOneDefaults The defaults version 1 links were made with, before links had a version.
- */
-export async function decodeForm(text: string, defaults: unknown, versionOneDefaults: unknown = defaults): Promise<unknown> {
+/** The form from share link text, laid over the defaults. Throws if the text is not a share link. */
+export async function decodeForm(text: string, defaults: unknown): Promise<unknown> {
   const json = new TextDecoder().decode(await transform(fromBase64Url(text), new DecompressionStream("deflate-raw")));
-  const { v, ...diff } = JSON.parse(json) as Record<string, unknown>;
-  return mergeOntoDefaults(diff, v === undefined ? versionOneDefaults : defaults);
+  return mergeOntoDefaults(JSON.parse(json), defaults);
 }
 
 /** The share link text in a URL hash, or undefined when there is none. */
