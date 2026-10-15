@@ -141,7 +141,7 @@ export const DEFAULT_VALUES: FormSchema = {
   outputType: "vendor",
   commandsVersion: "v2",
   mechanismType: "Elevator",
-  motorControllerType: "SparkMAX",
+  motorControllerType: "TalonFXS",
   motorType: "NEO",
   canId: 1,
   canBus: 0,
@@ -210,6 +210,12 @@ export const DEFAULT_VALUES: FormSchema = {
     encoderB: { type: "CANcoder", canId: 22, canBus: 0, channel: 1, pinionTeeth: 21, offset: 0, inverted: true },
   },
 };
+
+/**
+ * The defaults share links were made with before they had a version: the form started on a SPARK
+ * MAX. Old links that left the motor controller out still open on a SPARK MAX.
+ */
+export const VERSION_1_DEFAULT_VALUES: FormSchema = { ...DEFAULT_VALUES, motorControllerType: "SparkMAX" };
 
 export function useCodeGeneratorForm() {
   return useForm<FormSchema>({

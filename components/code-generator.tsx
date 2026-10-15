@@ -8,7 +8,7 @@ import GeneratedCodePanel from "./generatedCodePanel";
 import MobileLayout from "./mobileLayout";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DEFAULT_VALUES, formSchema, useCodeGeneratorForm } from "./useCodeGeneratorForm";
+import { DEFAULT_VALUES, VERSION_1_DEFAULT_VALUES, formSchema, useCodeGeneratorForm } from "./useCodeGeneratorForm";
 import { SHARE_PARAM, decodeForm, encodeForm, shareParam } from "@/lib/share-link";
 import { generateFiles } from "@/lib/code-generator";
 import type { FormValues, FileOutput } from "@/lib/types";
@@ -71,7 +71,7 @@ export default function CodeGenerator() {
   useEffect(() => {
     const encoded = shareParam(window.location.hash);
     if (!encoded) return;
-    decodeForm(encoded, DEFAULT_VALUES)
+    decodeForm(encoded, DEFAULT_VALUES, VERSION_1_DEFAULT_VALUES)
       .then((values) => {
         const parsed = formSchema.safeParse(values);
         if (parsed.success) {
