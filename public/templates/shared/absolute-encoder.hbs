@@ -239,10 +239,10 @@ import static org.wpilib.units.Units.Rotations;
           continue;
         }
         // The gear's position: that tooth, plus the fraction of a tooth past it from encoder B.
-        double teeth = tooth + centeredModulus(rawB - Math.floorMod(tooth, PINION_B_TEETH), 0.5);
-        // How far each reading is from what it would be with the gear there.
-        double errorA = toothError(rawA, teeth, PINION_A_TEETH);
-        double errorB = toothError(rawB, teeth, PINION_B_TEETH);
+        double teeth = tooth + MathUtil.inputModulus(rawB - Math.floorMod(tooth, PINION_B_TEETH), -0.5, 0.5);
+        // How far each reading is from what it would be with the gear there, wrapped around its pinion's teeth.
+        double errorA = Math.abs(MathUtil.inputModulus(rawA - teeth, -PINION_A_TEETH / 2.0, PINION_A_TEETH / 2.0));
+        double errorB = Math.abs(MathUtil.inputModulus(rawB - teeth, -PINION_B_TEETH / 2.0, PINION_B_TEETH / 2.0));
         double error = errorA * errorA + errorB * errorB;
         if (error < bestError) {
           bestError = error;
@@ -255,16 +255,6 @@ import static org.wpilib.units.Units.Rotations;
       return Optional.empty();
     }
     return Optional.of(Rotations.of(bestTeeth / SHARED_GEAR_TEETH));
-  }
-
-  /** How far a reading is from a predicted position, in teeth, wrapped around the pinion's teeth. */
-  private static double toothError(double raw, double predicted, long teeth) {
-    return Math.abs(centeredModulus(raw - predicted, teeth / 2.0));
-  }
-
-  /** A value wrapped into -halfRange to halfRange. */
-  private static double centeredModulus(double value, double halfRange) {
-    return MathUtil.inputModulus(value, -halfRange, halfRange);
   }
 {{/unless}}
 {{/if}}
