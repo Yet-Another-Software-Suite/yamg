@@ -1,0 +1,9 @@
+.gradle/
+build/
+bin/
+logs/
+ctre_sim/
+simgui*.json
+networktables.json
+*.log
+hs_err_pid*.log
