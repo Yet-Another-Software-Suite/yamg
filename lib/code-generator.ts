@@ -227,6 +227,23 @@ export function buildTemplateData(data: FormValues) {
   return templateData;
 }
 
+/**
+ * The Chinese Remainder Theorem's basis for two coprime pinions: a number that is 1 more than a
+ * multiple of a and a multiple of b, and one that is a multiple of a and 1 more than a multiple of b.
+ * For 19 and 21 teeth they are 210 and 190. Zero when the pinions are not coprime, which the form
+ * reports.
+ */
+export function crtBasis(a: number, b: number): { a: number; b: number } {
+  const inverse = (value: number, modulus: number) => {
+    for (let x = 1; x < modulus; x++) {
+      if ((value * x) % modulus === 1) return x;
+    }
+    return 0;
+  };
+  if (!(a > 1 && b > 1)) return { a: 0, b: 0 };
+  return { a: b * inverse(b % a, a), b: a * inverse(a % b, b) };
+}
+
 /** A CANcoder, a CANdi, or a duty cycle encoder on a Smart IO port. */
 interface EncoderDevice {
   field: string;
@@ -303,6 +320,7 @@ function encoderTemplateData(data: FormValues) {
     });
     const crtA = crtEncoder("crtEncoderA", params.encoderA ?? {});
     const crtB = crtEncoder("crtEncoderB", params.encoderB ?? {});
+    const basis = crtBasis(crtA.pinionTeeth, crtB.pinionTeeth);
     return {
       absoluteEncoder: false,
       crt: true,
@@ -312,6 +330,9 @@ function encoderTemplateData(data: FormValues) {
       sharedGearRatio: num(params.sharedGearRatio, 1),
       crtA,
       crtB,
+      crtModulus: crtA.pinionTeeth * crtB.pinionTeeth,
+      crtBasisA: basis.a,
+      crtBasisB: basis.b,
       ...shared(),
     };
   }

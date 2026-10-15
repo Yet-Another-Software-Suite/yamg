@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { generateFiles, setTemplateLoader, templatePaths } from "@/lib/code-generator";
+import { crtBasis, generateFiles, setTemplateLoader, templatePaths } from "@/lib/code-generator";
 import { getCompatibleMotors } from "@/lib/config/hardware-config";
 import { absoluteEncoderIssues, crtUniqueRange } from "@/lib/absolute-encoder";
 import { elevatorDrive } from "@/lib/elevator-drive";
@@ -240,6 +240,16 @@ describe("generateFiles", () => {
     const [vendor] = await generateFiles(form("Turret", "TalonFX", "vendor", "v3", true));
     expect(vendor.content).not.toMatch(/new EasyCRT|import yams/);
     expect(vendor.content).toContain("solveCrt(encoderA, encoderB, sharedGearMin, sharedGearMax)");
+    expect(vendor.content).toContain("CRT_BASIS_A = 210;");
+    expect(vendor.content).toContain("CRT_BASIS_B = 190;");
+  });
+
+  it("works out the CRT basis: 1 more than a multiple of one pinion, and a multiple of the other", () => {
+    for (const [a, b] of [[19, 21], [13, 15], [21, 19], [17, 23]]) {
+      const basis = crtBasis(a, b);
+      expect([basis.a % a, basis.a % b, basis.b % a, basis.b % b]).toEqual([1, 0, 0, 1]);
+    }
+    expect(crtBasis(19, 21)).toEqual({ a: 210, b: 190 });
   });
 
   it("checks that the CRT pinions are coprime, and cover the travel", () => {

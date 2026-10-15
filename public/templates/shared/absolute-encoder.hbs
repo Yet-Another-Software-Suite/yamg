@@ -193,49 +193,78 @@ import static org.wpilib.units.Units.Rotations;
   }
 {{#unless (eq output "yams")}}
 
+  // Encoder A's pinion turns once every {{crtA.pinionTeeth}} teeth of the {{sharedGearTeeth}} tooth gear, and encoder B's every
+  // {{crtB.pinionTeeth}}, so each encoder knows which tooth of the gear is at its pinion, give or take whole
+  // pinion turns. The two together know it over {{crtA.pinionTeeth}} x {{crtB.pinionTeeth}} = {{crtModulus}} teeth.
+  private static final long PINION_A_TEETH = {{crtA.pinionTeeth}};
+  private static final long PINION_B_TEETH = {{crtB.pinionTeeth}};
+  private static final long CRT_MODULUS = {{crtModulus}};
+  // The Chinese Remainder Theorem's basis: {{crtBasisA}} is 1 tooth past a whole turn of pinion A and a
+  // whole number of turns of pinion B, and {{crtBasisB}} the other way round.
+  private static final long CRT_BASIS_A = {{crtBasisA}};
+  private static final long CRT_BASIS_B = {{crtBasisB}};
+  private static final double SHARED_GEAR_TEETH = {{sharedGearTeeth}}.0;
+
   /**
-   * The angle of the {{sharedGearTeeth}} tooth gear from the two encoder readings, the same way as
-   * YAMS's EasyCRT: try every gear angle that fits encoder A, and keep the one that best predicts
-   * encoder B.
+   * The angle of the {{sharedGearTeeth}} tooth gear from the two encoder readings, or empty if the
+   * readings do not agree or it is outside the travel. Adapted from FRC Team 8114's 2026 turret
+   * (BSD 3-Clause): try rounding each encoder's tooth both ways, solve each with the Chinese
+   * Remainder Theorem, and keep the position that best matches both readings.
+   *
+   * <p>Each candidate is scored by its whole position, the tooth plus the fraction of a tooth from
+   * encoder B. Scoring by the tooth alone ties a right and a wrong candidate whenever the gear is
+   * half a tooth between teeth, and the wrong one is a whole CRT range away.
    */
   private static Optional<Angle> solveCrt(Angle encoderA, Angle encoderB, Angle min, Angle max) {
-    // Encoder rotations per rotation of the gear they mesh with.
-    double ratioA = (double) {{sharedGearTeeth}} / {{crtA.pinionTeeth}};
-    double ratioB = (double) {{sharedGearTeeth}} / {{crtB.pinionTeeth}};
-    // Neighboring candidates predict encoder B readings 1/{{crtB.pinionTeeth}} of a rotation apart,
-    // so a match has to be within a quarter of that.
-    double tolerance = 0.25 / {{crtB.pinionTeeth}};
-    double a = MathUtil.inputModulus(encoderA.in(Rotations), 0.0, 1.0);
-    double b = MathUtil.inputModulus(encoderB.in(Rotations), 0.0, 1.0);
-    double minRotations = min.in(Rotations);
-    double maxRotations = max.in(Rotations);
+    // Which tooth of the gear is at each pinion, as a fraction of a pinion turn's worth of teeth.
+    double rawA = encoderA.in(Rotations) * PINION_A_TEETH;
+    double rawB = encoderB.in(Rotations) * PINION_B_TEETH;
+    long floorA = (long) Math.floor(rawA);
+    long floorB = (long) Math.floor(rawB);
+    // The travel in teeth, with half a tooth either side so that rounding at the ends still fits.
+    double minTeeth = min.in(Rotations) * SHARED_GEAR_TEETH - 0.5;
+    double maxTeeth = max.in(Rotations) * SHARED_GEAR_TEETH + 0.5;
 
     double bestError = Double.MAX_VALUE;
-    double secondError = Double.MAX_VALUE;
-    double bestRotations = Double.NaN;
-    // Encoder A reads (ratioA * gear) mod 1, so the gear is at (a + turns) / ratioA for a whole number of turns.
-    int minTurns = (int) Math.floor(ratioA * minRotations - a) - 1;
-    int maxTurns = (int) Math.ceil(ratioA * maxRotations - a) + 1;
-    for (int turns = minTurns; turns <= maxTurns; turns++) {
-      double gearRotations = (a + turns) / ratioA;
-      if (gearRotations < minRotations - 1e-6 || gearRotations > maxRotations + 1e-6) {
-        continue;
-      }
-      // How far encoder B's real reading is from what it would read with the gear there.
-      double error = Math.abs(MathUtil.inputModulus(ratioB * gearRotations - b, -0.5, 0.5));
-      if (error < bestError) {
-        secondError = bestError;
-        bestError = error;
-        bestRotations = gearRotations;
-      } else if (error < secondError) {
-        secondError = error;
+    double bestTeeth = Double.NaN;
+    for (int i = 0; i < 2; i++) {
+      long toothA = Math.floorMod(floorA + i, PINION_A_TEETH);
+      for (int j = 0; j < 2; j++) {
+        long toothB = Math.floorMod(floorB + j, PINION_B_TEETH);
+        // The one tooth within CRT_MODULUS that is toothA past pinion A's turns and toothB past pinion B's.
+        long residue = Math.floorMod(toothA * CRT_BASIS_A + toothB * CRT_BASIS_B, CRT_MODULUS);
+        // Move it by whole CRT_MODULUS steps to the first one at or above the bottom of the travel.
+        long tooth = residue + CRT_MODULUS * (long) Math.ceil((minTeeth - residue) / CRT_MODULUS);
+        if (tooth > maxTeeth) {
+          continue;
+        }
+        // The gear's position: that tooth, plus the fraction of a tooth past it from encoder B.
+        double teeth = tooth + centeredModulus(rawB - Math.floorMod(tooth, PINION_B_TEETH), 0.5);
+        // How far each reading is from what it would be with the gear there.
+        double errorA = toothError(rawA, teeth, PINION_A_TEETH);
+        double errorB = toothError(rawB, teeth, PINION_B_TEETH);
+        double error = errorA * errorA + errorB * errorB;
+        if (error < bestError) {
+          bestError = error;
+          bestTeeth = teeth;
+        }
       }
     }
-    // No candidate is close enough, or two are.
-    if (bestError > tolerance || secondError <= tolerance) {
+    // Readings half a tooth or more apart do not agree on one position: check the offsets and inversion.
+    if (bestError >= 0.25 || bestTeeth < minTeeth || bestTeeth > maxTeeth) {
       return Optional.empty();
     }
-    return Optional.of(Rotations.of(bestRotations));
+    return Optional.of(Rotations.of(bestTeeth / SHARED_GEAR_TEETH));
+  }
+
+  /** How far a reading is from a predicted position, in teeth, wrapped around the pinion's teeth. */
+  private static double toothError(double raw, double predicted, long teeth) {
+    return Math.abs(centeredModulus(raw - predicted, teeth / 2.0));
+  }
+
+  /** A value wrapped into -halfRange to halfRange. */
+  private static double centeredModulus(double value, double halfRange) {
+    return MathUtil.inputModulus(value, -halfRange, halfRange);
   }
 {{/unless}}
 {{/if}}

@@ -349,7 +349,7 @@ export function TurretCrtSection({ form }: { form: Form }) {
               <p className="text-sm text-muted-foreground">
                 {yams
                   ? "The code solves for the angle with YAMS's EasyCRT."
-                  : "The code solves for the angle the same way as YAMS's EasyCRT."}{" "}
+                  : "The code solves for the angle with the Chinese Remainder Theorem, adapted from FRC Team 8114's 2026 turret."}{" "}
                 Both pinions mesh with one shared gear. Their tooth counts must be coprime (no common factor), or the
                 readings repeat sooner.
               </p>
