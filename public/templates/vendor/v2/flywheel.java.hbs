@@ -12,6 +12,7 @@ import static org.wpilib.units.Units.Seconds;
 import static org.wpilib.units.Units.Volts;
 
 {{> imports}}
+import java.util.Optional;
 import org.wpilib.command2.Command;
 import org.wpilib.command2.SubsystemBase;
 import org.wpilib.command2.button.Trigger;
@@ -169,9 +170,24 @@ public class {{className}} extends SubsystemBase {
 {{> setMotorVoltage}}
   }
 
+  /** The speed the closed loop is spinning the flywheel at, or empty while the closed loop is off. */
+  public Optional<AngularVelocity> getGoalVelocity() {
+    return Optional.ofNullable(goalVelocity);
+  }
+
   /** Spin at a speed and hold it. This command does not end on its own. */
   public Command setVelocity(AngularVelocity velocity) {
+{{#if sendGoalOnce}}
+    return run(() -> {
+      if (goalVelocity == null || !velocity.isEquivalent(goalVelocity)) {
+        // The Talon runs the closed loop itself, so it only needs the goal when it changes.
+        setMechanismGoalVelocity(velocity);
+      }
+      goalVelocity = velocity;
+    }).withName("{{className}} Set Velocity");
+{{else}}
     return run(() -> goalVelocity = velocity).withName("{{className}} Set Velocity");
+{{/if}}
   }
 
   /** Drive the flywheel with a duty cycle from -1 to 1. The closed loop is not used. */
@@ -189,6 +205,7 @@ public class {{className}} extends SubsystemBase {
 
   @Override
   public void periodic() {
+{{#unless sendGoalOnce}}
     if (goalVelocity != null) {
 {{#if onboardControl}}
 {{#if systemCoreProfile}}
@@ -212,6 +229,7 @@ public class {{className}} extends SubsystemBase {
       setMechanismVelocity(goalVelocity, feedforwardVoltage);
 {{/if}}
     }
+{{/unless}}
 
     // Turn the spoke with the flywheel, so that the drawing shows it spinning.
     spokeLigament.setAngle(getMechanismPosition().in(Degrees) % 360);

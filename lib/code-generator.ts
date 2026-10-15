@@ -171,6 +171,10 @@ export function buildTemplateData(data: FormValues) {
     systemCoreProfile:
       data.motorControllerType === "ThriftyNova" ||
       (["SparkMAX", "SparkFlex"].includes(data.motorControllerType) && !isFlywheel),
+    // A Talon runs its closed loop from the last request it was sent, so it is sent the goal once,
+    // when the goal changes. A SPARK and a Nova are given their setpoint in periodic(): a Nova's
+    // profile, and a SPARK's in simulation, run there.
+    sendGoalOnce: ["TalonFX", "TalonFXS"].includes(data.motorControllerType),
     // Gains per meter, which the motor controller code converts to per turn of the drive.
     linear: isElevator,
     statorCurrentLimit: num(data.currentLimits?.stator, 40),

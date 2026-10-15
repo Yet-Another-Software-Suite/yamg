@@ -16,6 +16,7 @@ import static org.wpilib.units.Units.Volts;
 
 {{> imports}}
 {{> encoderImports}}
+import java.util.Optional;
 import org.wpilib.command2.Command;
 import org.wpilib.command2.SubsystemBase;
 import org.wpilib.command2.button.Trigger;
@@ -227,7 +228,18 @@ public class {{className}} extends SubsystemBase {
     }
 {{/if}}
     Angle clamped = angle.lt(MIN_ANGLE) ? MIN_ANGLE : angle.gt(MAX_ANGLE) ? MAX_ANGLE : angle;
+{{#if sendGoalOnce}}
+    if (goal == null || !clamped.isEquivalent(goal)) {
+      // The Talon runs the profile itself, so it only needs the goal when it changes.
+      setMechanismGoal(clamped);
+    }
+{{/if}}
     goal = clamped;
+  }
+
+  /** The angle the closed loop is moving the arm to, or empty while the closed loop is off. */
+  public Optional<Angle> getGoal() {
+    return Optional.ofNullable(goal);
   }
 
   /** Go to an angle and hold it. This command does not end on its own. */
@@ -250,6 +262,7 @@ public class {{className}} extends SubsystemBase {
 
   @Override
   public void periodic() {
+{{#unless sendGoalOnce}}
     if (goal != null) {
 {{#if onboardControl}}
 {{#if systemCoreProfile}}
@@ -277,6 +290,7 @@ public class {{className}} extends SubsystemBase {
       setMechanismPosition(Radians.of(next.position), feedforwardVoltage);
 {{/if}}
     }
+{{/unless}}
 
     armLigament.setAngle(getAngle().in(Degrees));
 {{#unless useEpilogue}}

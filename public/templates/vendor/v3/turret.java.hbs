@@ -16,6 +16,7 @@ import static org.wpilib.units.Units.Volts;
 
 {{> imports}}
 {{> encoderImports}}
+import java.util.Optional;
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Trigger;
@@ -227,7 +228,18 @@ public class {{className}} implements Mechanism {
     }
 {{/if}}
     Angle clamped = angle.lt(MIN_ANGLE) ? MIN_ANGLE : angle.gt(MAX_ANGLE) ? MAX_ANGLE : angle;
+{{#if sendGoalOnce}}
+    if (goal == null || !clamped.isEquivalent(goal)) {
+      // The Talon runs the profile itself, so it only needs the goal when it changes.
+      setMechanismGoal(clamped);
+    }
+{{/if}}
     goal = clamped;
+  }
+
+  /** The angle the closed loop is moving the turret to, or empty while the closed loop is off. */
+  public Optional<Angle> getGoal() {
+    return Optional.ofNullable(goal);
   }
 
   /** Go to an angle and hold it. This command does not end on its own. */
@@ -268,6 +280,7 @@ public class {{className}} implements Mechanism {
 
   /** Call this from Robot.robotPeriodic(), before the scheduler runs. */
   public void periodic() {
+{{#unless sendGoalOnce}}
     if (goal != null) {
 {{#if onboardControl}}
 {{#if systemCoreProfile}}
@@ -297,6 +310,7 @@ public class {{className}} implements Mechanism {
       setMechanismPosition(Radians.of(next.position), feedforwardVoltage);
 {{/if}}
     }
+{{/unless}}
 
     turretLigament.setAngle(getAngle().in(Degrees));
 {{#unless useEpilogue}}

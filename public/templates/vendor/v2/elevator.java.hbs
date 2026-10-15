@@ -19,6 +19,7 @@ import static org.wpilib.units.Units.Seconds;
 import static org.wpilib.units.Units.Volts;
 
 {{> imports}}
+import java.util.Optional;
 import org.wpilib.command2.Command;
 import org.wpilib.command2.SubsystemBase;
 import org.wpilib.command2.button.Trigger;
@@ -256,7 +257,18 @@ public class {{className}} extends SubsystemBase {
     }
 {{/if}}
     Distance clamped = height.lt(MIN_HEIGHT) ? MIN_HEIGHT : height.gt(MAX_HEIGHT) ? MAX_HEIGHT : height;
+{{#if sendGoalOnce}}
+    if (goal == null || !clamped.isEquivalent(goal)) {
+      // The Talon runs the profile itself, so it only needs the goal when it changes.
+      setMechanismGoal(toMechanismPosition(clamped));
+    }
+{{/if}}
     goal = clamped;
+  }
+
+  /** The height the closed loop is moving the elevator to, or empty while the closed loop is off. */
+  public Optional<Distance> getGoal() {
+    return Optional.ofNullable(goal);
   }
 
   /** Go to a height and hold it. This command does not end on its own. */
@@ -279,6 +291,7 @@ public class {{className}} extends SubsystemBase {
 
   @Override
   public void periodic() {
+{{#unless sendGoalOnce}}
     if (goal != null) {
 {{#if onboardControl}}
 {{#if systemCoreProfile}}
@@ -306,6 +319,7 @@ public class {{className}} extends SubsystemBase {
       setMechanismPosition(toMechanismPosition(Meters.of(next.position)), feedforwardVoltage);
 {{/if}}
     }
+{{/unless}}
 
     carriageLigament.setLength(getHeight().in(Meters));
 {{#unless useEpilogue}}
