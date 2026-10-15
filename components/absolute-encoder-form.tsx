@@ -202,7 +202,7 @@ export function AbsoluteEncoderSection({ form }: { form: Form }) {
   const connection = type === "none" ? undefined : encoderConnection(type, values.absoluteEncoder?.port, controller)
   const yams = values.outputType === "yams"
   const travel = travelDegrees(values)
-  const crt = values.mechanismType === "Turret" && (values.turretParams?.crt ?? false)
+  const crt = values.turretParams?.crt ?? false
 
   return (
     <AccordionItem value="absoluteEncoder">
@@ -242,12 +242,12 @@ export function AbsoluteEncoderSection({ form }: { form: Form }) {
                         {ABSOLUTE_ENCODERS[key].displayName}
                       </SelectItem>
                     ))}
-                    {values.mechanismType === "Turret" && <SelectItem value="crt">Two Encoders (CRT)</SelectItem>}
+                    <SelectItem value="crt">Two Encoders (CRT)</SelectItem>
                   </SelectContent>
                 </Select>
                 {crt ? (
                   <FormDescription>
-                    Two absolute encoders on pinions with different tooth counts. Neither knows the turret&apos;s angle
+                    Two absolute encoders on pinions with different tooth counts. Neither knows the {noun}&apos;s angle
                     on its own, but together they do, even over more than one turn.
                   </FormDescription>
                 ) : (
@@ -259,7 +259,7 @@ export function AbsoluteEncoderSection({ form }: { form: Form }) {
           />
 
           {crt ? (
-            <TurretCrtFields form={form} values={values} />
+            <CrtFields form={form} values={values} />
           ) : (
             <>
               {((type === "ThroughBore" && fitsDataPort("ThroughBore", controller)) ||
@@ -338,6 +338,7 @@ export function AbsoluteEncoderSection({ form }: { form: Form }) {
 /** One of the two CRT encoders. */
 function CrtEncoderFields({ form, which, values }: { form: Form; which: "encoderA" | "encoderB"; values: FormValues }) {
   const prefix = `turretParams.${which}`
+  const noun = values.mechanismType.toLowerCase()
   const issues = issueLookup(values)
   const encoder = values.turretParams?.[which] ?? {}
   const connection = encoderConnection(encoder.type ?? "CANcoder", "smartIo", values.motorControllerType)
@@ -378,20 +379,21 @@ function CrtEncoderFields({ form, which, values }: { form: Form; which: "encoder
         name={`${prefix}.offset`}
         label="Zero Offset (degrees)"
         step="0.01"
-        description="What the encoder reads with the turret at 0°."
+        description={`What the encoder reads with the ${noun} at 0°.`}
       />
       <SwitchField
         form={form}
         name={`${prefix}.inverted`}
         label="Inverted"
-        description="On when the reading goes down as the turret turns positive. Usually on, since a pinion turns opposite to its gear."
+        description={`On when the reading goes down as the ${noun} turns positive. Usually on, since a pinion turns opposite to its gear.`}
       />
     </div>
   )
 }
 
-/** A turret's CRT: two encoders whose pinions have coprime tooth counts. */
-function TurretCrtFields({ form, values }: { form: Form; values: FormValues }) {
+/** A CRT: two encoders whose pinions have coprime tooth counts. */
+function CrtFields({ form, values }: { form: Form; values: FormValues }) {
+  const noun = values.mechanismType.toLowerCase()
   const issues = issueLookup(values)
   const params = values.turretParams ?? {}
   const yams = values.outputType === "yams"
@@ -402,7 +404,7 @@ function TurretCrtFields({ form, values }: { form: Form; values: FormValues }) {
   const ready =
     Number.isInteger(a) && Number.isInteger(b) && Number.isInteger(shared) && a! > 0 && b! > 0 && shared! > 0
   const range = ready ? crtUniqueRange(shared!, a!, b!) : 0
-  const turretRange = ready ? (range / (params.sharedGearRatio || 1)) * 360 : 0
+  const mechanismRange = ready ? (range / (params.sharedGearRatio || 1)) * 360 : 0
 
   return (
     <>
@@ -415,8 +417,8 @@ function TurretCrtFields({ form, values }: { form: Form; values: FormValues }) {
       </p>
       <p className="text-sm text-muted-foreground">
         The code logs each encoder&apos;s reading as CRT/EncoderA and CRT/EncoderB, and the angle they agree on as
-        CRT/Angle. With the turret at 0°, the readings are the offsets. CRT/Angle should follow the turret while it is
-        still. If it does not, check that both readings go up as the turret turns positive.
+        CRT/Angle. With the {noun} at 0°, the readings are the offsets. CRT/Angle should follow the {noun} while it is
+        still. If it does not, check that both readings go up as the {noun} turns positive.
       </p>
       <NumberField
         form={form}
@@ -428,9 +430,9 @@ function TurretCrtFields({ form, values }: { form: Form; values: FormValues }) {
       <NumberField
         form={form}
         name="turretParams.sharedGearRatio"
-        label="Shared Gear Rotations per Turret Rotation"
+        label={`Shared Gear Rotations per ${values.mechanismType} Rotation`}
         step="0.01"
-        description="1 when the pinions mesh with the turret gear itself."
+        description={`1 when the pinions mesh with the ${noun}'s own gear.`}
         issue={issues("turretParams.sharedGearRatio")}
       />
       <div className="space-y-4">
@@ -439,7 +441,7 @@ function TurretCrtFields({ form, values }: { form: Form; values: FormValues }) {
       </div>
       {ready && a !== b && gcd(a!, b!) === 1 && (
         <p className="text-sm text-muted-foreground">
-          {a} and {b} teeth are coprime. Together they tell {turretRange.toFixed(0)}° of turret travel apart, and the
+          {a} and {b} teeth are coprime. Together they tell {mechanismRange.toFixed(0)}° of {noun} travel apart, and the
           hard limits need {travel.max - travel.min}°.
         </p>
       )}

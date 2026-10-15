@@ -259,6 +259,30 @@ describe("generateFiles", () => {
     expect(vendor.content).toContain("CRT_BASIS_B = 190;");
   });
 
+  it("lets an arm or a pivot find its angle with CRT too", async () => {
+    for (const mechanismType of ["Arm", "Pivot"] as const) {
+      for (const output of OUTPUTS) {
+        for (const commandsVersion of ["v2", "v3"] as const) {
+          for (const controller of CONTROLLERS) {
+            const base = form(mechanismType, controller, output, commandsVersion, true);
+            const crt = { ...base, subsystemName: `${mechanismType}${controller}Crt`, turretParams: { ...base.turretParams, crt: true } };
+            const [file] = await generateFiles(crt);
+            expect(file.content).toContain("getCrtAngle(");
+            expect(file.content).toContain(`The ${mechanismType.toLowerCase()} encoders do not agree on an angle.`);
+            expect(file.content).not.toMatch(/the turret|turret's|getCrtTurretAngle/);
+            expect(file.content).not.toContain("withExternalEncoder(");
+            const out = process.env.YAMG_RENDER_DIR;
+            if (out) {
+              const target = path.join(out, `${output}-${commandsVersion}`, file.filename);
+              fs.mkdirSync(path.dirname(target), { recursive: true });
+              fs.writeFileSync(target, file.content);
+            }
+          }
+        }
+      }
+    }
+  });
+
   it("works out the CRT basis: 1 more than a multiple of one pinion, and a multiple of the other", () => {
     for (const [a, b] of [[19, 21], [13, 15], [21, 19], [17, 23]]) {
       const basis = crtBasis(a, b);

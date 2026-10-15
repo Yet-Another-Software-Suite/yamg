@@ -83,11 +83,11 @@ export interface FormValues {
   /** An absolute encoder that tells an arm, pivot or turret where it is when the robot turns on. */
   absoluteEncoder?: AbsoluteEncoderParams
   turretParams?: {
-    /** Find the turret's angle from two absolute encoders on pinions with different tooth counts. */
+    /** Find an arm's, pivot's or turret's angle from two absolute encoders on pinions with different tooth counts. */
     crt?: boolean
     /** Teeth on the gear both encoder pinions mesh with. */
     sharedGearTeeth?: number
-    /** Rotations of that shared gear per turret rotation: 1 when the pinions mesh with the turret gear. */
+    /** Rotations of that shared gear per mechanism rotation: 1 when the pinions mesh with the mechanism's own gear. */
     sharedGearRatio?: number
     encoderA?: CrtEncoderParams
     encoderB?: CrtEncoderParams
@@ -118,7 +118,7 @@ export interface AbsoluteEncoderParams {
   ratio?: number
 }
 
-/** One of the two encoders a turret's CRT reads. The SystemCore reads both. */
+/** One of the two encoders a CRT reads. The SystemCore reads both. */
 export interface CrtEncoderParams {
   type?: "CANcoder" | "ThroughBore" | "DutyCycle"
   canId?: number
@@ -126,7 +126,7 @@ export interface CrtEncoderParams {
   channel?: number
   /** Teeth on the pinion the encoder is on. */
   pinionTeeth?: number
-  /** What the encoder reads, in degrees, with the turret at zero. */
+  /** What the encoder reads, in degrees, with the mechanism at zero. */
   offset?: number
   inverted?: boolean
 }

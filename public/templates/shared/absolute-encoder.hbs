@@ -68,12 +68,12 @@ import org.wpilib.telemetry.Telemetry;
 {{/unless}}
 {{/if}}
 {{#if crt}}
-  // The turret's angle when the robot turns on comes from two absolute encoders, on pinions with
+  // The {{mechanismNoun}}'s angle when the robot turns on comes from two absolute encoders, on pinions with
   // {{crtA.pinionTeeth}} and {{crtB.pinionTeeth}} teeth that both mesh with a {{sharedGearTeeth}} tooth gear. Neither knows the angle on its
-  // own, but the pair of readings is unique over the turret's travel (the Chinese Remainder Theorem).
-  /** Rotations of the {{sharedGearTeeth}} tooth gear per turret rotation. */
+  // own, but the pair of readings is unique over the {{mechanismNoun}}'s travel (the Chinese Remainder Theorem).
+  /** Rotations of the {{sharedGearTeeth}} tooth gear per {{mechanismNoun}} rotation. */
   private static final double SHARED_GEAR_RATIO = {{sharedGearRatio}};
-  // What each encoder reads with the turret at zero.
+  // What each encoder reads with the {{mechanismNoun}} at zero.
   private static final Angle CRT_ENCODER_A_OFFSET = Degrees.of({{crtA.offset}});
   private static final Angle CRT_ENCODER_B_OFFSET = Degrees.of({{crtB.offset}});
 {{#if (eq output "yams")}}
@@ -81,7 +81,7 @@ import org.wpilib.telemetry.Telemetry;
   private final EasyCRT crt = new EasyCRT({{sharedGearTeeth}}, {{crtA.pinionTeeth}}, {{crtB.pinionTeeth}});
 {{/if}}
   private final Alert crtAlert = new Alert(
-      "{{className}}", "The turret encoders do not agree on an angle. Check their offsets and inversion.", Alert.Level.HIGH);
+      "{{className}}", "The {{mechanismNoun}} encoders do not agree on an angle. Check their offsets and inversion.", Alert.Level.HIGH);
 {{/if}}
 {{#each systemCoreEncoders}}
 {{#if cancoder}}
@@ -147,7 +147,7 @@ import org.wpilib.telemetry.Telemetry;
 {{/if}}
 {{#if crt}}
       // Start the motor's encoder at the angle the two encoders agree on. Simulation has no
-      // encoders, so there the turret starts at its starting position.
+      // encoders, so there the {{mechanismNoun}} starts at its starting position.
       Optional<Angle> crtAngle = getCrtAngle({{crtA.startup}}, {{crtB.startup}});
       crtAngle.ifPresent(angle -> {{seedCall}}(angle));
       crtAlert.set(crtAngle.isEmpty());
@@ -201,11 +201,11 @@ import org.wpilib.telemetry.Telemetry;
 {{/if}}
 {{#if crt}}
   /**
-   * Where the two encoders say the turret is, or empty if they do not agree on one angle. Read it
-   * while the turret is still, since the two encoders are read one after the other.
+   * Where the two encoders say the {{mechanismNoun}} is, or empty if they do not agree on one angle. Read it
+   * while the {{mechanismNoun}} is still, since the two encoders are read one after the other.
    */
   private Optional<Angle> getCrtAngle(Angle readingA, Angle readingB) {
-    // Each reading from where it is with the turret at zero, counting up as the turret turns positive.
+    // Each reading from where it is with the {{mechanismNoun}} at zero, counting up as the {{mechanismNoun}} turns positive.
     Angle encoderA = {{#if crtA.inverted}}CRT_ENCODER_A_OFFSET.minus(readingA){{else}}readingA.minus(CRT_ENCODER_A_OFFSET){{/if}};
     Angle encoderB = {{#if crtB.inverted}}CRT_ENCODER_B_OFFSET.minus(readingB){{else}}readingB.minus(CRT_ENCODER_B_OFFSET){{/if}};
     // The pinions mesh with the {{sharedGearTeeth}} tooth gear, so the solve is for its angle, over its travel.
@@ -220,7 +220,7 @@ import org.wpilib.telemetry.Telemetry;
 {{/if}}
   }
 
-  /** What encoder A reads, before the offset and inversion. With the turret at zero, this is its offset. */
+  /** What encoder A reads, before the offset and inversion. With the {{mechanismNoun}} at zero, this is its offset. */
 {{#if useEpilogue}}
   @Logged(name = "CRT/EncoderA")
 {{/if}}
@@ -228,7 +228,7 @@ import org.wpilib.telemetry.Telemetry;
     return {{crtA.live}};
   }
 
-  /** What encoder B reads, before the offset and inversion. With the turret at zero, this is its offset. */
+  /** What encoder B reads, before the offset and inversion. With the {{mechanismNoun}} at zero, this is its offset. */
 {{#if useEpilogue}}
   @Logged(name = "CRT/EncoderB")
 {{/if}}
@@ -237,14 +237,14 @@ import org.wpilib.telemetry.Telemetry;
   }
 
   /**
-   * Where the two encoders say the turret is, or NaN degrees if they do not agree. It should follow
-   * the turret's angle while the turret is still. Each encoder's reading should go up as the turret
+   * Where the two encoders say the {{mechanismNoun}} is, or NaN degrees if they do not agree. It should follow
+   * the {{mechanismNoun}}'s angle while the {{mechanismNoun}} is still. Each encoder's reading should go up as the {{mechanismNoun}}
    * turns positive once it is inverted, or it needs inverting the other way.
    */
 {{#if useEpilogue}}
   @Logged(name = "CRT/Angle")
 {{/if}}
-  public Angle getCrtTurretAngle() {
+  public Angle getCrtMechanismAngle() {
     return getCrtAngle(getCrtEncoderAReading(), getCrtEncoderBReading()).orElse(Degrees.of(Double.NaN));
   }
 {{#unless (eq output "yams")}}
@@ -331,7 +331,7 @@ import org.wpilib.telemetry.Telemetry;
     // The CRT encoders' readings set their offsets, and the solved angle shows whether they agree.
     Telemetry.log("{{ntKey}}/CRT/EncoderA", getCrtEncoderAReading());
     Telemetry.log("{{ntKey}}/CRT/EncoderB", getCrtEncoderBReading());
-    Telemetry.log("{{ntKey}}/CRT/Angle", getCrtTurretAngle());
+    Telemetry.log("{{ntKey}}/CRT/Angle", getCrtMechanismAngle());
 {{else}}
     // The encoder's reading sets its offset, and its angle shows whether it needs inverting.
     Telemetry.log("{{ntKey}}/AbsoluteEncoder/Reading", getAbsoluteEncoderReading());

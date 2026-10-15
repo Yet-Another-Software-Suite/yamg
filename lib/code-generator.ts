@@ -137,6 +137,7 @@ export function buildTemplateData(data: FormValues) {
     output,
     commands,
     mechanismType: data.mechanismType,
+    mechanismNoun: data.mechanismType.toLowerCase(),
     motorControllerType: data.motorControllerType,
     motorType: data.motorType,
     motorDisplayName: motor.displayName,

@@ -80,9 +80,9 @@ export function discontinuityPoint(data: FormValues): "0.5" | "1.0" | undefined 
   return low >= -180 && high < 180 ? "0.5" : low >= 0 && high < 360 ? "1.0" : undefined;
 }
 
-/** True when the turret finds its angle from two encoders with the Chinese Remainder Theorem. */
+/** True when the mechanism finds its angle from two encoders with the Chinese Remainder Theorem. */
 export function usesCrt(data: FormValues): boolean {
-  return data.mechanismType === "Turret" && data.turretParams?.crt === true;
+  return takesAbsoluteEncoder(data.mechanismType) && data.turretParams?.crt === true;
 }
 
 /** True when the mechanism has one absolute encoder. */
@@ -171,8 +171,7 @@ export function absoluteEncoderIssues(data: FormValues): EncoderIssue[] {
         path: ["absoluteEncoder", "ratio"],
         message:
           `The encoder turns ${Math.round(travelLength * ratio)}° between the hard stops, but it only knows where it is within one turn (360°), ` +
-          "so two angles would read the same. Gear the encoder down" +
-          (data.mechanismType === "Turret" ? ", or use two encoders with CRT." : ", or narrow the hard limits."),
+          "so two angles would read the same. Gear the encoder down, narrow the hard limits, or use two encoders with CRT.",
       });
     } else if (data.outputType === "yams" && attachesToMotorController(connection, data.motorControllerType) && !discontinuityPoint(data)) {
       // The motor controller reads the encoder from -180 to 180 degrees, or 0 to 360, from its zero.
