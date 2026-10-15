@@ -93,7 +93,7 @@ export default function GeneratedCodePanel({
             </Button>
           ))}
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto [&>button]:flex-1 sm:[&>button]:flex-none">
           <Button
             variant="outline"
             size="sm"
