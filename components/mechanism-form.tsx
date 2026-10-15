@@ -1400,13 +1400,13 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
         )}
       </Accordion>
 
-      <div className="mt-6 space-y-4 rounded-lg border p-4">
-        <div className="flex items-center gap-4">
+      <div className="mt-6 rounded-lg border p-4">
+        <div className="flex items-start gap-4">
           <a href="https://yams.yassrobotics.com" target="_blank" rel="noopener noreferrer" className="shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/yams-logo.png`} alt="YAMS logo" width={64} height={47} />
           </a>
-          <div className="space-y-1 text-sm">
+          <div className="min-w-0 flex-1 space-y-1 text-sm">
             <p className="font-semibold">Need more? Try YAMS!</p>
             <p className="text-muted-foreground">
               YAMS has built-in simulation, including battery simulation of the whole robot, live tuning, telemetry, LQR,
@@ -1421,23 +1421,23 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
               https://yams.yassrobotics.com
             </a>
           </div>
+          {/* The same field as the Use YAMS switch at the top of the form, in the ad's top right corner. */}
+          <FormField
+            control={form.control}
+            name="outputType"
+            render={({ field }) => (
+              <FormItem className="shrink-0 space-y-0">
+                <FormControl>
+                  <Switch
+                    aria-label="Use YAMS"
+                    checked={field.value === "yams"}
+                    onCheckedChange={(checked) => field.onChange(checked ? "yams" : "vendor")}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
         </div>
-        {/* The same field as the Use YAMS switch at the top of the form. */}
-        <FormField
-          control={form.control}
-          name="outputType"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-              <FormLabel>Use YAMS</FormLabel>
-              <FormControl>
-                <Switch
-                  checked={field.value === "yams"}
-                  onCheckedChange={(checked) => field.onChange(checked ? "yams" : "vendor")}
-                />
-              </FormControl>
-            </FormItem>
-          )}
-        />
       </div>
     </div>
   )
