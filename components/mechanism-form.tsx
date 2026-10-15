@@ -20,7 +20,7 @@ import {
 import ReCalcIntegration from "./recalc-integration"
 import { renameForMechanism } from "@/lib/mechanism-name"
 import { takesAbsoluteEncoder } from "@/lib/absolute-encoder"
-import { AbsoluteEncoderSection, CanBusField, TurretCrtSection } from "./absolute-encoder-form"
+import { AbsoluteEncoderSection, CanBusField } from "./absolute-encoder-form"
 
 export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
   const mechanismType = form.watch("mechanismType")
@@ -30,7 +30,6 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
   const usesYams = form.watch("outputType") === "yams"
   const elevatorDriveType = form.watch("elevatorParams.driveType") ?? "drum"
   const elevatorCascade = form.watch("elevatorParams.cascade") ?? false
-  const turretCrt = form.watch("turretParams.crt") ?? false
   // Arms, pivots and turrets share their parameters.
   const isAngular = takesAbsoluteEncoder(mechanismType)
 
@@ -1273,8 +1272,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
           </AccordionItem>
         )}
 
-        {mechanismType === "Turret" && <TurretCrtSection form={form} />}
-        {isAngular && !(mechanismType === "Turret" && turretCrt) && <AbsoluteEncoderSection form={form} />}
+        {isAngular && <AbsoluteEncoderSection form={form} />}
 
         {mechanismType === "Flywheel" && (
           <AccordionItem value="flywheelParams">

@@ -82,7 +82,17 @@ function NumberField({
 }
 
 /** A labelled switch. */
-function SwitchField({ form, name, label, description }: { form: Form; name: string; label: string; description: string }) {
+function SwitchField({
+  form,
+  name,
+  label,
+  description,
+}: {
+  form: Form
+  name: string
+  label: string
+  description: string
+}) {
   return (
     <FormField
       control={form.control}
@@ -192,6 +202,7 @@ export function AbsoluteEncoderSection({ form }: { form: Form }) {
   const connection = type === "none" ? undefined : encoderConnection(type, values.absoluteEncoder?.port, controller)
   const yams = values.outputType === "yams"
   const travel = travelDegrees(values)
+  const crt = values.mechanismType === "Turret" && (values.turretParams?.crt ?? false)
 
   return (
     <AccordionItem value="absoluteEncoder">
@@ -208,7 +219,13 @@ export function AbsoluteEncoderSection({ form }: { form: Form }) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Encoder</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value ?? "none"}>
+                <Select
+                  onValueChange={(value) => {
+                    form.setValue("turretParams.crt", value === "crt")
+                    if (value !== "crt") field.onChange(value)
+                  }}
+                  value={crt ? "crt" : (field.value ?? "none")}
+                >
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select an encoder" />
@@ -225,77 +242,91 @@ export function AbsoluteEncoderSection({ form }: { form: Form }) {
                         {ABSOLUTE_ENCODERS[key].displayName}
                       </SelectItem>
                     ))}
+                    {values.mechanismType === "Turret" && <SelectItem value="crt">Two Encoders (CRT)</SelectItem>}
                   </SelectContent>
                 </Select>
-                {type !== "none" && <FormDescription>{ABSOLUTE_ENCODERS[type].description}</FormDescription>}
+                {crt ? (
+                  <FormDescription>
+                    Two absolute encoders on pinions with different tooth counts. Neither knows the turret&apos;s angle
+                    on its own, but together they do, even over more than one turn.
+                  </FormDescription>
+                ) : (
+                  type !== "none" && <FormDescription>{ABSOLUTE_ENCODERS[type].description}</FormDescription>
+                )}
                 <Issue message={issues("absoluteEncoder.type")} />
               </FormItem>
             )}
           />
 
-          {((type === "ThroughBore" && fitsDataPort("ThroughBore", controller)) ||
-            ((type === "ThroughBore" || type === "DutyCycle") && isTalon(controller))) && (
-            <FormField
-              control={form.control}
-              name="absoluteEncoder.port"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Plugged Into</FormLabel>
-                  <Select onValueChange={field.onChange} value={connection}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {fitsDataPort("ThroughBore", controller) && (
-                        <SelectItem value="dataPort">The {controllerName}&apos;s data port</SelectItem>
-                      )}
-                      {isTalon(controller) && <SelectItem value="candi">A CANdi&apos;s PWM1 input</SelectItem>}
-                      <SelectItem value="smartIo">A SystemCore Smart IO port</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
-          )}
-
-          {connection && (
+          {crt ? (
+            <TurretCrtFields form={form} values={values} />
+          ) : (
             <>
-              <ConnectionField form={form} prefix="absoluteEncoder" connection={connection} issues={issues} />
-              <NumberField
-                form={form}
-                name="absoluteEncoder.offset"
-                label="Zero Offset (degrees)"
-                step="0.01"
-                description={`Move the ${noun} to 0°, and enter what the encoder reads.`}
-              />
-              <SwitchField
-                form={form}
-                name="absoluteEncoder.inverted"
-                label="Inverted"
-                description={`On when the encoder reading goes down as the ${noun} moves in its positive direction.`}
-              />
-              <NumberField
-                form={form}
-                name="absoluteEncoder.ratio"
-                label="Encoder Gearing"
-                step="0.01"
-                description={`Encoder rotations per ${noun} rotation, 1 when it is on the ${noun}'s shaft. The travel between the hard stops (${travel.max - travel.min}°) times this must stay under one encoder turn.`}
-                issue={issues("absoluteEncoder.ratio")}
-              />
-              <p className="text-sm text-muted-foreground">
-                {!yams
-                  ? `The code reads the encoder when the robot turns on, and starts the ${controllerName}'s encoder there.`
-                  : attachesToMotorController(connection, controller)
-                    ? `The ${controllerName} reads this encoder itself, so YAMS gives it to the SmartMotorController with withExternalEncoder.`
-                    : `This encoder is not one the ${controllerName} reads itself, so the code reads it when the robot turns on and gives the angle to setEncoderPosition.`}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {yams && attachesToMotorController(connection, controller)
-                  ? `YAMS publishes the encoder as ${values.subsystemName}Motor/externalencoder/position. With the zero offset at 0, move the ${noun} to 0° and use that as the offset. If it goes the opposite way to the motor's position, turn on Inverted.`
-                  : `The code logs the encoder's reading as AbsoluteEncoder/Reading and the angle it gives as AbsoluteEncoder/Angle. Move the ${noun} to 0° and use the reading as the offset. If the angle goes the opposite way to the ${noun}'s angle, turn on Inverted.`}
-              </p>
+              {((type === "ThroughBore" && fitsDataPort("ThroughBore", controller)) ||
+                ((type === "ThroughBore" || type === "DutyCycle") && isTalon(controller))) && (
+                <FormField
+                  control={form.control}
+                  name="absoluteEncoder.port"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Plugged Into</FormLabel>
+                      <Select onValueChange={field.onChange} value={connection}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {fitsDataPort("ThroughBore", controller) && (
+                            <SelectItem value="dataPort">The {controllerName}&apos;s data port</SelectItem>
+                          )}
+                          {isTalon(controller) && <SelectItem value="candi">A CANdi&apos;s PWM1 input</SelectItem>}
+                          <SelectItem value="smartIo">A SystemCore Smart IO port</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {connection && (
+                <>
+                  <ConnectionField form={form} prefix="absoluteEncoder" connection={connection} issues={issues} />
+                  <NumberField
+                    form={form}
+                    name="absoluteEncoder.offset"
+                    label="Zero Offset (degrees)"
+                    step="0.01"
+                    description={`Move the ${noun} to 0°, and enter what the encoder reads.`}
+                  />
+                  <SwitchField
+                    form={form}
+                    name="absoluteEncoder.inverted"
+                    label="Inverted"
+                    description={`On when the encoder reading goes down as the ${noun} moves in its positive direction.`}
+                  />
+                  <NumberField
+                    form={form}
+                    name="absoluteEncoder.ratio"
+                    label="Encoder Gearing"
+                    step="0.01"
+                    description={`Encoder rotations per ${noun} rotation, 1 when it is on the ${noun}'s shaft. The travel between the hard stops (${travel.max - travel.min}°) times this must stay under one encoder turn.`}
+                    issue={issues("absoluteEncoder.ratio")}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    {!yams
+                      ? `The code reads the encoder when the robot turns on, and starts the ${controllerName}'s encoder there.`
+                      : attachesToMotorController(connection, controller)
+                        ? `The ${controllerName} reads this encoder itself, so YAMS gives it to the SmartMotorController with withExternalEncoder.`
+                        : `This encoder is not one the ${controllerName} reads itself, so the code reads it when the robot turns on and gives the angle to setEncoderPosition.`}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {yams && attachesToMotorController(connection, controller)
+                      ? `YAMS publishes the encoder as ${values.subsystemName}Motor/externalencoder/position. With the zero offset at 0, move the ${noun} to 0° and use that as the offset. If it goes the opposite way to the motor's position, turn on Inverted.`
+                      : `The code logs the encoder's reading as AbsoluteEncoder/Reading and the angle it gives as AbsoluteEncoder/Angle. Move the ${noun} to 0° and use the reading as the offset. If the angle goes the opposite way to the ${noun}'s angle, turn on Inverted.`}
+                  </p>
+                </>
+              )}
             </>
           )}
         </div>
@@ -360,74 +391,58 @@ function CrtEncoderFields({ form, which, values }: { form: Form; which: "encoder
 }
 
 /** A turret's CRT: two encoders whose pinions have coprime tooth counts. */
-export function TurretCrtSection({ form }: { form: Form }) {
-  const values = form.watch() as FormValues
+function TurretCrtFields({ form, values }: { form: Form; values: FormValues }) {
   const issues = issueLookup(values)
   const params = values.turretParams ?? {}
-  const crt = params.crt ?? false
   const yams = values.outputType === "yams"
   const a = params.encoderA?.pinionTeeth
   const b = params.encoderB?.pinionTeeth
   const shared = params.sharedGearTeeth
   const travel = travelDegrees(values)
-  const ready = Number.isInteger(a) && Number.isInteger(b) && Number.isInteger(shared) && a! > 0 && b! > 0 && shared! > 0
+  const ready =
+    Number.isInteger(a) && Number.isInteger(b) && Number.isInteger(shared) && a! > 0 && b! > 0 && shared! > 0
   const range = ready ? crtUniqueRange(shared!, a!, b!) : 0
   const turretRange = ready ? (range / (params.sharedGearRatio || 1)) * 360 : 0
 
   return (
-    <AccordionItem value="turretCrt">
-      <AccordionTrigger>Turret Encoders (CRT)</AccordionTrigger>
-      <AccordionContent>
-        <div className="space-y-4">
-          <SwitchField
-            form={form}
-            name="turretParams.crt"
-            label="Two Encoders (CRT)"
-            description="Find the turret's angle when the robot turns on from two absolute encoders on pinions with different tooth counts. Neither knows the angle on its own, but together they do, even over more than one turn."
-          />
-          {crt && (
-            <>
-              <p className="text-sm text-muted-foreground">
-                {yams
-                  ? "The code solves for the angle with YAMS's EasyCRT."
-                  : "The code solves for the angle with the Chinese Remainder Theorem, adapted from FRC Team 8114's 2026 turret."}{" "}
-                Both pinions mesh with one shared gear. Their tooth counts must be coprime (no common factor), or the
-                readings repeat sooner.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                The code logs each encoder&apos;s reading as CRT/EncoderA and CRT/EncoderB, and the angle they agree on
-                as CRT/Angle. With the turret at 0°, the readings are the offsets. CRT/Angle should follow the
-                turret while it is still. If it does not, check that both readings go up as the turret turns positive.
-              </p>
-              <NumberField
-                form={form}
-                name="turretParams.sharedGearTeeth"
-                label="Shared Gear Teeth"
-                description="Teeth on the gear both encoder pinions mesh with."
-                issue={issues("turretParams.sharedGearTeeth")}
-              />
-              <NumberField
-                form={form}
-                name="turretParams.sharedGearRatio"
-                label="Shared Gear Rotations per Turret Rotation"
-                step="0.01"
-                description="1 when the pinions mesh with the turret gear itself."
-                issue={issues("turretParams.sharedGearRatio")}
-              />
-              <div className="space-y-4">
-                <CrtEncoderFields form={form} which="encoderA" values={values} />
-                <CrtEncoderFields form={form} which="encoderB" values={values} />
-              </div>
-              {ready && a !== b && gcd(a!, b!) === 1 && (
-                <p className="text-sm text-muted-foreground">
-                  {a} and {b} teeth are coprime. Together they tell {turretRange.toFixed(0)}° of turret travel apart, and
-                  the hard limits need {travel.max - travel.min}°.
-                </p>
-              )}
-            </>
-          )}
-        </div>
-      </AccordionContent>
-    </AccordionItem>
+    <>
+      <p className="text-sm text-muted-foreground">
+        {yams
+          ? "The code solves for the angle with YAMS's EasyCRT."
+          : "The code solves for the angle with the Chinese Remainder Theorem, adapted from FRC Team 8114's 2026 turret."}{" "}
+        Both pinions mesh with one shared gear. Their tooth counts must be coprime (no common factor), or the readings
+        repeat sooner.
+      </p>
+      <p className="text-sm text-muted-foreground">
+        The code logs each encoder&apos;s reading as CRT/EncoderA and CRT/EncoderB, and the angle they agree on as
+        CRT/Angle. With the turret at 0°, the readings are the offsets. CRT/Angle should follow the turret while it is
+        still. If it does not, check that both readings go up as the turret turns positive.
+      </p>
+      <NumberField
+        form={form}
+        name="turretParams.sharedGearTeeth"
+        label="Shared Gear Teeth"
+        description="Teeth on the gear both encoder pinions mesh with."
+        issue={issues("turretParams.sharedGearTeeth")}
+      />
+      <NumberField
+        form={form}
+        name="turretParams.sharedGearRatio"
+        label="Shared Gear Rotations per Turret Rotation"
+        step="0.01"
+        description="1 when the pinions mesh with the turret gear itself."
+        issue={issues("turretParams.sharedGearRatio")}
+      />
+      <div className="space-y-4">
+        <CrtEncoderFields form={form} which="encoderA" values={values} />
+        <CrtEncoderFields form={form} which="encoderB" values={values} />
+      </div>
+      {ready && a !== b && gcd(a!, b!) === 1 && (
+        <p className="text-sm text-muted-foreground">
+          {a} and {b} teeth are coprime. Together they tell {turretRange.toFixed(0)}° of turret travel apart, and the
+          hard limits need {travel.max - travel.min}°.
+        </p>
+      )}
+    </>
   )
 }
