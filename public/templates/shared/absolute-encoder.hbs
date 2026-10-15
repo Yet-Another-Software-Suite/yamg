@@ -115,7 +115,7 @@ import org.wpilib.telemetry.Telemetry;
 {{#if absoluteNative}}
       // The {{encoderDisplayName}} {{encoderWhere}} tells the motor controller where the
       // {{mechanismNoun}} is, and is the closed loop's feedback.
-      // YAMS publishes what it reads as {{className}}Motor/external/mechanism/position. Set the zero
+      // YAMS publishes what it reads as {{className}}Motor/externalencoder/mechanism/position. Set the zero
       // offset to 0, move the {{mechanismNoun}} to zero, and use that reading as the offset. If it goes
       // the opposite way to the motor's position, invert the encoder.
       .withExternalEncoder({{yamsExternalEncoder}})
