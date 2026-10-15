@@ -293,7 +293,7 @@ export function AbsoluteEncoderSection({ form }: { form: Form }) {
               </p>
               <p className="text-sm text-muted-foreground">
                 {yams && attachesToMotorController(connection, controller)
-                  ? `YAMS publishes the encoder as ${values.subsystemName}Motor/externalencoder/position. With the zero offset at 0, move the ${noun} to 0° and use that as the offset. If it goes the opposite way to the motor's position, turn on Inverted.`
+                  ? `YAMS publishes the encoder as ${values.subsystemName}Motor/external/mechanism/position. With the zero offset at 0, move the ${noun} to 0° and use that as the offset. If it goes the opposite way to the motor's position, turn on Inverted.`
                   : `The code logs the encoder's reading as AbsoluteEncoder/Reading and the angle it gives as AbsoluteEncoder/Angle. Move the ${noun} to 0° and use the reading as the offset. If the angle goes the opposite way to the ${noun}'s angle, turn on Inverted.`}
               </p>
             </>
