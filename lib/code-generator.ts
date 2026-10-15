@@ -262,6 +262,8 @@ interface EncoderDevice {
  * SmartMotorController with withExternalEncoder. An encoder from another vendor, and every encoder
  * in plain vendor code, is read once when the robot turns on, and the motor's encoder is set there
  * with setEncoderPosition. The two CRT encoders are never attached to the SmartMotorController.
+ * YAMS code solves them with EasyCRT, and plain vendor code with a Chinese Remainder Theorem solve
+ * adapted from FRC Team 8114's 2026 turret.
  */
 function encoderTemplateData(data: FormValues) {
   const yams = data.outputType === "yams";
