@@ -1399,6 +1399,24 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
           </AccordionItem>
         )}
       </Accordion>
+
+      <a
+        href="https://yams.yassrobotics.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-6 flex items-center gap-4 rounded-lg border p-4 transition-colors hover:bg-muted/50"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/yams-logo.png`} alt="YAMS logo" width={64} height={47} className="shrink-0" />
+        <div className="space-y-1 text-sm">
+          <p className="font-semibold">Need more? Try YAMS!</p>
+          <p className="text-muted-foreground">
+            YAMS has built-in simulation, including battery simulation of the whole robot, live tuning, telemetry, LQR,
+            exponential profiles, and much more!
+          </p>
+          <p className="text-primary underline underline-offset-4 break-all">https://yams.yassrobotics.com</p>
+        </div>
+      </a>
     </div>
   )
 }
