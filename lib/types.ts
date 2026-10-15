@@ -8,6 +8,8 @@ export interface FormValues {
   motorControllerType: "ThriftyNova" | "SparkMAX" | "SparkFlex" | "TalonFX" | "TalonFXS" 
   motorType: "NEO" | "NEO550" | "Minion" | "Krakenx44" | "Krakenx60" | "Vortex"
   canId: number
+  /** The SystemCore CAN bus the motor controller is on: 0 to 4, for CAN_S0 to CAN_S4. */
+  canBus?: number
   pidValues: {
     kP: number
     kI: number
@@ -104,6 +106,8 @@ export interface AbsoluteEncoderParams {
   port?: "dataPort" | "candi" | "smartIo"
   /** The CANcoder's or the CANdi's CAN ID. */
   canId?: number
+  /** The SystemCore CAN bus the CANcoder or the CANdi is on. */
+  canBus?: number
   /** The SystemCore Smart IO channel of a duty cycle encoder. */
   channel?: number
   /** What the encoder reads, in degrees, with the mechanism at zero. */
@@ -118,6 +122,7 @@ export interface AbsoluteEncoderParams {
 export interface CrtEncoderParams {
   type?: "CANcoder" | "ThroughBore" | "DutyCycle"
   canId?: number
+  canBus?: number
   channel?: number
   /** Teeth on the pinion the encoder is on. */
   pinionTeeth?: number

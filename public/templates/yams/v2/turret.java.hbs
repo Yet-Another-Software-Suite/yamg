@@ -124,6 +124,7 @@ public class {{className}} extends SubsystemBase {
   public void periodic() {
     // Publishes the turret's telemetry, and applies anything changed through live tuning.
     turret.updateTelemetry();
+{{> encoderTelemetry}}
   }
 
   @Override

@@ -13,7 +13,7 @@ import static org.wpilib.units.Units.RotationsPerSecondPerSecond;
 {{/inline}}
 {{#*inline "fields"}}
   // The Talon FXS, and the requests that control it.
-  private final TalonFXS motor = new TalonFXS(CAN_ID, new CANBus(CANPort.CAN_S0));
+  private final TalonFXS motor = new TalonFXS(CAN_ID, new CANBus(CANPort.{{canPort}}));
 {{#if velocityControl}}
   private final VelocityVoltage velocityRequest = new VelocityVoltage(0);
 {{else}}

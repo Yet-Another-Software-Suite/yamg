@@ -20,7 +20,7 @@ import {
 import ReCalcIntegration from "./recalc-integration"
 import { renameForMechanism } from "@/lib/mechanism-name"
 import { takesAbsoluteEncoder } from "@/lib/absolute-encoder"
-import { AbsoluteEncoderSection, TurretCrtSection } from "./absolute-encoder-form"
+import { AbsoluteEncoderSection, CanBusField, TurretCrtSection } from "./absolute-encoder-form"
 
 export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
   const mechanismType = form.watch("mechanismType")
@@ -259,19 +259,22 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="canId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>CAN ID</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} onChange={(e) => handleNumberChange(e, field.onChange)} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="canId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CAN ID</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} onChange={(e) => handleNumberChange(e, field.onChange)} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <CanBusField form={form} name="canBus" />
+              </div>
 
               <FormField
                 control={form.control}

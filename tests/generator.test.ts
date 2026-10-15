@@ -30,14 +30,14 @@ function absoluteEncoder(
     // A duty cycle encoder on the SystemCore for a Talon FX, and a CANcoder for the rest.
     return motorControllerType === "TalonFX"
       ? { type: "DutyCycle", port: "smartIo", channel: 2, offset: 90, ratio: 2 }
-      : { type: "CANcoder", canId: 20, offset: 33.25, inverted: true, ratio: 1 };
+      : { type: "CANcoder", canId: 20, canBus: 2, offset: 33.25, inverted: true, ratio: 1 };
   }
   if (!everything) return { type: "none" };
   const byController: Record<FormValues["motorControllerType"], FormValues["absoluteEncoder"]> = {
     SparkMAX: { type: "Thrifty10Pin", offset: 12.5, ratio: 1 },
     SparkFlex: { type: "ThroughBore", port: "dataPort", offset: 200, inverted: true, ratio: 1 },
-    TalonFX: { type: "CANcoder", canId: 20, offset: -45, ratio: 1 },
-    TalonFXS: { type: "ThroughBore", port: "candi", canId: 23, offset: 90, inverted: true, ratio: 1 },
+    TalonFX: { type: "CANcoder", canId: 20, canBus: 1, offset: -45, ratio: 1 },
+    TalonFXS: { type: "ThroughBore", port: "candi", canId: 23, canBus: 1, offset: 90, inverted: true, ratio: 1 },
     ThriftyNova: { type: "ThroughBore", port: "dataPort", offset: 10, ratio: 1 },
   };
   return byController[motorControllerType];
@@ -62,6 +62,8 @@ function form(
     motorControllerType,
     motorType: motor,
     canId: 3,
+    // With every option on, the devices are on other CAN buses.
+    canBus: everything ? 1 : 0,
     pidValues: { kP: 2, kI: 0, kD: 0.1 },
     maxVelocity: 2,
     maxAcceleration: 4,
@@ -102,7 +104,7 @@ function form(
       crt: mechanismType === "Turret" && everything && logger === "telemetry",
       sharedGearTeeth: 100,
       sharedGearRatio: 1,
-      encoderA: { type: "CANcoder", canId: 21, pinionTeeth: 19, offset: 15, inverted: true },
+      encoderA: { type: "CANcoder", canId: 21, canBus: 3, pinionTeeth: 19, offset: 15, inverted: true },
       encoderB: { type: "ThroughBore", channel: 1, pinionTeeth: 21, offset: 300, inverted: true },
     },
   };
@@ -177,9 +179,13 @@ describe("generateFiles", () => {
     expect(telemetry.content).not.toContain("@Logged");
   });
 
-  it("leaves telemetry to YAMS when YAMS is used", async () => {
+  it("leaves telemetry to YAMS when YAMS is used, but for encoders the code reads itself", async () => {
     const [yams] = await generateFiles(form("Arm", "SparkMAX", "yams", "v2", true, "epilogue"));
-    expect(yams.content).not.toMatch(/@Logged|Telemetry\.log/);
+    expect(yams.content).not.toContain("@Logged");
+    expect(yams.content.match(/Telemetry\.log\("[^"]*"/g)).toEqual([
+      'Telemetry.log("ArmSparkMAXEpilogue/AbsoluteEncoder/Reading"',
+      'Telemetry.log("ArmSparkMAXEpilogue/AbsoluteEncoder/Angle"',
+    ]);
     expect(yams.content).toContain('.withTelemetry("ArmSparkMAXEpilogue", TelemetryVerbosity.HIGH)');
   });
 
@@ -224,12 +230,20 @@ describe("generateFiles", () => {
     // Encoders from another vendor are read at startup, and given to setEncoderPosition.
     const [dutyCycle] = await generateFiles(form("Pivot", "TalonFX", "yams", "v2", true, "epilogue"));
     expect(dutyCycle.content).toContain("new DutyCycleEncoder(2)");
-    expect(dutyCycle.content).toContain("motor.setEncoderPosition(getAbsoluteAngle());");
+    expect(dutyCycle.content).toContain("motor.setEncoderPosition(getAbsoluteAngle(Rotations.of(absoluteEncoder.get())));");
     expect(dutyCycle.content).not.toContain("withExternalEncoder");
     const [sparkCancoder] = await generateFiles(form("Arm", "SparkMAX", "yams", "v2", true, "epilogue"));
-    expect(sparkCancoder.content).toContain("motor.setEncoderPosition(getAbsoluteAngle());");
+    expect(sparkCancoder.content).toContain(
+      "motor.setEncoderPosition(getAbsoluteAngle(cancoder.getAbsolutePosition().waitForUpdate(0.25).getValue()));",
+    );
+    // Its reading is logged every loop, without waiting, to find the offset and the inversion.
+    expect(sparkCancoder.content).toContain("return cancoder.getAbsolutePosition().refresh().getValue();");
+    expect(sparkCancoder.content).toContain('Telemetry.log("ArmSparkMAXEpilogue/AbsoluteEncoder/Reading", getAbsoluteEncoderReading());');
     const [vendor] = await generateFiles(form("Arm", "SparkMAX", "vendor", "v2", true));
-    expect(vendor.content).toContain("setEncoderPosition(getAbsoluteAngle());");
+    expect(vendor.content).toContain("setEncoderPosition(getAbsoluteAngle(Rotations.of(motor.getAbsoluteEncoder().getPosition().get())));");
+    expect(vendor.content).toContain('Telemetry.log("ArmSparkMAXAll/AbsoluteEncoder/Angle", getAbsoluteEncoderAngle());');
+    const [epilogue] = await generateFiles(form("Arm", "SparkMAX", "vendor", "v2", true, "epilogue"));
+    expect(epilogue.content).toContain('@Logged(name = "AbsoluteEncoder/Reading")');
     expect(vendor.content).toContain("dataPortConfig.absoluteEncoder.setSparkMaxDataPortConfig();");
   });
 
@@ -237,6 +251,7 @@ describe("generateFiles", () => {
     const [yams] = await generateFiles(form("Turret", "SparkMAX", "yams", "v2", true));
     expect(yams.content).toContain("new EasyCRT(100, 19, 21)");
     expect(yams.content).toContain("crt.solve(encoderA, encoderB, sharedGearMin, sharedGearMax)");
+    expect(yams.content).toContain('Telemetry.log("TurretSparkMAXAll/CRT/EncoderA", getCrtEncoderAReading());');
     const [vendor] = await generateFiles(form("Turret", "TalonFX", "vendor", "v3", true));
     expect(vendor.content).not.toMatch(/new EasyCRT|import yams/);
     expect(vendor.content).toContain("solveCrt(encoderA, encoderB, sharedGearMin, sharedGearMax)");
@@ -278,6 +293,23 @@ describe("generateFiles", () => {
     expect(absoluteEncoderIssues(geared).map((issue) => issue.path.join("."))).toEqual(["absoluteEncoder.ratio"]);
     const thrifty = { ...pivot, absoluteEncoder: { type: "Thrifty10Pin" as const, ratio: 1 } };
     expect(absoluteEncoderIssues(thrifty).map((issue) => issue.path.join("."))).toEqual(["absoluteEncoder.type"]);
+  });
+
+  it("puts each CAN device on its CAN bus, and a Talon's own encoder on the Talon's bus", async () => {
+    const [talon] = await generateFiles(form("Pivot", "TalonFX", "yams", "v2", true));
+    expect(talon.content).toContain("new TalonFX(3, new CANBus(CANPort.CAN_S1))");
+    expect(talon.content).toContain("new CANcoder(20, new CANBus(CANPort.CAN_S1))");
+    const [nova] = await generateFiles(form("Arm", "ThriftyNova", "vendor", "v2", true));
+    expect(nova.content).toContain("new Nova(1, CAN_ID,");
+    const [turret] = await generateFiles(form("Turret", "SparkMAX", "vendor", "v2", true));
+    expect(turret.content).toContain("new CANcoder(21, new CANBus(CANPort.CAN_S3))");
+
+    const pivot = form("Pivot", "TalonFX", "yams", "v2", true);
+    const otherBus = { ...pivot, absoluteEncoder: { ...pivot.absoluteEncoder, canBus: 2 } };
+    expect(absoluteEncoderIssues(otherBus).map((issue) => issue.path.join("."))).toEqual(["absoluteEncoder.canBus"]);
+    // The same CAN ID is fine on another bus, for an encoder the Talon does not read itself.
+    const sameId = { ...otherBus, outputType: "vendor" as const, absoluteEncoder: { ...otherBus.absoluteEncoder, canId: 3 } };
+    expect(absoluteEncoderIssues(sameId)).toEqual([]);
   });
 
   it("uses one template per output, Commands version and mechanism", () => {

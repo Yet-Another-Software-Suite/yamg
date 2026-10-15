@@ -130,6 +130,7 @@ public class {{className}} implements Mechanism {
   public void periodic() {
     // Publishes the pivot's telemetry, and applies anything changed through live tuning.
     pivot.updateTelemetry();
+{{> encoderTelemetry}}
   }
 
   /** Call this from Robot.simulationPeriodic(). */

@@ -102,6 +102,39 @@ function SwitchField({ form, name, label, description }: { form: Form; name: str
   )
 }
 
+/** The SystemCore's CAN buses. */
+const CAN_BUSES = [0, 1, 2, 3, 4]
+
+/** Which SystemCore CAN bus a device is on. */
+export function CanBusField({ form, name, issue }: { form: Form; name: string; issue?: string }) {
+  return (
+    <FormField
+      control={form.control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>CAN Bus</FormLabel>
+          <Select onValueChange={(value) => field.onChange(Number(value))} value={String(field.value ?? 0)}>
+            <FormControl>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+            </FormControl>
+            <SelectContent>
+              {CAN_BUSES.map((bus) => (
+                <SelectItem key={bus} value={String(bus)}>
+                  CAN_S{bus}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Issue message={issue} />
+        </FormItem>
+      )}
+    />
+  )
+}
+
 /** The CAN ID or Smart IO channel an encoder is on. */
 function ConnectionField({
   form,
@@ -116,13 +149,16 @@ function ConnectionField({
 }) {
   if (connection === "can" || connection === "candi") {
     return (
-      <NumberField
-        form={form}
-        name={`${prefix}.canId`}
-        label={connection === "can" ? "CANcoder CAN ID" : "CANdi CAN ID"}
-        description={connection === "candi" ? "The encoder plugs into the CANdi's PWM1 input." : undefined}
-        issue={issues(`${prefix}.canId`)}
-      />
+      <div className="grid grid-cols-2 gap-4">
+        <NumberField
+          form={form}
+          name={`${prefix}.canId`}
+          label={connection === "can" ? "CANcoder CAN ID" : "CANdi CAN ID"}
+          description={connection === "candi" ? "The encoder plugs into the CANdi's PWM1 input." : undefined}
+          issue={issues(`${prefix}.canId`)}
+        />
+        <CanBusField form={form} name={`${prefix}.canBus`} issue={issues(`${prefix}.canBus`)} />
+      </div>
     )
   }
   if (connection === "smartIo") {
@@ -255,6 +291,11 @@ export function AbsoluteEncoderSection({ form }: { form: Form }) {
                     ? `The ${controllerName} reads this encoder itself, so YAMS gives it to the SmartMotorController with withExternalEncoder.`
                     : `This encoder is not one the ${controllerName} reads itself, so the code reads it when the robot turns on and gives the angle to setEncoderPosition.`}
               </p>
+              <p className="text-sm text-muted-foreground">
+                {yams && attachesToMotorController(connection, controller)
+                  ? `YAMS publishes the encoder as ${values.subsystemName}Motor/externalencoder/position. With the zero offset at 0, move the ${noun} to 0° and use that as the offset. If it goes the opposite way to the motor's position, turn on Inverted.`
+                  : `The code logs the encoder's reading as AbsoluteEncoder/Reading and the angle it gives as AbsoluteEncoder/Angle. Move the ${noun} to 0° and use the reading as the offset. If the angle goes the opposite way to the ${noun}'s angle, turn on Inverted.`}
+              </p>
             </>
           )}
         </div>
@@ -352,6 +393,11 @@ export function TurretCrtSection({ form }: { form: Form }) {
                   : "The code solves for the angle with the Chinese Remainder Theorem, adapted from FRC Team 8114's 2026 turret."}{" "}
                 Both pinions mesh with one shared gear. Their tooth counts must be coprime (no common factor), or the
                 readings repeat sooner.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                The code logs each encoder&apos;s reading as CRT/EncoderA and CRT/EncoderB, and the angle they agree on
+                as CRT/Angle. With the turret at 0°, the readings are the offsets. CRT/Angle should follow the
+                turret while it is still. If it does not, check that both readings go up as the turret turns positive.
               </p>
               <NumberField
                 form={form}

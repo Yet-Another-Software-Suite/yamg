@@ -5,8 +5,8 @@ import org.wpilib.hardware.bus.CANPort;
 import yams.core.motorcontrollers.remote.TalonFXWrapper;
 {{/inline}}
 {{#*inline "device"}}
-  // The vendor motor controller object: a Talon FX with CAN ID {{canId}}.
-  private final TalonFX talon = new TalonFX({{canId}}, new CANBus(CANPort.CAN_S0));
+  // The vendor motor controller object: a Talon FX with CAN ID {{canId}} on CAN bus {{canPort}}.
+  private final TalonFX talon = new TalonFX({{canId}}, new CANBus(CANPort.{{canPort}}));
 {{/inline}}
 {{#*inline "fields"}}
   // The SmartMotorController applies the config to the Talon FX, which drives one {{motorDisplayName}}.

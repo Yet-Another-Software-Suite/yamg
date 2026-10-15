@@ -117,6 +117,11 @@ export interface EncoderIssue {
   message: string;
 }
 
+/** True when two CAN devices have the same CAN ID on the same CAN bus. */
+function sameCan(a: { canId?: number; canBus?: number }, b: { canId?: number; canBus?: number }): boolean {
+  return (a.canId ?? 0) === (b.canId ?? 0) && (a.canBus ?? 0) === (b.canBus ?? 0);
+}
+
 const isWhole = (value: number | undefined): value is number => value !== undefined && Number.isInteger(value) && value > 0;
 
 /** Problems with the absolute encoder or CRT settings, each with the form field it belongs to. */
@@ -135,10 +140,23 @@ export function absoluteEncoderIssues(data: FormValues): EncoderIssue[] {
         message: "The Thrifty 10-Pin Magnetic Encoder plugs into a SPARK MAX's or a Thrifty Nova's data port.",
       });
     }
-    if ((connection === "can" || connection === "candi") && (encoder.canId ?? 0) === data.canId) {
+    const device = connection === "can" ? "CANcoder" : "CANdi";
+    if ((connection === "can" || connection === "candi") && sameCan(encoder, data)) {
       issues.push({
         path: ["absoluteEncoder", "canId"],
-        message: `The ${connection === "can" ? "CANcoder" : "CANdi"} needs its own CAN ID, not the motor controller's.`,
+        message: `The ${device} needs its own CAN ID, not the motor controller's, or another CAN bus.`,
+      });
+    }
+    if (
+      data.outputType === "yams" &&
+      attachesToMotorController(connection, data.motorControllerType) &&
+      (connection === "can" || connection === "candi") &&
+      (encoder.canBus ?? 0) !== (data.canBus ?? 0)
+    ) {
+      // A Talon only reads a remote sensor on its own CAN bus.
+      issues.push({
+        path: ["absoluteEncoder", "canBus"],
+        message: `The Talon reads the ${device} itself, so it has to be on the Talon's CAN bus (CAN_S${data.canBus ?? 0}).`,
       });
     }
     if (connection === "smartIo" && !(Number.isInteger(encoder.channel) && encoder.channel! >= 0 && encoder.channel! < SMART_IO_CHANNELS)) {
@@ -180,7 +198,7 @@ export function absoluteEncoderIssues(data: FormValues): EncoderIssue[] {
         issues.push({ path: ["turretParams", key, "pinionTeeth"], message: "Enter the pinion's tooth count." });
       }
       const connection = encoderConnection(encoder.type ?? "CANcoder", "smartIo", data.motorControllerType);
-      if (connection === "can" && (encoder.canId ?? 0) === data.canId) {
+      if (connection === "can" && sameCan(encoder, data)) {
         issues.push({ path: ["turretParams", key, "canId"], message: "The CANcoder needs its own CAN ID, not the motor controller's." });
       }
       if (connection === "smartIo" && !(Number.isInteger(encoder.channel) && encoder.channel! >= 0 && encoder.channel! < SMART_IO_CHANNELS)) {
@@ -189,8 +207,8 @@ export function absoluteEncoderIssues(data: FormValues): EncoderIssue[] {
     }
     const aConnection = encoderConnection(a.type ?? "CANcoder", "smartIo", data.motorControllerType);
     const bConnection = encoderConnection(b.type ?? "CANcoder", "smartIo", data.motorControllerType);
-    if (aConnection === bConnection && aConnection === "can" && a.canId === b.canId) {
-      issues.push({ path: ["turretParams", "encoderB", "canId"], message: "The two CANcoders need different CAN IDs." });
+    if (aConnection === bConnection && aConnection === "can" && sameCan(a, b)) {
+      issues.push({ path: ["turretParams", "encoderB", "canId"], message: "The two CANcoders need different CAN IDs, or different CAN buses." });
     }
     if (aConnection === bConnection && aConnection === "smartIo" && a.channel === b.channel) {
       issues.push({ path: ["turretParams", "encoderB", "channel"], message: "The two encoders need different Smart IO channels." });

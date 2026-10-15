@@ -142,6 +142,9 @@ export function buildTemplateData(data: FormValues) {
     motorDisplayName: motor.displayName,
     controllerDisplayName: controller.displayName,
     canId: data.canId,
+    // The SystemCore CAN bus: CANPort for most vendors, and its number for a Thrifty Nova.
+    canBus: data.canBus ?? 0,
+    canPort: `CAN_S${data.canBus ?? 0}`,
     dcMotor: getWPILibMotorType(data.motorType),
     gearRatio: num(data.gearRatio, 1),
     brakeMode: data.brakeMode,
@@ -250,6 +253,7 @@ interface EncoderDevice {
   cancoder: boolean;
   candi: boolean;
   canId: number;
+  canPort: string;
   channel: number;
   displayName: string;
 }
@@ -273,22 +277,28 @@ function encoderTemplateData(data: FormValues) {
   const talon = !spark && !nova;
   const systemCoreEncoders: EncoderDevice[] = [];
 
-  /** Add an encoder device field, and return the Java that reads it as an Angle. */
+  /**
+   * Add an encoder device field, and return the Java that reads it as an Angle: once at startup,
+   * waiting for a fresh value, and every loop, without waiting.
+   */
   const systemCoreEncoder = (
     field: string,
     type: string,
     connection: "can" | "candi" | "smartIo",
     canId: number | undefined,
+    canBus: number | undefined,
     channel: number | undefined,
   ) => {
     const cancoder = connection === "can";
     const candi = connection === "candi";
     const displayName = ABSOLUTE_ENCODERS[type as keyof typeof ABSOLUTE_ENCODERS].displayName;
-    systemCoreEncoders.push({ field, cancoder, candi, canId: canId ?? 0, channel: channel ?? 0, displayName });
+    systemCoreEncoders.push({ field, cancoder, candi, canId: canId ?? 0, canPort: `CAN_S${canBus ?? 0}`, channel: channel ?? 0, displayName });
     // A CANcoder or a CANdi can still be booting when the robot program starts, so wait for a fresh reading.
-    if (cancoder) return `${field}.getAbsolutePosition().waitForUpdate(0.25).getValue()`;
-    if (candi) return `${field}.getPWM1Position().waitForUpdate(0.25).getValue()`;
-    return `Rotations.of(${field}.get())`;
+    const signal = cancoder ? `${field}.getAbsolutePosition()` : `${field}.getPWM1Position()`;
+    if (cancoder || candi) {
+      return { startup: `${signal}.waitForUpdate(0.25).getValue()`, live: `${signal}.refresh().getValue()` };
+    }
+    return { startup: `Rotations.of(${field}.get())`, live: `Rotations.of(${field}.get())` };
   };
 
   const shared = () => {
@@ -309,11 +319,12 @@ function encoderTemplateData(data: FormValues) {
   if (usesCrt(data)) {
     const params = data.turretParams!;
     const crtEncoder = (field: string, encoder: NonNullable<typeof params.encoderA>) => ({
-      reading: systemCoreEncoder(
+      ...systemCoreEncoder(
         field,
         encoder.type ?? "CANcoder",
         (encoder.type ?? "CANcoder") === "CANcoder" ? "can" : "smartIo",
         encoder.canId,
+        encoder.canBus,
         encoder.channel,
       ),
       offset: num(encoder.offset, 0),
@@ -350,14 +361,15 @@ function encoderTemplateData(data: FormValues) {
   const offset = encoder.offset ?? 0;
   const native = yams && attachesToMotorController(connection, controller);
 
-  let reading: string;
+  let reading: { startup: string; live: string };
   if (connection === "dataPort") {
-    reading = spark
+    const dataPort = spark
       ? `Rotations.of(${yams ? "spark" : "motor"}.getAbsoluteEncoder().getPosition().get())`
       : `Rotations.of(${yams ? "nova" : "motor"}.status().getAbsPosition())`;
+    reading = { startup: dataPort, live: dataPort };
   } else {
     const field = connection === "can" ? "cancoder" : connection === "candi" ? "candi" : "absoluteEncoder";
-    reading = systemCoreEncoder(field, type, connection, encoder.canId, encoder.channel);
+    reading = systemCoreEncoder(field, type, connection, encoder.canId, encoder.canBus, encoder.channel);
   }
 
   const controllerName = getMotorController(controller).displayName;
@@ -369,13 +381,14 @@ function encoderTemplateData(data: FormValues) {
     encoderDisplayName: ABSOLUTE_ENCODERS[type].displayName,
     encoderWhere:
       connection === "can"
-        ? `with CAN ID ${encoder.canId ?? 0}`
+        ? `with CAN ID ${encoder.canId ?? 0} on CAN bus CAN_S${encoder.canBus ?? 0}`
         : connection === "candi"
-          ? `on the PWM1 input of the CANdi with CAN ID ${encoder.canId ?? 0}`
+          ? `on the PWM1 input of the CANdi with CAN ID ${encoder.canId ?? 0} on CAN bus CAN_S${encoder.canBus ?? 0}`
           : connection === "dataPort"
           ? `on the ${controllerName}'s data port`
           : `on SystemCore Smart IO channel ${encoder.channel ?? 0}`,
-    encoderReading: reading,
+    encoderReading: reading.startup,
+    encoderLiveReading: reading.live,
     encoderOffset: num(offset, 0),
     encoderInverted: encoder.inverted ?? false,
     encoderRatio: num(ratio, 1),

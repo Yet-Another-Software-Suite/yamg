@@ -5,8 +5,8 @@ import com.thrifty.nova.NovaConfig;
 import org.wpilib.math.controller.PIDController;
 {{/inline}}
 {{#*inline "fields"}}
-  // The Thrifty Nova on CAN bus 0.
-  private final Nova motor = new Nova(0, CAN_ID, MotorType.{{thriftyMotorType}});
+  // The Thrifty Nova on CAN bus {{canBus}}.
+  private final Nova motor = new Nova({{canBus}}, CAN_ID, MotorType.{{thriftyMotorType}});
   // The closed loop runs here, on the SystemCore, in volts per {{gainUnit}}.
   private final PIDController pid = new PIDController(KP, KI, KD);
   // The last voltage given to the Nova, which the simulation uses.

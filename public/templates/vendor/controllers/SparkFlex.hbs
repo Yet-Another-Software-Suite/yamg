@@ -20,7 +20,7 @@ import static org.wpilib.units.Units.Milliseconds;
 {{/inline}}
 {{#*inline "fields"}}
   // The SPARK Flex, its built-in encoder and its closed loop controller.
-  private final SparkFlex motor = new SparkFlex(CANPort.CAN_S0, CAN_ID, MotorType.kBrushless);
+  private final SparkFlex motor = new SparkFlex(CANPort.{{canPort}}, CAN_ID, MotorType.kBrushless);
   private final RelativeEncoder encoder = motor.getEncoder();
   private final SparkClosedLoopController closedLoop = motor.getClosedLoopController();
 {{/inline}}

@@ -310,6 +310,7 @@ public class {{className}} implements Mechanism {
     Telemetry.log("{{ntKey}}/Temperature", getTemperature());
 {{/if}}
     Telemetry.log("{{ntKey}}/Mechanism", mechanism2d);
+{{> encoderTelemetry}}
 {{/unless}}
   }
 

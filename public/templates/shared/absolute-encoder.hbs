@@ -50,6 +50,9 @@ import yams.core.units.EasyCRT;
 {{#if (and (eq output "yams") (or absoluteEncoder crt))}}
 import static org.wpilib.units.Units.Rotations;
 {{/if}}
+{{#if (and (eq output "yams") absoluteSeed)}}
+import org.wpilib.telemetry.Telemetry;
+{{/if}}
 {{/inline}}
 {{#*inline "encoderFields"}}
 {{#if absoluteEncoder}}
@@ -82,11 +85,11 @@ import static org.wpilib.units.Units.Rotations;
 {{/if}}
 {{#each systemCoreEncoders}}
 {{#if cancoder}}
-  // A {{displayName}} with CAN ID {{canId}}.
-  private final CANcoder {{field}} = new CANcoder({{canId}}, new CANBus(CANPort.CAN_S0));
+  // A {{displayName}} with CAN ID {{canId}} on CAN bus {{canPort}}.
+  private final CANcoder {{field}} = new CANcoder({{canId}}, new CANBus(CANPort.{{canPort}}));
 {{else if candi}}
-  // A CANdi with CAN ID {{canId}}, with a {{displayName}} on its PWM1 input.
-  private final CANdi {{field}} = new CANdi({{canId}}, new CANBus(CANPort.CAN_S0));
+  // A CANdi with CAN ID {{canId}} on CAN bus {{canPort}}, with a {{displayName}} on its PWM1 input.
+  private final CANdi {{field}} = new CANdi({{canId}}, new CANBus(CANPort.{{canPort}}));
 {{else}}
   // A {{displayName}} on SystemCore Smart IO channel {{channel}}. It reads 0 to 1 rotation.
   private final DutyCycleEncoder {{field}} = new DutyCycleEncoder({{channel}});
@@ -112,6 +115,9 @@ import static org.wpilib.units.Units.Rotations;
 {{#if absoluteNative}}
       // The {{encoderDisplayName}} {{encoderWhere}} tells the motor controller where the
       // {{mechanismNoun}} is, and is the closed loop's feedback.
+      // YAMS publishes what it reads as {{className}}Motor/externalencoder/position. Set the zero
+      // offset to 0, move the {{mechanismNoun}} to zero, and use that reading as the offset. If it goes
+      // the opposite way to the motor's position, invert the encoder.
       .withExternalEncoder({{yamsExternalEncoder}})
       .withUseExternalFeedbackEncoder(true)
       .withExternalEncoderInverted({{encoderInverted}})
@@ -142,13 +148,13 @@ import static org.wpilib.units.Units.Rotations;
 {{#if crt}}
       // Start the motor's encoder at the angle the two encoders agree on. Simulation has no
       // encoders, so there the turret starts at its starting position.
-      Optional<Angle> crtAngle = getCrtAngle();
+      Optional<Angle> crtAngle = getCrtAngle({{crtA.startup}}, {{crtB.startup}});
       crtAngle.ifPresent(angle -> {{seedCall}}(angle));
       crtAlert.set(crtAngle.isEmpty());
 {{else}}
       // Start the motor's encoder where the absolute encoder says the {{mechanismNoun}} is.
       // Simulation has no encoder, so there it starts at its starting position.
-      {{seedCall}}(getAbsoluteAngle());
+      {{seedCall}}(getAbsoluteAngle({{encoderReading}}));
 {{/if}}
     }
 {{/if}}
@@ -161,13 +167,35 @@ import static org.wpilib.units.Units.Rotations;
    * within one of its own turns, so this is the angle within half an encoder turn of the middle of
    * the travel.
    */
-  private Angle getAbsoluteAngle() {
+  private Angle getAbsoluteAngle(Angle reading) {
     // How far the encoder has turned from where it reads with the {{mechanismNoun}} at zero.
-    Angle fromZero = {{#if encoderInverted}}ABSOLUTE_ENCODER_OFFSET.minus({{encoderReading}}){{else}}{{encoderReading}}.minus(ABSOLUTE_ENCODER_OFFSET){{/if}};
+    Angle fromZero = {{#if encoderInverted}}ABSOLUTE_ENCODER_OFFSET.minus(reading){{else}}reading.minus(ABSOLUTE_ENCODER_OFFSET){{/if}};
     // How far that is from the middle of the travel, as an encoder angle from -0.5 to 0.5 rotations.
     double fromMiddle = MathUtil.inputModulus(
         fromZero.minus(ABSOLUTE_TRAVEL_MIDDLE.times(ABSOLUTE_ENCODER_RATIO)).in(Rotations), -0.5, 0.5);
     return ABSOLUTE_TRAVEL_MIDDLE.plus(Rotations.of(fromMiddle).div(ABSOLUTE_ENCODER_RATIO));
+  }
+
+  /**
+   * What the absolute encoder reads, before the offset and inversion. Move the {{mechanismNoun}} to
+   * zero, and this is the offset.
+   */
+{{#if useEpilogue}}
+  @Logged(name = "AbsoluteEncoder/Reading")
+{{/if}}
+  public Angle getAbsoluteEncoderReading() {
+    return {{encoderLiveReading}};
+  }
+
+  /**
+   * Where the absolute encoder says the {{mechanismNoun}} is. It should follow the {{mechanismNoun}}'s
+   * angle. If it goes the opposite way, the encoder needs inverting.
+   */
+{{#if useEpilogue}}
+  @Logged(name = "AbsoluteEncoder/Angle")
+{{/if}}
+  public Angle getAbsoluteEncoderAngle() {
+    return getAbsoluteAngle(getAbsoluteEncoderReading());
   }
 {{/unless}}
 {{/if}}
@@ -176,10 +204,10 @@ import static org.wpilib.units.Units.Rotations;
    * Where the two encoders say the turret is, or empty if they do not agree on one angle. Read it
    * while the turret is still, since the two encoders are read one after the other.
    */
-  private Optional<Angle> getCrtAngle() {
+  private Optional<Angle> getCrtAngle(Angle readingA, Angle readingB) {
     // Each reading from where it is with the turret at zero, counting up as the turret turns positive.
-    Angle encoderA = {{#if crtA.inverted}}CRT_ENCODER_A_OFFSET.minus({{crtA.reading}}){{else}}{{crtA.reading}}.minus(CRT_ENCODER_A_OFFSET){{/if}};
-    Angle encoderB = {{#if crtB.inverted}}CRT_ENCODER_B_OFFSET.minus({{crtB.reading}}){{else}}{{crtB.reading}}.minus(CRT_ENCODER_B_OFFSET){{/if}};
+    Angle encoderA = {{#if crtA.inverted}}CRT_ENCODER_A_OFFSET.minus(readingA){{else}}readingA.minus(CRT_ENCODER_A_OFFSET){{/if}};
+    Angle encoderB = {{#if crtB.inverted}}CRT_ENCODER_B_OFFSET.minus(readingB){{else}}readingB.minus(CRT_ENCODER_B_OFFSET){{/if}};
     // The pinions mesh with the {{sharedGearTeeth}} tooth gear, so the solve is for its angle, over its travel.
     Angle sharedGearMin = Degrees.of({{hardLimitMin}}).times(SHARED_GEAR_RATIO);
     Angle sharedGearMax = Degrees.of({{hardLimitMax}}).times(SHARED_GEAR_RATIO);
@@ -190,6 +218,34 @@ import static org.wpilib.units.Units.Rotations;
     return solveCrt(encoderA, encoderB, sharedGearMin, sharedGearMax)
         .map(sharedGearAngle -> sharedGearAngle.div(SHARED_GEAR_RATIO));
 {{/if}}
+  }
+
+  /** What encoder A reads, before the offset and inversion. With the turret at zero, this is its offset. */
+{{#if useEpilogue}}
+  @Logged(name = "CRT/EncoderA")
+{{/if}}
+  public Angle getCrtEncoderAReading() {
+    return {{crtA.live}};
+  }
+
+  /** What encoder B reads, before the offset and inversion. With the turret at zero, this is its offset. */
+{{#if useEpilogue}}
+  @Logged(name = "CRT/EncoderB")
+{{/if}}
+  public Angle getCrtEncoderBReading() {
+    return {{crtB.live}};
+  }
+
+  /**
+   * Where the two encoders say the turret is, or NaN degrees if they do not agree. It should follow
+   * the turret's angle while the turret is still. Each encoder's reading should go up as the turret
+   * turns positive once it is inverted, or it needs inverting the other way.
+   */
+{{#if useEpilogue}}
+  @Logged(name = "CRT/Angle")
+{{/if}}
+  public Angle getCrtTurretAngle() {
+    return getCrtAngle(getCrtEncoderAReading(), getCrtEncoderBReading()).orElse(Degrees.of(Double.NaN));
   }
 {{#unless (eq output "yams")}}
 
@@ -265,6 +321,22 @@ import static org.wpilib.units.Units.Rotations;
   private void setEncoderPosition(Angle mechanismPosition) {
 {{> setEncoderPosition}}
   }
+{{/if}}
+{{/unless}}
+{{/inline}}
+{{#*inline "encoderTelemetry"}}
+{{#unless useEpilogue}}
+{{#if absoluteSeed}}
+{{#if crt}}
+    // The CRT encoders' readings set their offsets, and the solved angle shows whether they agree.
+    Telemetry.log("{{ntKey}}/CRT/EncoderA", getCrtEncoderAReading());
+    Telemetry.log("{{ntKey}}/CRT/EncoderB", getCrtEncoderBReading());
+    Telemetry.log("{{ntKey}}/CRT/Angle", getCrtTurretAngle());
+{{else}}
+    // The encoder's reading sets its offset, and its angle shows whether it needs inverting.
+    Telemetry.log("{{ntKey}}/AbsoluteEncoder/Reading", getAbsoluteEncoderReading());
+    Telemetry.log("{{ntKey}}/AbsoluteEncoder/Angle", getAbsoluteEncoderAngle());
+{{/if}}
 {{/if}}
 {{/unless}}
 {{/inline}}

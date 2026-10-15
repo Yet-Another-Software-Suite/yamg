@@ -292,6 +292,7 @@ public class {{className}} extends SubsystemBase {
     Telemetry.log("{{ntKey}}/Temperature", getTemperature());
 {{/if}}
     Telemetry.log("{{ntKey}}/Mechanism", mechanism2d);
+{{> encoderTelemetry}}
 {{/unless}}
   }
 

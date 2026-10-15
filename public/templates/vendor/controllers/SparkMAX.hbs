@@ -20,7 +20,7 @@ import static org.wpilib.units.Units.Milliseconds;
 {{/inline}}
 {{#*inline "fields"}}
   // The SPARK MAX, its built-in encoder and its closed loop controller.
-  private final SparkMax motor = new SparkMax(CANPort.CAN_S0, CAN_ID, MotorType.kBrushless);
+  private final SparkMax motor = new SparkMax(CANPort.{{canPort}}, CAN_ID, MotorType.kBrushless);
   private final RelativeEncoder encoder = motor.getEncoder();
   private final SparkClosedLoopController closedLoop = motor.getClosedLoopController();
 {{/inline}}

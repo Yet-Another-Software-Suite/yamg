@@ -8,6 +8,7 @@ import * as z from "zod";
 const crtEncoderSchema = z.object({
   type: z.enum(["CANcoder", "ThroughBore", "DutyCycle"]).optional(),
   canId: z.number().int().min(0).max(62).optional(),
+  canBus: z.number().int().min(0).max(4).optional(),
   channel: z.number().int().min(0).optional(),
   pinionTeeth: z.number().optional(),
   offset: z.number().optional(),
@@ -28,6 +29,7 @@ export const formSchema = z.object({
   ]),
   motorType: z.enum(["NEO", "NEO550", "Minion", "Vortex", "Krakenx44", "Krakenx60"]),
   canId: z.number().int().min(0).max(62),
+  canBus: z.number().int().min(0).max(4).optional(),
   pidValues: z.object({
     kP: z.number().min(0.0),
     kI: z.number().min(0.0),
@@ -110,6 +112,7 @@ export const formSchema = z.object({
       type: z.enum(["none", "CANcoder", "ThroughBore", "Thrifty10Pin", "DutyCycle"]).optional(),
       port: z.enum(["dataPort", "candi", "smartIo"]).optional(),
       canId: z.number().int().min(0).max(62).optional(),
+      canBus: z.number().int().min(0).max(4).optional(),
       channel: z.number().int().min(0).optional(),
       offset: z.number().optional(),
       inverted: z.boolean().optional(),
@@ -138,6 +141,7 @@ export const DEFAULT_VALUES: FormSchema = {
   motorControllerType: "SparkMAX",
   motorType: "NEO",
   canId: 1,
+  canBus: 0,
   pidValues: { kP: 1.0, kI: 0.0, kD: 0.0 },
   maxAcceleration: 1.0,
   maxVelocity: 1.0,
@@ -186,6 +190,7 @@ export const DEFAULT_VALUES: FormSchema = {
     type: "none",
     port: "dataPort",
     canId: 20,
+    canBus: 0,
     channel: 0,
     offset: 0,
     inverted: false,
@@ -195,8 +200,8 @@ export const DEFAULT_VALUES: FormSchema = {
     crt: false,
     sharedGearTeeth: 100,
     sharedGearRatio: 1,
-    encoderA: { type: "CANcoder", canId: 21, channel: 0, pinionTeeth: 19, offset: 0, inverted: true },
-    encoderB: { type: "CANcoder", canId: 22, channel: 1, pinionTeeth: 21, offset: 0, inverted: true },
+    encoderA: { type: "CANcoder", canId: 21, canBus: 0, channel: 0, pinionTeeth: 19, offset: 0, inverted: true },
+    encoderB: { type: "CANcoder", canId: 22, canBus: 0, channel: 1, pinionTeeth: 21, offset: 0, inverted: true },
   },
 };
 
