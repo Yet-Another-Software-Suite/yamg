@@ -10,6 +10,8 @@ export interface ElevatorSimOptions extends ControlsBaseSimOptions {
   minHeight?: number
   maxHeight?: number
   startingHeight?: number
+  /** A level slide, with no gravity to hold against. */
+  level?: boolean
 }
 
 /**
@@ -21,6 +23,7 @@ export class ElevatorSim extends ControlsBaseSim {
   minHeight: number
   maxHeight: number
   startingHeight: number
+  level: boolean
 
   constructor(canvas: HTMLCanvasElement, options: ElevatorSimOptions = {}) {
     super(canvas, options)
@@ -31,13 +34,17 @@ export class ElevatorSim extends ControlsBaseSim {
     this.minHeight = options.minHeight !== undefined ? options.minHeight : 0
     this.maxHeight = options.maxHeight !== undefined ? options.maxHeight : 1.0
     this.startingHeight = options.startingHeight !== undefined ? options.startingHeight : this.minHeight
+    this.level = options.level ?? false
 
     // Initialize position
     this.position = this.startingHeight
 
     // Override kG with calculated gravity compensation
-    this.kG =
-      options.kG !== undefined ? options.kG : (this.mass * 9.81 * this.drumRadius) / (this.motor.kt / this.motor.R)
+    this.kG = this.level
+      ? 0
+      : options.kG !== undefined
+        ? options.kG
+        : (this.mass * 9.81 * this.drumRadius) / (this.motor.kt / this.motor.R)
   }
 
   override updatePhysics(): void {
@@ -51,7 +58,7 @@ export class ElevatorSim extends ControlsBaseSim {
     const motorTorque = this.current * this.motor.kt // N-m
 
     // Calculate gravity torque
-    const gravityTorque = this.mass * 9.81 * this.drumRadius // N-m
+    const gravityTorque = this.level ? 0 : this.mass * 9.81 * this.drumRadius // N-m
 
     // Calculate net torque
     const netTorque = motorTorque - gravityTorque // N-m

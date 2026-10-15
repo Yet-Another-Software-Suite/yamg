@@ -73,6 +73,7 @@ export function createSimulationOptions(
         minHeight: formValues.elevatorParams?.hardLimitMin || 0,
         maxHeight: formValues.elevatorParams?.hardLimitMax || 1.0,
         startingHeight: formValues.elevatorParams?.startingHeight || 0,
+        level: elevatorDrive(formValues.elevatorParams).level,
       }
       return { simType: "ElevatorSim", options: elevatorOptions }
     }

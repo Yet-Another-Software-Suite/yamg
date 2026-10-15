@@ -283,6 +283,39 @@ describe("generateFiles", () => {
     }
   });
 
+  it("gives an elevator a rack and pinion, level or lifting", async () => {
+    for (const level of [true, false]) {
+      for (const output of OUTPUTS) {
+        for (const commandsVersion of ["v2", "v3"] as const) {
+          for (const controller of CONTROLLERS) {
+            const base = form("Elevator", controller, output, commandsVersion, true);
+            const rack = {
+              ...base,
+              subsystemName: `Elevator${controller}${level ? "LevelRack" : "Rack"}`,
+              elevatorParams: { ...base.elevatorParams, rackAndPinion: true, pinionPitchDiameter: 1.5, level },
+            };
+            const [file] = await generateFiles(rack);
+            // A rack and pinion is never a cascade, and moves the pitch circumference per turn.
+            expect(file.content).not.toMatch(/withCascadingElevatorStages|CASCADE_STAGES/);
+            expect(file.content).toContain("Inches.of(1.5).times(Math.PI)");
+            if (output === "yams") {
+              expect(file.content.includes(".withHorizontalElevator()")).toBe(level);
+              expect(file.content).toContain(`new ElevatorFeedforward(0.1, ${level ? "0.0" : "0.3"}, 1.2, 0.0)`);
+            } else {
+              expect(file.content).toContain(`MAX_HEIGHT.in(Meters), ${level ? "false" : "true"}, STARTING_HEIGHT`);
+            }
+            const out = process.env.YAMG_RENDER_DIR;
+            if (out) {
+              const target = path.join(out, `${output}-${commandsVersion}`, file.filename);
+              fs.mkdirSync(path.dirname(target), { recursive: true });
+              fs.writeFileSync(target, file.content);
+            }
+          }
+        }
+      }
+    }
+  });
+
   it("works out the CRT basis: 1 more than a multiple of one pinion, and a multiple of the other", () => {
     for (const [a, b] of [[19, 21], [13, 15], [21, 19], [17, 23]]) {
       const basis = crtBasis(a, b);

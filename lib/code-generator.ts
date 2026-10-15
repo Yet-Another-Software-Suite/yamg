@@ -217,6 +217,7 @@ export function buildTemplateData(data: FormValues) {
       mass: num(kg(p.mass, p.massUnit), 5),
       drumRadius: num(p.drumRadius, 0.0254),
       ...elevatorTemplateData(p),
+      ...(elevatorDrive(p).level ? { kG: num(0, 0) } : {}),
     });
   }
 
@@ -485,7 +486,10 @@ function elevatorTemplateData(params: FormValues["elevatorParams"]) {
     circumferenceJava: drive.circumferenceJava,
     circumferenceUnit: drive.circumferenceUnit,
     driveDescription: drive.description,
-    driveNoun: drive.kind === "chain" ? "sprocket" : drive.kind === "belt" ? "pulley" : "drum",
+    driveNoun: drive.kind === "chain" ? "sprocket" : drive.kind === "belt" ? "pulley" : drive.kind === "rack" ? "pinion" : "drum",
+    rackAndPinion: drive.kind === "rack",
+    // A level slide has no gravity: no kG, and no gravity in the simulation.
+    level: drive.level,
     cascade: drive.stages > 1,
     cascadeStages: drive.stages,
     // YAMS takes a chain or belt as its pitch and teeth, and a drum as its circumference.

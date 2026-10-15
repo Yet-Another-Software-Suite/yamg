@@ -75,6 +75,12 @@ export interface FormValues {
     cascade?: boolean
     /** Moving stages in the cascade, counting the carriage. */
     cascadeStages?: number
+    /** A pinion on the gearbox runs along a toothed rack, in place of a drum, chain or belt. */
+    rackAndPinion?: boolean
+    /** The pinion's pitch diameter, in inches. */
+    pinionPitchDiameter?: number
+    /** A level rack and pinion slide, with no gravity to hold against. */
+    level?: boolean
   }
   flywheelParams?: {
     momentOfInertia?: number

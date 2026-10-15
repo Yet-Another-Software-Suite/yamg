@@ -99,6 +99,9 @@ export const formSchema = z.object({
       sprocketTeeth: z.number().int().positive().optional(),
       cascade: z.boolean().optional(),
       cascadeStages: z.number().int().min(2).max(5).optional(),
+      rackAndPinion: z.boolean().optional(),
+      pinionPitchDiameter: z.number().positive().optional(),
+      level: z.boolean().optional(),
     })
     .optional(),
   flywheelParams: z
@@ -181,6 +184,9 @@ export const DEFAULT_VALUES: FormSchema = {
     sprocketTeeth: 22,
     cascade: false,
     cascadeStages: 2,
+    rackAndPinion: false,
+    pinionPitchDiameter: 1.5,
+    level: true,
   },
   flywheelParams: {
     momentOfInertia: 0.0025,

@@ -7,12 +7,14 @@ export const CHAIN_PITCH_INCHES = { "25": 0.25, "35": 0.375 } as const;
 
 /** How an elevator's drive turns into carriage travel. */
 export interface ElevatorDrive {
-  /** What the gearbox output turns: a drum, a chain sprocket or a belt pulley. */
-  kind: "drum" | "chain" | "belt";
+  /** What the gearbox output turns: a drum, a chain sprocket, a belt pulley or a rack's pinion. */
+  kind: "drum" | "chain" | "belt" | "rack";
   /** How far the chain, belt or rope moves for one turn of the output, in meters. */
   circumferenceMeters: number;
   /** How many times as far the carriage moves as the chain, belt or rope: the cascade stages, or 1. */
   stages: number;
+  /** A level rack and pinion slide, with no gravity to hold against. */
+  level: boolean;
   /** How far the carriage moves for one turn of the output, in meters. */
   travelPerRotationMeters: number;
   /** The drum radius that gives the same travel, for simulations that take a radius. */
@@ -34,8 +36,9 @@ export interface ElevatorDrive {
  */
 export function elevatorDrive(params: ElevatorParams | undefined): ElevatorDrive {
   const p = params ?? {};
-  const kind = p.driveType ?? "drum";
-  const stages = p.cascade ? Math.max(1, Math.round(p.cascadeStages ?? 2)) : 1;
+  const kind = p.rackAndPinion ? "rack" : (p.driveType ?? "drum");
+  // A rack and pinion drives the carriage directly, so it is never a cascade.
+  const stages = p.cascade && kind !== "rack" ? Math.max(1, Math.round(p.cascadeStages ?? 2)) : 1;
   const teeth = Math.max(1, Math.round(p.sprocketTeeth ?? 22));
 
   let circumferenceMeters: number;
@@ -43,7 +46,14 @@ export function elevatorDrive(params: ElevatorParams | undefined): ElevatorDrive
   let circumferenceUnit: ElevatorDrive["circumferenceUnit"];
   let description: string;
   let pitchJava: string | undefined;
-  if (kind === "chain") {
+  if (kind === "rack") {
+    // One turn of the pinion moves the rack its pitch circumference.
+    const diameter = p.pinionPitchDiameter ?? 1.5;
+    circumferenceMeters = Math.PI * diameter * 0.0254;
+    circumferenceJava = `Inches.of(${diameter}).times(Math.PI)`;
+    circumferenceUnit = "Inches";
+    description = `a pinion with a ${diameter} in pitch diameter, times pi`;
+  } else if (kind === "chain") {
     const pitch = p.chainPitch ?? "25";
     const inches = CHAIN_PITCH_INCHES[pitch];
     circumferenceMeters = inches * 0.0254 * teeth;
@@ -69,6 +79,7 @@ export function elevatorDrive(params: ElevatorParams | undefined): ElevatorDrive
   const travelPerRotationMeters = circumferenceMeters * stages;
   return {
     kind,
+    level: kind === "rack" && (p.level ?? true),
     circumferenceMeters,
     stages,
     travelPerRotationMeters,

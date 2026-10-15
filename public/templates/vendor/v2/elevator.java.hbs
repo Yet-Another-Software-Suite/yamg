@@ -56,6 +56,11 @@ import org.wpilib.units.measure.Voltage;
  * YAMG.
  *
  * <p>Heights are the carriage's, from the bottom of its travel.
+{{#if rackAndPinion}}
+ *
+ * <p>A pinion on the gearbox runs along a toothed rack.{{#if level}} The slide is level, so gravity
+ * does not act on it, kG is 0, and the height is how far along the slide the carriage is.{{/if}}
+{{/if}}
 {{#if useEpilogue}}
  *
  * <p>Epilogue logs the getters marked {@code @Logged}. Mark the class that holds this one {@code
@@ -70,7 +75,7 @@ public class {{className}} extends SubsystemBase {
   private static final DCMotor DC_MOTOR = {{{dcMotor}}};
   /** Motor rotations per turn of the {{driveNoun}}. */
   private static final double GEAR_RATIO = {{gearRatio}};
-  /** How far the chain, belt or rope moves for each turn of the {{driveNoun}}: {{driveDescription}}. */
+  /** How far the {{#if rackAndPinion}}rack{{else}}chain, belt or rope{{/if}} moves for each turn of the {{driveNoun}}: {{driveDescription}}. */
   private static final Distance DRIVE_CIRCUMFERENCE = {{circumferenceJava}};
 {{#if cascade}}
   /**
@@ -140,17 +145,25 @@ public class {{className}} extends SubsystemBase {
   // takes a drum radius, so it is given the drum that would move the carriage as far.
   private final ElevatorSim elevatorSim = new ElevatorSim(
       DC_MOTOR, GEAR_RATIO, CARRIAGE_MASS.in(Kilograms), TRAVEL_PER_ROTATION.in(Meters) / (2 * Math.PI),
-      MIN_HEIGHT.in(Meters), MAX_HEIGHT.in(Meters), true, STARTING_HEIGHT.in(Meters));
+      MIN_HEIGHT.in(Meters), MAX_HEIGHT.in(Meters), {{#if level}}false{{else}}true{{/if}}, STARTING_HEIGHT.in(Meters));
 {{> simFields}}
   // The simulated speed last loop, to work out the acceleration.
   private AngularVelocity lastMechanismVelocity = RotationsPerSecond.of(0);
 {{#if useEpilogue}}
   @Logged(name = "Mechanism")
 {{/if}}
+{{#if level}}
+  // The slide is level, so it is drawn flat.
+  private final Mechanism2d mechanism2d = new Mechanism2d(MAX_HEIGHT.in(Meters) + 0.5, 1);
+  private final MechanismLigament2d carriageLigament = mechanism2d
+      .getRoot("Base", 0.25, 0.5)
+      .append(new MechanismLigament2d("Elevator", STARTING_HEIGHT.in(Meters), 0));
+{{else}}
   private final Mechanism2d mechanism2d = new Mechanism2d(1, MAX_HEIGHT.in(Meters) + 0.5);
   private final MechanismLigament2d carriageLigament = mechanism2d
       .getRoot("Base", 0.5, 0)
       .append(new MechanismLigament2d("Elevator", STARTING_HEIGHT.in(Meters), 90));
+{{/if}}
 
   public {{className}}() {
 {{> configure}}
