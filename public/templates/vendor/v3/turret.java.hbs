@@ -129,6 +129,12 @@ public class {{className}} implements Mechanism {
 {{/if}}
   // Where the closed loop is going. Null means the closed loop is off.
   private Angle goal = null;
+{{#if useEpilogue}}
+  // The last goal the closed loop was given, which Epilogue logs. Epilogue cannot log a missing goal,
+  // so while the closed loop is off it keeps the last one, as YAMS's telemetry does.
+  @Logged(name = "Goal")
+  private Angle loggedGoal = STARTING_ANGLE;
+{{/if}}
 
   // The physics simulation of the turret, and a drawing of it for a dashboard.
   private final SingleJointedArmSim turretSim = new SingleJointedArmSim(
@@ -313,7 +319,16 @@ public class {{className}} implements Mechanism {
 {{/unless}}
 
     turretLigament.setAngle(getAngle().in(Degrees));
+{{#if useEpilogue}}
+    if (goal != null) {
+      loggedGoal = goal;
+    }
+{{/if}}
 {{#unless useEpilogue}}
+    // The goal is published only while the closed loop has one, as YAMS's telemetry does.
+    if (goal != null) {
+      Telemetry.log("{{ntKey}}/Goal", goal);
+    }
 {{#if logPosition}}
     Telemetry.log("{{ntKey}}/Angle", getAngle());
 {{/if}}

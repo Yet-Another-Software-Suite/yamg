@@ -90,6 +90,12 @@ public class {{className}} implements Mechanism {
 
   // The speed the closed loop holds. Null means the closed loop is off.
   private AngularVelocity goalVelocity = null;
+{{#if useEpilogue}}
+  // The last goal the closed loop was given, which Epilogue logs. Epilogue cannot log a missing goal,
+  // so while the closed loop is off it keeps the last one, as YAMS's telemetry does.
+  @Logged(name = "Goal")
+  private AngularVelocity loggedGoalVelocity = RPM.of(0);
+{{/if}}
 
   // The physics simulation of the flywheel, and a drawing of it for a dashboard.
   private final FlywheelSim flywheelSim = new FlywheelSim(
@@ -248,7 +254,16 @@ public class {{className}} implements Mechanism {
 
     // Turn the spoke with the flywheel, so that the drawing shows it spinning.
     spokeLigament.setAngle(getMechanismPosition().in(Degrees) % 360);
+{{#if useEpilogue}}
+    if (goalVelocity != null) {
+      loggedGoalVelocity = goalVelocity;
+    }
+{{/if}}
 {{#unless useEpilogue}}
+    // The goal is published only while the closed loop has one, as YAMS's telemetry does.
+    if (goalVelocity != null) {
+      Telemetry.log("{{ntKey}}/Goal", goalVelocity);
+    }
 {{#if logVelocity}}
     Telemetry.log("{{ntKey}}/Velocity", getVelocity());
 {{/if}}

@@ -147,6 +147,12 @@ public class {{className}} implements Mechanism {
 {{/if}}
   // Where the closed loop is going. Null means the closed loop is off.
   private Distance goal = null;
+{{#if useEpilogue}}
+  // The last goal the closed loop was given, which Epilogue logs. Epilogue cannot log a missing goal,
+  // so while the closed loop is off it keeps the last one, as YAMS's telemetry does.
+  @Logged(name = "Goal")
+  private Distance loggedGoal = STARTING_HEIGHT;
+{{/if}}
 
   // The physics simulation of the elevator, and a drawing of it for a dashboard. The simulation
   // takes a drum radius, so it is given the drum that would move the carriage as far.
@@ -340,7 +346,16 @@ public class {{className}} implements Mechanism {
 {{/unless}}
 
     carriageLigament.setLength(getHeight().in(Meters));
+{{#if useEpilogue}}
+    if (goal != null) {
+      loggedGoal = goal;
+    }
+{{/if}}
 {{#unless useEpilogue}}
+    // The goal is published only while the closed loop has one, as YAMS's telemetry does.
+    if (goal != null) {
+      Telemetry.log("{{ntKey}}/Goal", goal);
+    }
 {{#if logPosition}}
     Telemetry.log("{{ntKey}}/Height", getHeight());
 {{/if}}
