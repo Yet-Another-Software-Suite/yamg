@@ -77,7 +77,8 @@ export function createSimulationOptions(
       return { simType: "ElevatorSim", options: elevatorOptions }
     }
 
-    case "Pivot": {
+    case "Pivot":
+    case "Turret": {
       // For pivot, we'll use the arm simulation with different parameters
       const pivotOptions: ArmSimOptions = {
         ...commonOptions,
@@ -128,6 +129,7 @@ export function getSliderRangeConfig(formValues: FormValues, simType: string) {
           initialValue: formValues.elevatorParams?.startingHeight || 0,
         }
       case "Pivot":
+      case "Turret":
         return {
           min: -90,
           max: 90,
@@ -143,6 +145,7 @@ export function getSliderRangeConfig(formValues: FormValues, simType: string) {
     switch (formValues.mechanismType) {
       case "Arm":
       case "Pivot":
+      case "Turret":
         return {
           min: -90,
           max: 90,
@@ -177,7 +180,7 @@ export function getSliderRangeConfig(formValues: FormValues, simType: string) {
  */
 export function convertTargetValue(value: number, formValues: FormValues, simType: string): number {
   if (simType === "position") {
-    if (formValues.mechanismType === "Arm" || formValues.mechanismType === "Pivot") {
+    if (formValues.mechanismType === "Arm" || formValues.mechanismType === "Pivot" || formValues.mechanismType === "Turret") {
       // Convert degrees to radians for arm/pivot
       return (value * Math.PI) / 180
     } else {
@@ -186,7 +189,7 @@ export function convertTargetValue(value: number, formValues: FormValues, simTyp
     }
   } else {
     // Velocity control
-    if (formValues.mechanismType === "Arm" || formValues.mechanismType === "Pivot") {
+    if (formValues.mechanismType === "Arm" || formValues.mechanismType === "Pivot" || formValues.mechanismType === "Turret") {
       // Convert degrees/s to radians/s for arm/pivot
       return (value * Math.PI) / 180
     } else if (formValues.mechanismType === "Flywheel") {

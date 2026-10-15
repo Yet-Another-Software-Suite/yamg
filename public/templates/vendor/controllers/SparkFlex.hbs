@@ -129,3 +129,6 @@ import static org.wpilib.units.Units.Milliseconds;
     // Give the SPARK the motor's simulated speed, so that it updates its encoder.
     motorSim.iterate(mechanismVelocity.times(GEAR_RATIO).in(RPM), batteryVoltage.in(Volts), LOOP_PERIOD.in(Seconds));
 {{/inline}}
+{{#*inline "setEncoderPosition"}}
+    encoder.setPosition(mechanismPosition.times(GEAR_RATIO).in(Rotations));
+{{/inline}}

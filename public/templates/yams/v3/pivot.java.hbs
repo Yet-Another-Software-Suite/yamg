@@ -9,6 +9,7 @@ import static org.wpilib.units.Units.RadiansPerSecondPerSecond;
 import static org.wpilib.units.Units.Seconds;
 
 {{> imports}}
+{{> encoderImports}}
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Trigger;
@@ -31,6 +32,9 @@ import yams.core.telemetry.enums.TelemetryVerbosity;
  * <p>Gravity barely affects a pivot, so it has no gravity feedforward.
  */
 public class {{className}} implements Mechanism {
+
+{{> device}}
+{{> encoderFields}}
 
   // What the motor controller should do: its control mode, gains, gearing and limits.
   private final SmartMotorControllerConfig smcConfig = new SmartMotorControllerConfig(this)
@@ -62,11 +66,17 @@ public class {{className}} implements Mechanism {
       .withClosedLoopRampRate(Seconds.of({{closedLoopRampRate}}))
 {{/if}}
       // Where the pivot is when the robot turns on.
+{{#if absoluteNative}}
+      // Simulation has no encoder, so it starts here. The real robot reads the encoder.
+      .withSimStartingPosition(Degrees.of({{startingPosition}}))
+{{else}}
       .withStartingPosition(Degrees.of({{startingPosition}}))
+{{/if}}
 {{#if enableSoftLimits}}
       // The closed loop will not take the pivot past these angles.
       .withSoftLimits(Degrees.of({{reverseSoftLimit}}), Degrees.of({{forwardSoftLimit}}))
 {{/if}}
+{{> encoderConfig}}
       // Telemetry name and how much to publish.
       .withTelemetry("{{className}}Motor", TelemetryVerbosity.HIGH);
 
@@ -80,6 +90,14 @@ public class {{className}} implements Mechanism {
 
   // The pivot mechanism.
   private final Pivot pivot = new Pivot(pivotConfig, motor);
+{{#if absoluteSeed}}
+
+  public {{className}}() {
+{{> encoderSeed}}
+  }
+
+{{> encoderMethods}}
+{{/if}}
 
   /** Go to an angle and hold it. This command does not end on its own. */
   public Command setAngle(Angle angle) {

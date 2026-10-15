@@ -32,6 +32,8 @@ import yams.core.telemetry.enums.TelemetryVerbosity;
  */
 public class {{className}} extends SubsystemBase {
 
+{{> device}}
+
   // What the motor controller should do: its control mode, gains, gearing and limits.
   private final SmartMotorControllerConfig smcConfig = new SmartMotorControllerConfig(this)
       .withControlMode(ControlMode.CLOSED_LOOP)

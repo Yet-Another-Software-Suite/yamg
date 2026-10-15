@@ -1,0 +1,251 @@
+{{#*inline "encoderImports"}}
+{{#if importCanBus}}
+import com.ctre.phoenix6.CANBus;
+{{/if}}
+{{#if hasCancoder}}
+import com.ctre.phoenix6.hardware.CANcoder;
+{{/if}}
+{{#if hasCandi}}
+import com.ctre.phoenix6.hardware.CANdi;
+{{/if}}
+{{#if candiFeedback}}
+{{#if (eq motorControllerType "TalonFX")}}
+import com.ctre.phoenix6.configs.FeedbackConfigs;
+import com.ctre.phoenix6.configs.TalonFXConfiguration;
+import com.ctre.phoenix6.signals.FeedbackSensorSourceValue;
+{{else}}
+import com.ctre.phoenix6.configs.ExternalFeedbackConfigs;
+import com.ctre.phoenix6.configs.TalonFXSConfiguration;
+import com.ctre.phoenix6.signals.ExternalFeedbackSensorSourceValue;
+{{/if}}
+{{/if}}
+{{#if importCanPort}}
+import org.wpilib.hardware.bus.CANPort;
+{{/if}}
+{{#if novaDataPort}}
+import com.thrifty.core.Motor.AbsoluteEncoderType;
+{{#if (eq output "yams")}}
+{{#if absoluteNative}}
+import com.thrifty.core.Motor.FeedbackSensorType;
+{{/if}}
+import com.thrifty.nova.NovaConfig;
+{{/if}}
+{{/if}}
+{{#if hasDutyCycleEncoder}}
+import org.wpilib.hardware.rotation.DutyCycleEncoder;
+{{/if}}
+{{#if absoluteSeed}}
+import org.wpilib.math.util.MathUtil;
+{{#if (eq output "yams")}}
+import org.wpilib.framework.RobotBase;
+{{/if}}
+{{/if}}
+{{#if crt}}
+import java.util.Optional;
+import org.wpilib.util.Alert;
+{{#if (eq output "yams")}}
+import yams.core.units.EasyCRT;
+{{/if}}
+{{/if}}
+{{#if (and (eq output "yams") (or absoluteEncoder crt))}}
+import static org.wpilib.units.Units.Rotations;
+{{/if}}
+{{/inline}}
+{{#*inline "encoderFields"}}
+{{#if absoluteEncoder}}
+  // The {{encoderDisplayName}} {{encoderWhere}}, which knows where the {{mechanismNoun}} is when
+  // the robot turns on.
+{{#unless absoluteNative}}
+  // What it reads with the {{mechanismNoun}} at zero.{{#if encoderInverted}} It counts down as the {{mechanismNoun}} moves in its positive direction.{{/if}}
+  private static final Angle ABSOLUTE_ENCODER_OFFSET = Degrees.of({{encoderOffset}});
+  /** Encoder rotations per {{mechanismNoun}} rotation. */
+  private static final double ABSOLUTE_ENCODER_RATIO = {{encoderRatio}};
+  /** The middle of the travel between the hard stops. The encoder's reading is taken within half an encoder turn of it. */
+  private static final Angle ABSOLUTE_TRAVEL_MIDDLE = Degrees.of({{travelMiddle}});
+{{/unless}}
+{{/if}}
+{{#if crt}}
+  // The turret's angle when the robot turns on comes from two absolute encoders, on pinions with
+  // {{crtA.pinionTeeth}} and {{crtB.pinionTeeth}} teeth that both mesh with a {{sharedGearTeeth}} tooth gear. Neither knows the angle on its
+  // own, but the pair of readings is unique over the turret's travel (the Chinese Remainder Theorem).
+  /** Rotations of the {{sharedGearTeeth}} tooth gear per turret rotation. */
+  private static final double SHARED_GEAR_RATIO = {{sharedGearRatio}};
+  // What each encoder reads with the turret at zero.
+  private static final Angle CRT_ENCODER_A_OFFSET = Degrees.of({{crtA.offset}});
+  private static final Angle CRT_ENCODER_B_OFFSET = Degrees.of({{crtB.offset}});
+{{#if (eq output "yams")}}
+  // The shared gear's teeth, then each encoder pinion's teeth.
+  private final EasyCRT crt = new EasyCRT({{sharedGearTeeth}}, {{crtA.pinionTeeth}}, {{crtB.pinionTeeth}});
+{{/if}}
+  private final Alert crtAlert = new Alert(
+      "{{className}}", "The turret encoders do not agree on an angle. Check their offsets and inversion.", Alert.Level.HIGH);
+{{/if}}
+{{#each systemCoreEncoders}}
+{{#if cancoder}}
+  // A {{displayName}} with CAN ID {{canId}}.
+  private final CANcoder {{field}} = new CANcoder({{canId}}, new CANBus(CANPort.CAN_S0));
+{{else if candi}}
+  // A CANdi with CAN ID {{canId}}, with a {{displayName}} on its PWM1 input.
+  private final CANdi {{field}} = new CANdi({{canId}}, new CANBus(CANPort.CAN_S0));
+{{else}}
+  // A {{displayName}} on SystemCore Smart IO channel {{channel}}. It reads 0 to 1 rotation.
+  private final DutyCycleEncoder {{field}} = new DutyCycleEncoder({{channel}});
+{{/if}}
+{{/each}}
+{{/inline}}
+{{#*inline "encoderConfig"}}
+{{#if novaDataPort}}
+      // The encoder plugged into the Nova's data port.
+      .withVendorConfig(NovaConfig.absoluteEncoderType(AbsoluteEncoderType.{{novaEncoderType}}))
+{{/if}}
+{{#if candiFeedback}}
+      // The Talon reads the encoder on the CANdi's PWM1 input.
+{{#if (eq motorControllerType "TalonFX")}}
+      .withVendorConfig(new TalonFXConfiguration()
+          .withFeedback(new FeedbackConfigs().withFeedbackSensorSource(FeedbackSensorSourceValue.SyncCANdiPWM1)))
+{{else}}
+      .withVendorConfig(new TalonFXSConfiguration()
+          .withExternalFeedback(new ExternalFeedbackConfigs()
+              .withExternalFeedbackSensorSource(ExternalFeedbackSensorSourceValue.SyncCANdiPWM1)))
+{{/if}}
+{{/if}}
+{{#if absoluteNative}}
+      // The {{encoderDisplayName}} {{encoderWhere}} tells the motor controller where the
+      // {{mechanismNoun}} is, and is the closed loop's feedback.
+      .withExternalEncoder({{yamsExternalEncoder}})
+      .withUseExternalFeedbackEncoder(true)
+      .withExternalEncoderInverted({{encoderInverted}})
+{{#if encoderGeared}}
+      // The encoder turns {{encoderRatio}} times per {{mechanismNoun}} rotation.
+      .withExternalEncoderGearing({{encoderRatio}})
+{{/if}}
+      // What the encoder reads with the {{mechanismNoun}} at zero{{#if encoderGeared}}, in {{mechanismNoun}} degrees{{/if}}.
+      .withExternalEncoderZeroOffset(Degrees.of({{nativeOffset}}))
+      // The encoder reads {{#if (eq discontinuity "0.5")}}-180 to 180{{else}}0 to 360{{/if}} degrees from its zero, so it does not wrap between the hard stops.
+      .withExternalEncoderDiscontinuityPoint(Rotations.of({{discontinuity}}))
+{{/if}}
+{{/inline}}
+{{#*inline "encoderSeed"}}
+{{#if absoluteSeed}}
+    if (RobotBase.isReal()) {
+{{#if novaDataPort}}
+{{#unless (eq output "yams")}}
+      motor.configure(NovaConfig.absoluteEncoderType(AbsoluteEncoderType.{{novaEncoderType}}));
+{{/unless}}
+{{/if}}
+{{#if sparkMaxDataPort}}
+      // Read the absolute encoder on the data port, rather than an alternate encoder.
+      SparkMaxConfig dataPortConfig = new SparkMaxConfig();
+      dataPortConfig.absoluteEncoder.setSparkMaxDataPortConfig();
+      motor.configure(dataPortConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+{{/if}}
+{{#if crt}}
+      // Start the motor's encoder at the angle the two encoders agree on. Simulation has no
+      // encoders, so there the turret starts at its starting position.
+      Optional<Angle> crtAngle = getCrtAngle();
+      crtAngle.ifPresent(angle -> {{seedCall}}(angle));
+      crtAlert.set(crtAngle.isEmpty());
+{{else}}
+      // Start the motor's encoder where the absolute encoder says the {{mechanismNoun}} is.
+      // Simulation has no encoder, so there it starts at its starting position.
+      {{seedCall}}(getAbsoluteAngle());
+{{/if}}
+    }
+{{/if}}
+{{/inline}}
+{{#*inline "encoderMethods"}}
+{{#if absoluteSeed}}
+{{#unless crt}}
+  /**
+   * Where the absolute encoder says the {{mechanismNoun}} is. The encoder only knows where it is
+   * within one of its own turns, so this is the angle within half an encoder turn of the middle of
+   * the travel.
+   */
+  private Angle getAbsoluteAngle() {
+    // How far the encoder has turned from where it reads with the {{mechanismNoun}} at zero.
+    Angle fromZero = {{#if encoderInverted}}ABSOLUTE_ENCODER_OFFSET.minus({{encoderReading}}){{else}}{{encoderReading}}.minus(ABSOLUTE_ENCODER_OFFSET){{/if}};
+    // How far that is from the middle of the travel, as an encoder angle from -0.5 to 0.5 rotations.
+    double fromMiddle = MathUtil.inputModulus(
+        fromZero.minus(ABSOLUTE_TRAVEL_MIDDLE.times(ABSOLUTE_ENCODER_RATIO)).in(Rotations), -0.5, 0.5);
+    return ABSOLUTE_TRAVEL_MIDDLE.plus(Rotations.of(fromMiddle).div(ABSOLUTE_ENCODER_RATIO));
+  }
+{{/unless}}
+{{/if}}
+{{#if crt}}
+  /**
+   * Where the two encoders say the turret is, or empty if they do not agree on one angle. Read it
+   * while the turret is still, since the two encoders are read one after the other.
+   */
+  private Optional<Angle> getCrtAngle() {
+    // Each reading from where it is with the turret at zero, counting up as the turret turns positive.
+    Angle encoderA = {{#if crtA.inverted}}CRT_ENCODER_A_OFFSET.minus({{crtA.reading}}){{else}}{{crtA.reading}}.minus(CRT_ENCODER_A_OFFSET){{/if}};
+    Angle encoderB = {{#if crtB.inverted}}CRT_ENCODER_B_OFFSET.minus({{crtB.reading}}){{else}}{{crtB.reading}}.minus(CRT_ENCODER_B_OFFSET){{/if}};
+    // The pinions mesh with the {{sharedGearTeeth}} tooth gear, so the solve is for its angle, over its travel.
+    Angle sharedGearMin = Degrees.of({{hardLimitMin}}).times(SHARED_GEAR_RATIO);
+    Angle sharedGearMax = Degrees.of({{hardLimitMax}}).times(SHARED_GEAR_RATIO);
+{{#if (eq output "yams")}}
+    return crt.solve(encoderA, encoderB, sharedGearMin, sharedGearMax)
+        .map(sharedGearAngle -> sharedGearAngle.div(SHARED_GEAR_RATIO));
+{{else}}
+    return solveCrt(encoderA, encoderB, sharedGearMin, sharedGearMax)
+        .map(sharedGearAngle -> sharedGearAngle.div(SHARED_GEAR_RATIO));
+{{/if}}
+  }
+{{#unless (eq output "yams")}}
+
+  /**
+   * The angle of the {{sharedGearTeeth}} tooth gear from the two encoder readings, the same way as
+   * YAMS's EasyCRT: try every gear angle that fits encoder A, and keep the one that best predicts
+   * encoder B.
+   */
+  private static Optional<Angle> solveCrt(Angle encoderA, Angle encoderB, Angle min, Angle max) {
+    // Encoder rotations per rotation of the gear they mesh with.
+    double ratioA = (double) {{sharedGearTeeth}} / {{crtA.pinionTeeth}};
+    double ratioB = (double) {{sharedGearTeeth}} / {{crtB.pinionTeeth}};
+    // Neighboring candidates predict encoder B readings 1/{{crtB.pinionTeeth}} of a rotation apart,
+    // so a match has to be within a quarter of that.
+    double tolerance = 0.25 / {{crtB.pinionTeeth}};
+    double a = MathUtil.inputModulus(encoderA.in(Rotations), 0.0, 1.0);
+    double b = MathUtil.inputModulus(encoderB.in(Rotations), 0.0, 1.0);
+    double minRotations = min.in(Rotations);
+    double maxRotations = max.in(Rotations);
+
+    double bestError = Double.MAX_VALUE;
+    double secondError = Double.MAX_VALUE;
+    double bestRotations = Double.NaN;
+    // Encoder A reads (ratioA * gear) mod 1, so the gear is at (a + turns) / ratioA for a whole number of turns.
+    int minTurns = (int) Math.floor(ratioA * minRotations - a) - 1;
+    int maxTurns = (int) Math.ceil(ratioA * maxRotations - a) + 1;
+    for (int turns = minTurns; turns <= maxTurns; turns++) {
+      double gearRotations = (a + turns) / ratioA;
+      if (gearRotations < minRotations - 1e-6 || gearRotations > maxRotations + 1e-6) {
+        continue;
+      }
+      // How far encoder B's real reading is from what it would read with the gear there.
+      double error = Math.abs(MathUtil.inputModulus(ratioB * gearRotations - b, -0.5, 0.5));
+      if (error < bestError) {
+        secondError = bestError;
+        bestError = error;
+        bestRotations = gearRotations;
+      } else if (error < secondError) {
+        secondError = error;
+      }
+    }
+    // No candidate is close enough, or two are.
+    if (bestError > tolerance || secondError <= tolerance) {
+      return Optional.empty();
+    }
+    return Optional.of(Rotations.of(bestRotations));
+  }
+{{/unless}}
+{{/if}}
+{{#unless (eq output "yams")}}
+{{#if absoluteSeed}}
+
+  /** Set the motor's encoder to a {{mechanismNoun}} angle. */
+  private void setEncoderPosition(Angle mechanismPosition) {
+{{> setEncoderPosition}}
+  }
+{{/if}}
+{{/unless}}
+{{/inline}}

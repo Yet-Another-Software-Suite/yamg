@@ -129,3 +129,6 @@ import static org.wpilib.units.Units.RotationsPerSecondPerSecond;
     motor.getSimState().setRotorVelocity(mechanismVelocity.times(GEAR_RATIO));
     motor.getSimState().setRotorAcceleration(mechanismAcceleration.times(GEAR_RATIO));
 {{/inline}}
+{{#*inline "setEncoderPosition"}}
+    motor.setPosition(mechanismPosition);
+{{/inline}}

@@ -205,8 +205,15 @@ export const MECHANISMS: Record<string, MechanismDefinition> = {
   },
   Pivot: {
     name: "Pivot",
-    displayName: "Pivot (Turret/Wrist)",
+    displayName: "Pivot (Wrist)",
     description: "Rotational mechanism without significant gravity effects",
+    simClassName: "ArmSim",
+    requiresGravityCompensation: false,
+  },
+  Turret: {
+    name: "Turret",
+    displayName: "Turret",
+    description: "Flat rotational mechanism, which can find its angle with two encoders (CRT)",
     simClassName: "ArmSim",
     requiresGravityCompensation: false,
   },

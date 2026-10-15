@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { generateFiles, setTemplateLoader, templatePaths } from "@/lib/code-generator";
 import { getCompatibleMotors } from "@/lib/config/hardware-config";
+import { absoluteEncoderIssues, crtUniqueRange } from "@/lib/absolute-encoder";
 import { elevatorDrive } from "@/lib/elevator-drive";
 import type { FormValues } from "@/lib/types";
 
@@ -11,10 +12,36 @@ jest.mock("@/lib/format-java", () => ({ formatJava: async (java: string) => java
 // Read the templates from disk instead of fetching them.
 setTemplateLoader(async (p) => fs.readFileSync(path.join(__dirname, "..", "public", "templates", p), "utf-8"));
 
-const MECHANISMS: FormValues["mechanismType"][] = ["Arm", "Elevator", "Pivot", "Flywheel"];
+const MECHANISMS: FormValues["mechanismType"][] = ["Arm", "Elevator", "Pivot", "Turret", "Flywheel"];
 const CONTROLLERS: FormValues["motorControllerType"][] = ["SparkMAX", "SparkFlex", "TalonFX", "TalonFXS", "ThriftyNova"];
 const OUTPUTS: NonNullable<FormValues["outputType"]>[] = ["vendor", "yams"];
 const COMMANDS: NonNullable<FormValues["commandsVersion"]>[] = ["v2", "v3"];
+
+/**
+ * The absolute encoder for a combination, so that every encoder, port and controller is rendered:
+ * with every option on, each controller gets a different encoder; with Epilogue, a CANcoder.
+ */
+function absoluteEncoder(
+  motorControllerType: FormValues["motorControllerType"],
+  everything: boolean,
+  logger: "telemetry" | "epilogue",
+): FormValues["absoluteEncoder"] {
+  if (logger === "epilogue") {
+    // A duty cycle encoder on the SystemCore for a Talon FX, and a CANcoder for the rest.
+    return motorControllerType === "TalonFX"
+      ? { type: "DutyCycle", port: "smartIo", channel: 2, offset: 90, ratio: 2 }
+      : { type: "CANcoder", canId: 20, offset: 33.25, inverted: true, ratio: 1 };
+  }
+  if (!everything) return { type: "none" };
+  const byController: Record<FormValues["motorControllerType"], FormValues["absoluteEncoder"]> = {
+    SparkMAX: { type: "Thrifty10Pin", offset: 12.5, ratio: 1 },
+    SparkFlex: { type: "ThroughBore", port: "dataPort", offset: 200, inverted: true, ratio: 1 },
+    TalonFX: { type: "CANcoder", canId: 20, offset: -45, ratio: 1 },
+    TalonFXS: { type: "ThroughBore", port: "candi", canId: 23, offset: 90, inverted: true, ratio: 1 },
+    ThriftyNova: { type: "ThroughBore", port: "dataPort", offset: 10, ratio: 1 },
+  };
+  return byController[motorControllerType];
+}
 
 /** A form for one combination. With every option on, soft limits, ramps and supply limits are set. */
 function form(
@@ -69,6 +96,15 @@ function form(
           : { driveType: "drum" as const }),
     },
     flywheelParams: { momentOfInertia: 0.002, diameter: 0.1 },
+    absoluteEncoder: absoluteEncoder(motorControllerType, everything, logger),
+    // With every option on, a turret finds its angle with CRT, from a CANcoder and a Through Bore.
+    turretParams: {
+      crt: mechanismType === "Turret" && everything && logger === "telemetry",
+      sharedGearTeeth: 100,
+      sharedGearRatio: 1,
+      encoderA: { type: "CANcoder", canId: 21, pinionTeeth: 19, offset: 15, inverted: true },
+      encoderB: { type: "ThroughBore", channel: 1, pinionTeeth: 21, offset: 300, inverted: true },
+    },
   };
 }
 
@@ -170,6 +206,68 @@ describe("generateFiles", () => {
     expect(vendor.content).toContain("NovaConfig.supplyCurrent(SUPPLY_CURRENT_LIMIT.in(Amps))");
     const [yams] = await generateFiles(form("Arm", "ThriftyNova", "yams", "v2", true));
     expect(yams.content).toContain(".withSupplyCurrentLimit(Amps.of(30.0))");
+  });
+
+  it("gives YAMS the encoders a motor controller reads itself, and reads the rest at startup", async () => {
+    const [talon] = await generateFiles(form("Pivot", "TalonFX", "yams", "v2", true));
+    expect(talon.content).toContain(".withExternalEncoder(cancoder)");
+    expect(talon.content).toContain(".withExternalEncoderDiscontinuityPoint(Rotations.of(0.5))");
+    expect(talon.content).toContain(".withSimStartingPosition(");
+    const [spark] = await generateFiles(form("Arm", "SparkMAX", "yams", "v2", true));
+    expect(spark.content).toContain(".withExternalEncoder(spark.getAbsoluteEncoder())");
+    const [nova] = await generateFiles(form("Arm", "ThriftyNova", "yams", "v3", true));
+    expect(nova.content).toContain(".withVendorConfig(NovaConfig.absoluteEncoderType(AbsoluteEncoderType.REV_ENCODER))");
+    expect(nova.content).toContain(".withExternalEncoder(FeedbackSensorType.ABS)");
+    const [candi] = await generateFiles(form("Pivot", "TalonFXS", "yams", "v3", true));
+    expect(candi.content).toContain(".withExternalEncoder(candi)");
+    expect(candi.content).toContain("ExternalFeedbackSensorSourceValue.SyncCANdiPWM1");
+    // Encoders from another vendor are read at startup, and given to setEncoderPosition.
+    const [dutyCycle] = await generateFiles(form("Pivot", "TalonFX", "yams", "v2", true, "epilogue"));
+    expect(dutyCycle.content).toContain("new DutyCycleEncoder(2)");
+    expect(dutyCycle.content).toContain("motor.setEncoderPosition(getAbsoluteAngle());");
+    expect(dutyCycle.content).not.toContain("withExternalEncoder");
+    const [sparkCancoder] = await generateFiles(form("Arm", "SparkMAX", "yams", "v2", true, "epilogue"));
+    expect(sparkCancoder.content).toContain("motor.setEncoderPosition(getAbsoluteAngle());");
+    const [vendor] = await generateFiles(form("Arm", "SparkMAX", "vendor", "v2", true));
+    expect(vendor.content).toContain("setEncoderPosition(getAbsoluteAngle());");
+    expect(vendor.content).toContain("dataPortConfig.absoluteEncoder.setSparkMaxDataPortConfig();");
+  });
+
+  it("solves a turret's CRT with EasyCRT when YAMS is used, and the same way without it", async () => {
+    const [yams] = await generateFiles(form("Turret", "SparkMAX", "yams", "v2", true));
+    expect(yams.content).toContain("new EasyCRT(100, 19, 21)");
+    expect(yams.content).toContain("crt.solve(encoderA, encoderB, sharedGearMin, sharedGearMax)");
+    const [vendor] = await generateFiles(form("Turret", "TalonFX", "vendor", "v3", true));
+    expect(vendor.content).not.toMatch(/new EasyCRT|import yams/);
+    expect(vendor.content).toContain("solveCrt(encoderA, encoderB, sharedGearMin, sharedGearMax)");
+  });
+
+  it("checks that the CRT pinions are coprime, and cover the travel", () => {
+    const turret = form("Turret", "SparkMAX", "yams", "v2", true);
+    expect(absoluteEncoderIssues(turret)).toEqual([]);
+    const crt = (a: number, b: number, shared = 100) => ({
+      ...turret,
+      turretParams: {
+        ...turret.turretParams,
+        sharedGearTeeth: shared,
+        encoderA: { ...turret.turretParams!.encoderA, pinionTeeth: a },
+        encoderB: { ...turret.turretParams!.encoderB, pinionTeeth: b },
+      },
+    });
+    expect(absoluteEncoderIssues(crt(20, 30)).map((issue) => issue.message).join()).toContain("not coprime: both divide by 10");
+    expect(absoluteEncoderIssues(crt(21, 21)).map((issue) => issue.path.join("."))).toContain("turretParams.encoderB.pinionTeeth");
+    // 13 and 15 teeth on an 800 tooth gear cover 0.24 turns (88 degrees), less than the 110 degree travel.
+    expect(crtUniqueRange(800, 13, 15)).toBeCloseTo(0.24375);
+    expect(absoluteEncoderIssues(crt(13, 15, 800)).map((issue) => issue.path.join("."))).toEqual(["turretParams.sharedGearTeeth"]);
+  });
+
+  it("checks that a single absolute encoder cannot wrap, and fits the motor controller", () => {
+    const pivot = form("Pivot", "TalonFX", "vendor", "v2", true);
+    // The travel is 110 degrees, so a 4:1 encoder turns 440 degrees.
+    const geared = { ...pivot, absoluteEncoder: { ...pivot.absoluteEncoder, ratio: 4 } };
+    expect(absoluteEncoderIssues(geared).map((issue) => issue.path.join("."))).toEqual(["absoluteEncoder.ratio"]);
+    const thrifty = { ...pivot, absoluteEncoder: { type: "Thrifty10Pin" as const, ratio: 1 } };
+    expect(absoluteEncoderIssues(thrifty).map((issue) => issue.path.join("."))).toEqual(["absoluteEncoder.type"]);
   });
 
   it("uses one template per output, Commands version and mechanism", () => {

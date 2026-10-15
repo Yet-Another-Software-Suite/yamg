@@ -4,7 +4,7 @@ export interface FormValues {
   outputType?: "vendor" | "yams"
   /** WPILib Commands v2 (subsystems) or Commands v3 (mechanisms). */
   commandsVersion?: "v2" | "v3"
-  mechanismType: "Elevator" | "Arm" | "Pivot" | "Flywheel"
+  mechanismType: "Elevator" | "Arm" | "Pivot" | "Turret" | "Flywheel"
   motorControllerType: "ThriftyNova" | "SparkMAX" | "SparkFlex" | "TalonFX" | "TalonFXS" 
   motorType: "NEO" | "NEO550" | "Minion" | "Krakenx44" | "Krakenx60" | "Vortex"
   canId: number
@@ -78,6 +78,52 @@ export interface FormValues {
     momentOfInertia?: number
     diameter?: number
   }
+  /** An absolute encoder that tells an arm, pivot or turret where it is when the robot turns on. */
+  absoluteEncoder?: AbsoluteEncoderParams
+  turretParams?: {
+    /** Find the turret's angle from two absolute encoders on pinions with different tooth counts. */
+    crt?: boolean
+    /** Teeth on the gear both encoder pinions mesh with. */
+    sharedGearTeeth?: number
+    /** Rotations of that shared gear per turret rotation: 1 when the pinions mesh with the turret gear. */
+    sharedGearRatio?: number
+    encoderA?: CrtEncoderParams
+    encoderB?: CrtEncoderParams
+  }
+}
+
+/** The absolute encoders YAMG supports. */
+export type AbsoluteEncoderType = "CANcoder" | "ThroughBore" | "Thrifty10Pin" | "DutyCycle"
+
+export interface AbsoluteEncoderParams {
+  type?: "none" | AbsoluteEncoderType
+  /**
+   * Where a REV Through Bore or a duty cycle encoder is plugged in: a SPARK's or a Nova's data port, a
+   * CANdi a Talon reads, or a SystemCore Smart IO port.
+   */
+  port?: "dataPort" | "candi" | "smartIo"
+  /** The CANcoder's or the CANdi's CAN ID. */
+  canId?: number
+  /** The SystemCore Smart IO channel of a duty cycle encoder. */
+  channel?: number
+  /** What the encoder reads, in degrees, with the mechanism at zero. */
+  offset?: number
+  /** True when the encoder counts down as the mechanism moves in its positive direction. */
+  inverted?: boolean
+  /** Encoder rotations per mechanism rotation: 1 when it is on the mechanism's shaft. */
+  ratio?: number
+}
+
+/** One of the two encoders a turret's CRT reads. The SystemCore reads both. */
+export interface CrtEncoderParams {
+  type?: "CANcoder" | "ThroughBore" | "DutyCycle"
+  canId?: number
+  channel?: number
+  /** Teeth on the pinion the encoder is on. */
+  pinionTeeth?: number
+  /** What the encoder reads, in degrees, with the turret at zero. */
+  offset?: number
+  inverted?: boolean
 }
 
 export interface FileOutput {

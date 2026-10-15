@@ -79,3 +79,6 @@ import org.wpilib.math.controller.PIDController;
     simMechanismPosition = mechanismPosition;
     simMechanismVelocity = mechanismVelocity;
 {{/inline}}
+{{#*inline "setEncoderPosition"}}
+    motor.setIntPosition(mechanismPosition.times(GEAR_RATIO).in(Rotations));
+{{/inline}}

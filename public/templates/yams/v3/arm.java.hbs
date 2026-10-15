@@ -9,6 +9,7 @@ import static org.wpilib.units.Units.RadiansPerSecondPerSecond;
 import static org.wpilib.units.Units.Seconds;
 
 {{> imports}}
+{{> encoderImports}}
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Trigger;
@@ -32,6 +33,9 @@ import yams.core.telemetry.enums.TelemetryVerbosity;
  * angles raise it.
  */
 public class {{className}} implements Mechanism {
+
+{{> device}}
+{{> encoderFields}}
 
   // What the motor controller should do: its control mode, gains, gearing and limits.
   private final SmartMotorControllerConfig smcConfig = new SmartMotorControllerConfig(this)
@@ -63,11 +67,17 @@ public class {{className}} implements Mechanism {
       .withClosedLoopRampRate(Seconds.of({{closedLoopRampRate}}))
 {{/if}}
       // Where the arm is when the robot turns on.
+{{#if absoluteNative}}
+      // Simulation has no encoder, so it starts here. The real robot reads the encoder.
+      .withSimStartingPosition(Degrees.of({{startingPosition}}))
+{{else}}
       .withStartingPosition(Degrees.of({{startingPosition}}))
+{{/if}}
 {{#if enableSoftLimits}}
       // The closed loop will not take the arm past these angles.
       .withSoftLimits(Degrees.of({{reverseSoftLimit}}), Degrees.of({{forwardSoftLimit}}))
 {{/if}}
+{{> encoderConfig}}
       // Telemetry name and how much to publish.
       .withTelemetry("{{className}}Motor", TelemetryVerbosity.HIGH);
 
@@ -83,6 +93,14 @@ public class {{className}} implements Mechanism {
 
   // The arm mechanism.
   private final Arm arm = new Arm(armConfig, motor);
+{{#if absoluteSeed}}
+
+  public {{className}}() {
+{{> encoderSeed}}
+  }
+
+{{> encoderMethods}}
+{{/if}}
 
   /** Go to an angle and hold it. This command does not end on its own. */
   public Command setAngle(Angle angle) {

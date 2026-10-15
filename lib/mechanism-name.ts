@@ -1,5 +1,5 @@
 /** The mechanism types, as they appear at the start of a default class name. */
-const MECHANISM_NAMES = ["Elevator", "Arm", "Pivot", "Flywheel"] as const;
+const MECHANISM_NAMES = ["Elevator", "Arm", "Pivot", "Turret", "Flywheel"] as const;
 
 /** The class name suffix for each command framework. */
 const SUFFIXES = { v2: "Subsystem", v3: "Mechanism" } as const;

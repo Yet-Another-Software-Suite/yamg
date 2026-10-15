@@ -6,6 +6,14 @@ import {
   getMotorController,
   getWPILibMotorType,
 } from "./config/hardware-config";
+import {
+  ABSOLUTE_ENCODERS,
+  attachesToMotorController,
+  discontinuityPoint,
+  encoderConnection,
+  usesAbsoluteEncoder,
+  usesCrt,
+} from "./absolute-encoder";
 import { elevatorDrive } from "./elevator-drive";
 import { formatJava } from "./format-java";
 
@@ -74,13 +82,19 @@ export function setTemplateLoader(loader: TemplateLoader) {
 Handlebars.registerHelper("eq", (a, b) => a === b);
 // True when every argument is, for example {{#if (and useEpilogue logPosition)}}.
 Handlebars.registerHelper("and", (...args) => args.slice(0, -1).every(Boolean));
+// True when any argument is.
+Handlebars.registerHelper("or", (...args) => args.slice(0, -1).some(Boolean));
 
 const MECHANISM_FILES: Record<FormValues["mechanismType"], string> = {
   Arm: "arm",
   Elevator: "elevator",
   Pivot: "pivot",
+  Turret: "turret",
   Flywheel: "flywheel",
 };
+
+/** Shared partials, put in front of every mechanism template: the absolute encoder and CRT code. */
+const SHARED_PARTIALS = "shared/absolute-encoder.hbs";
 
 const THRIFTY_MOTOR_TYPES: Record<string, string> = {
   NEO: "NEO",
@@ -178,7 +192,7 @@ export function buildTemplateData(data: FormValues) {
     talonSimMotorType: data.motorType === "Krakenx44" ? "KrakenX44" : "KrakenX60",
   };
 
-  if (data.mechanismType === "Arm" || data.mechanismType === "Pivot") {
+  if (data.mechanismType === "Arm" || data.mechanismType === "Pivot" || data.mechanismType === "Turret") {
     const p = data.armParams ?? {};
     Object.assign(templateData, {
       armLength: num(p.length, 1),
@@ -188,6 +202,7 @@ export function buildTemplateData(data: FormValues) {
       hardLimitMax: num(p.hardLimitMax, 90),
     });
   }
+  Object.assign(templateData, encoderTemplateData(data));
 
   if (isElevator) {
     const p = data.elevatorParams ?? {};
@@ -210,6 +225,153 @@ export function buildTemplateData(data: FormValues) {
 
   Object.assign(templateData, robotTemplateData(data, templateData));
   return templateData;
+}
+
+/** A CANcoder, a CANdi, or a duty cycle encoder on a Smart IO port. */
+interface EncoderDevice {
+  field: string;
+  cancoder: boolean;
+  candi: boolean;
+  canId: number;
+  channel: number;
+  displayName: string;
+}
+
+/**
+ * What the absolute encoder and CRT partials need.
+ *
+ * With YAMS, an encoder from the motor controller's vendor that the controller reads itself (a
+ * CANcoder or a CANdi on a Talon, or an encoder on a SPARK's or a Nova's data port) is given to the
+ * SmartMotorController with withExternalEncoder. An encoder from another vendor, and every encoder
+ * in plain vendor code, is read once when the robot turns on, and the motor's encoder is set there
+ * with setEncoderPosition. The two CRT encoders are never attached to the SmartMotorController.
+ */
+function encoderTemplateData(data: FormValues) {
+  const yams = data.outputType === "yams";
+  const controller = data.motorControllerType;
+  const spark = controller === "SparkMAX" || controller === "SparkFlex";
+  const nova = controller === "ThriftyNova";
+  const talon = !spark && !nova;
+  const systemCoreEncoders: EncoderDevice[] = [];
+
+  /** Add an encoder device field, and return the Java that reads it as an Angle. */
+  const systemCoreEncoder = (
+    field: string,
+    type: string,
+    connection: "can" | "candi" | "smartIo",
+    canId: number | undefined,
+    channel: number | undefined,
+  ) => {
+    const cancoder = connection === "can";
+    const candi = connection === "candi";
+    const displayName = ABSOLUTE_ENCODERS[type as keyof typeof ABSOLUTE_ENCODERS].displayName;
+    systemCoreEncoders.push({ field, cancoder, candi, canId: canId ?? 0, channel: channel ?? 0, displayName });
+    // A CANcoder or a CANdi can still be booting when the robot program starts, so wait for a fresh reading.
+    if (cancoder) return `${field}.getAbsolutePosition().waitForUpdate(0.25).getValue()`;
+    if (candi) return `${field}.getPWM1Position().waitForUpdate(0.25).getValue()`;
+    return `Rotations.of(${field}.get())`;
+  };
+
+  const shared = () => {
+    const hasCancoder = systemCoreEncoders.some((encoder) => encoder.cancoder);
+    const hasCandi = systemCoreEncoders.some((encoder) => encoder.candi);
+    return {
+      systemCoreEncoders,
+      hasCancoder,
+      hasCandi,
+      hasDutyCycleEncoder: systemCoreEncoders.some((encoder) => !encoder.cancoder && !encoder.candi),
+      // Talon partials import these already, and so do SPARK partials for CANPort.
+      importCanBus: (hasCancoder || hasCandi) && !talon,
+      importCanPort: (hasCancoder || hasCandi) && nova,
+      seedCall: yams ? "motor.setEncoderPosition" : "setEncoderPosition",
+    };
+  };
+
+  if (usesCrt(data)) {
+    const params = data.turretParams!;
+    const crtEncoder = (field: string, encoder: NonNullable<typeof params.encoderA>) => ({
+      reading: systemCoreEncoder(
+        field,
+        encoder.type ?? "CANcoder",
+        (encoder.type ?? "CANcoder") === "CANcoder" ? "can" : "smartIo",
+        encoder.canId,
+        encoder.channel,
+      ),
+      offset: num(encoder.offset, 0),
+      inverted: encoder.inverted ?? false,
+      pinionTeeth: encoder.pinionTeeth ?? 0,
+    });
+    const crtA = crtEncoder("crtEncoderA", params.encoderA ?? {});
+    const crtB = crtEncoder("crtEncoderB", params.encoderB ?? {});
+    return {
+      absoluteEncoder: false,
+      crt: true,
+      absoluteSeed: true,
+      absoluteNative: false,
+      sharedGearTeeth: params.sharedGearTeeth ?? 0,
+      sharedGearRatio: num(params.sharedGearRatio, 1),
+      crtA,
+      crtB,
+      ...shared(),
+    };
+  }
+
+  if (!usesAbsoluteEncoder(data)) {
+    return { absoluteEncoder: false, crt: false, absoluteSeed: false, absoluteNative: false, ...shared() };
+  }
+
+  const encoder = data.absoluteEncoder!;
+  const type = encoder.type as keyof typeof ABSOLUTE_ENCODERS;
+  const connection = encoderConnection(type, encoder.port, controller);
+  const ratio = encoder.ratio ?? 1;
+  const offset = encoder.offset ?? 0;
+  const native = yams && attachesToMotorController(connection, controller);
+
+  let reading: string;
+  if (connection === "dataPort") {
+    reading = spark
+      ? `Rotations.of(${yams ? "spark" : "motor"}.getAbsoluteEncoder().getPosition().get())`
+      : `Rotations.of(${yams ? "nova" : "motor"}.status().getAbsPosition())`;
+  } else {
+    const field = connection === "can" ? "cancoder" : connection === "candi" ? "candi" : "absoluteEncoder";
+    reading = systemCoreEncoder(field, type, connection, encoder.canId, encoder.channel);
+  }
+
+  const controllerName = getMotorController(controller).displayName;
+  return {
+    absoluteEncoder: true,
+    crt: false,
+    absoluteNative: native,
+    absoluteSeed: !native,
+    encoderDisplayName: ABSOLUTE_ENCODERS[type].displayName,
+    encoderWhere:
+      connection === "can"
+        ? `with CAN ID ${encoder.canId ?? 0}`
+        : connection === "candi"
+          ? `on the PWM1 input of the CANdi with CAN ID ${encoder.canId ?? 0}`
+          : connection === "dataPort"
+          ? `on the ${controllerName}'s data port`
+          : `on SystemCore Smart IO channel ${encoder.channel ?? 0}`,
+    encoderReading: reading,
+    encoderOffset: num(offset, 0),
+    encoderInverted: encoder.inverted ?? false,
+    encoderRatio: num(ratio, 1),
+    encoderGeared: ratio !== 1,
+    // YAMS takes the zero offset in mechanism rotations.
+    nativeOffset: num(Math.round((offset / ratio) * 1e4) / 1e4, 0),
+    // The form reports a travel that fits neither, so the fallback is only seen while it is being edited.
+    discontinuity: discontinuityPoint(data) ?? "0.5",
+    travelMiddle: num(((data.armParams?.hardLimitMin ?? 0) + (data.armParams?.hardLimitMax ?? 90)) / 2, 0),
+    yamsExternalEncoder:
+      connection === "can" ? "cancoder" : connection === "candi" ? "candi" : spark ? "spark.getAbsoluteEncoder()" : "FeedbackSensorType.ABS",
+    // YAMS needs the CANdi's PWM1 input chosen as the Talon's feedback source in its vendor config.
+    candiFeedback: native && connection === "candi",
+    novaDataPort: nova && connection === "dataPort",
+    novaEncoderType: type === "Thrifty10Pin" ? "THRIFTY_10_PIN_ENCODER" : "REV_ENCODER",
+    // A SPARK MAX's data port also takes an alternate encoder, so it is told to read the absolute one.
+    sparkMaxDataPort: !yams && controller === "SparkMAX" && connection === "dataPort",
+    ...shared(),
+  };
 }
 
 /** What Robot.java and the files around it need: the mechanism's field, and its commands. */
@@ -311,7 +473,8 @@ export async function renderJava(data: FormValues): Promise<string> {
   // Throws for an unknown mechanism, which the caller reports.
   getMechanism(data.mechanismType);
   const paths = templatePaths(data);
-  const source = (await loadTemplate(paths.controller)) + (await loadTemplate(paths.mechanism));
+  const source =
+    (await loadTemplate(SHARED_PARTIALS)) + (await loadTemplate(paths.controller)) + (await loadTemplate(paths.mechanism));
   const template = Handlebars.compile(source, { noEscape: true });
   // Drop the blank lines the partial definitions leave at the top of the file.
   return template(buildTemplateData(data)).replace(/^\s+/, "");

@@ -15,6 +15,7 @@ import static org.wpilib.units.Units.Seconds;
 import static org.wpilib.units.Units.Volts;
 
 {{> imports}}
+{{> encoderImports}}
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Trigger;
@@ -112,6 +113,7 @@ public class {{className}} implements Mechanism {
 {{/if}}
 
 {{> fields}}
+{{> encoderFields}}
 
 {{#if systemCoreProfile}}
   // Where WPILib's profile is now, in radians.
@@ -137,10 +139,13 @@ public class {{className}} implements Mechanism {
 
   public {{className}}() {
 {{> configure}}
+{{> encoderSeed}}
     if (RobotBase.isSimulation()) {
 {{> simInit}}
     }
   }
+
+{{> encoderMethods}}
 
   private Angle getMechanismPosition() {
 {{> getMechanismPosition}}

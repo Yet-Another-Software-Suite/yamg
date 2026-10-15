@@ -3,10 +3,11 @@ import com.thrifty.core.Motor.MotorType;
 import com.thrifty.nova.Nova;
 import yams.core.motorcontrollers.local.NovaWrapper;
 {{/inline}}
-{{#*inline "fields"}}
+{{#*inline "device"}}
   // The vendor motor controller object: a Thrifty Nova on CAN bus 0 with CAN ID {{canId}}.
   private final Nova nova = new Nova(0, {{canId}}, MotorType.{{thriftyMotorType}});
-
+{{/inline}}
+{{#*inline "fields"}}
   // The SmartMotorController applies the config to the Nova, which drives one {{motorDisplayName}}.
   private final SmartMotorController motor = new NovaWrapper(nova, {{dcMotor}}, smcConfig);
 {{/inline}}

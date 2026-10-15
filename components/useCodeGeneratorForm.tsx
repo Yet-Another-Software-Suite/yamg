@@ -4,11 +4,21 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 
+/** One of a turret's two CRT encoders. */
+const crtEncoderSchema = z.object({
+  type: z.enum(["CANcoder", "ThroughBore", "DutyCycle"]).optional(),
+  canId: z.number().int().min(0).max(62).optional(),
+  channel: z.number().int().min(0).optional(),
+  pinionTeeth: z.number().optional(),
+  offset: z.number().optional(),
+  inverted: z.boolean().optional(),
+});
+
 export const formSchema = z.object({
   subsystemName: z.string().min(1, "Subsystem name is required"),
   outputType: z.enum(["vendor", "yams"]),
   commandsVersion: z.enum(["v2", "v3"]),
-  mechanismType: z.enum(["Elevator", "Arm", "Pivot", "Flywheel"]),
+  mechanismType: z.enum(["Elevator", "Arm", "Pivot", "Turret", "Flywheel"]),
   motorControllerType: z.enum([
     "ThriftyNova",
     "SparkMAX",
@@ -95,6 +105,26 @@ export const formSchema = z.object({
       diameter: z.number().optional(),
     })
     .optional(),
+  absoluteEncoder: z
+    .object({
+      type: z.enum(["none", "CANcoder", "ThroughBore", "Thrifty10Pin", "DutyCycle"]).optional(),
+      port: z.enum(["dataPort", "candi", "smartIo"]).optional(),
+      canId: z.number().int().min(0).max(62).optional(),
+      channel: z.number().int().min(0).optional(),
+      offset: z.number().optional(),
+      inverted: z.boolean().optional(),
+      ratio: z.number().optional(),
+    })
+    .optional(),
+  turretParams: z
+    .object({
+      crt: z.boolean().optional(),
+      sharedGearTeeth: z.number().optional(),
+      sharedGearRatio: z.number().optional(),
+      encoderA: crtEncoderSchema.optional(),
+      encoderB: crtEncoderSchema.optional(),
+    })
+    .optional(),
 });
 
 export type FormSchema = z.infer<typeof formSchema>;
@@ -151,6 +181,22 @@ export const DEFAULT_VALUES: FormSchema = {
   flywheelParams: {
     momentOfInertia: 0.0025,
     diameter: 0.1016,
+  },
+  absoluteEncoder: {
+    type: "none",
+    port: "dataPort",
+    canId: 20,
+    channel: 0,
+    offset: 0,
+    inverted: false,
+    ratio: 1,
+  },
+  turretParams: {
+    crt: false,
+    sharedGearTeeth: 100,
+    sharedGearRatio: 1,
+    encoderA: { type: "CANcoder", canId: 21, channel: 0, pinionTeeth: 19, offset: 0, inverted: true },
+    encoderB: { type: "CANcoder", canId: 22, channel: 1, pinionTeeth: 21, offset: 0, inverted: true },
   },
 };
 

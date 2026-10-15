@@ -19,6 +19,8 @@ import {
 } from "@/lib/config/hardware-config"
 import ReCalcIntegration from "./recalc-integration"
 import { renameForMechanism } from "@/lib/mechanism-name"
+import { takesAbsoluteEncoder } from "@/lib/absolute-encoder"
+import { AbsoluteEncoderSection, TurretCrtSection } from "./absolute-encoder-form"
 
 export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
   const mechanismType = form.watch("mechanismType")
@@ -28,6 +30,9 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
   const usesYams = form.watch("outputType") === "yams"
   const elevatorDriveType = form.watch("elevatorParams.driveType") ?? "drum"
   const elevatorCascade = form.watch("elevatorParams.cascade") ?? false
+  const turretCrt = form.watch("turretParams.crt") ?? false
+  // Arms, pivots and turrets share their parameters.
+  const isAngular = takesAbsoluteEncoder(mechanismType)
 
   // The units the generated code uses, which are also the units YAMS uses.
   const isElevator = mechanismType === "Elevator"
@@ -606,7 +611,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             onChange={(e) => handleNumberChange(e, field.onChange)}
                           />
                         </FormControl>
-                        <FormDescription>Velocity feedforward in V/({feedforwardUnit}/s){!isFlywheel && mechanismType !== "Pivot" ? " (auto-calculable with ReCalc)" : ""}</FormDescription>
+                        <FormDescription>Velocity feedforward in V/({feedforwardUnit}/s){(mechanismType === "Arm" || isElevator) ? " (auto-calculable with ReCalc)" : ""}</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -627,7 +632,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             onChange={(e) => handleNumberChange(e, field.onChange)}
                           />
                         </FormControl>
-                        <FormDescription>Acceleration feedforward in V/({feedforwardUnit}/s²){!isFlywheel && mechanismType !== "Pivot" ? " (auto-calculable with ReCalc)" : ""}</FormDescription>
+                        <FormDescription>Acceleration feedforward in V/({feedforwardUnit}/s²){(mechanismType === "Arm" || isElevator) ? " (auto-calculable with ReCalc)" : ""}</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -1103,9 +1108,9 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
           </AccordionItem>
         )}
 
-        {mechanismType === "Arm" && (
+        {isAngular && (
           <AccordionItem value="armParams">
-            <AccordionTrigger>Arm Parameters</AccordionTrigger>
+            <AccordionTrigger>{mechanismType} Parameters</AccordionTrigger>
             <AccordionContent>
               <div className="space-y-4">
                 <FormField
@@ -1113,7 +1118,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                   name="armParams.length"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Arm Length (m)</FormLabel>
+                      <FormLabel>{mechanismType === "Turret" ? "Turret Radius" : `${mechanismType} Length`} (m)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
@@ -1165,7 +1170,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             onChange={(e) => handleNumberChange(e, field.onChange)}
                           />
                         </FormControl>
-                        <FormDescription>Minimum angle for simulation</FormDescription>
+                        <FormDescription>The hard stop, which the simulation and the absolute encoders use</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -1186,7 +1191,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             onChange={(e) => handleNumberChange(e, field.onChange)}
                           />
                         </FormControl>
-                        <FormDescription>Maximum angle for simulation</FormDescription>
+                        <FormDescription>The hard stop, which the simulation and the absolute encoders use</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -1236,6 +1241,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                     )}
                   />
                 </div>
+                {mechanismType === "Arm" && (
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -1258,10 +1264,14 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                     )}
                   />
                 </div>
+                )}
               </div>
             </AccordionContent>
           </AccordionItem>
         )}
+
+        {mechanismType === "Turret" && <TurretCrtSection form={form} />}
+        {isAngular && !(mechanismType === "Turret" && turretCrt) && <AbsoluteEncoderSection form={form} />}
 
         {mechanismType === "Flywheel" && (
           <AccordionItem value="flywheelParams">
