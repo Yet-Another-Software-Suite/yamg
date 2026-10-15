@@ -164,9 +164,13 @@ export function buildTemplateData(data: FormValues) {
     // A Talon or a SPARK runs the trapezoidal profile, the PID and the feedforward itself. A Nova's
     // closed loop runs on the SystemCore, with WPILib's profile and feedforward.
     onboardControl: data.motorControllerType !== "ThriftyNova",
-    // WPILib's profile and feedforward: for a Nova, and for a SPARK in simulation, since REVLib's
-    // simulated SPARK runs neither MAXMotion nor the onboard feedforward.
-    systemCoreProfile: ["ThriftyNova", "SparkMAX", "SparkFlex"].includes(data.motorControllerType),
+    // WPILib's profile and feedforward: for a Nova, and for a SPARK's position control in
+    // simulation. REVLib's simulated SPARK applies the onboard feedforward, but its MAXMotion profile
+    // neither keeps to the acceleration nor stops at the goal. A SPARK flywheel needs no profile, so
+    // it runs its own feedforward in simulation too.
+    systemCoreProfile:
+      data.motorControllerType === "ThriftyNova" ||
+      (["SparkMAX", "SparkFlex"].includes(data.motorControllerType) && !isFlywheel),
     // Gains per meter, which the motor controller code converts to per turn of the drive.
     linear: isElevator,
     statorCurrentLimit: num(data.currentLimits?.stator, 40),

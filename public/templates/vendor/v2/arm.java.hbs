@@ -247,8 +247,8 @@ public class {{className}} extends SubsystemBase {
 {{#if onboardControl}}
 {{#if systemCoreProfile}}
       if (RobotBase.isSimulation()) {
-        // REVLib's simulated SPARK runs neither the onboard profile nor the onboard feedforward,
-        // so in simulation they run here instead.
+        // REVLib's simulated SPARK applies the onboard feedforward, but its MAXMotion profile neither
+        // keeps to the acceleration nor stops at the goal, so in simulation the profile runs here.
         // Step the profile one loop, and give the motor controller the next setpoint and feedforward.
         TrapezoidProfile.State next = profile.calculate(LOOP_PERIOD.in(Seconds), setpoint, new TrapezoidProfile.State(goal.in(Radians), 0));
         Voltage feedforwardVoltage = Volts.of(feedforward.calculate(setpoint.position, setpoint.velocity, next.velocity));
