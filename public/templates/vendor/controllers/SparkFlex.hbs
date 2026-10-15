@@ -48,36 +48,33 @@ import static org.wpilib.units.Units.Milliseconds;
     config.closedLoop
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
         .pid(KP / gainScale, KI * sparkLoopPeriod.in(Seconds) / gainScale, KD / sparkLoopPeriod.in(Seconds) / gainScale);
-{{#unless velocityControl}}
-    if (!RobotBase.isSimulation()) {
-      // In simulation the profile and the feedforward run on the SystemCore instead: REVLib's
-      // simulated SPARK applies the feedforward, but its MAXMotion profile neither keeps to the
-      // acceleration nor stops at the goal.
-{{/unless}}
-      // The SPARK runs the feedforward itself. Its kS and kG are in volts, and its kV and kA per
-      // motor RPM, so they are converted from per {{gainUnit}}.
-      double rpmPerGainUnit = {{#if (eq mechanismType "Arm")}}RadiansPerSecond{{else}}RotationsPerSecond{{/if}}.of(GEAR_RATIO).in(RPM){{#if linear}} / TRAVEL_PER_ROTATION.in(Meters){{/if}};
-      config.closedLoop.feedForward.kS({{kS}}).kV({{kV}} / rpmPerGainUnit).kA({{kA}} / rpmPerGainUnit);
+    // The SPARK runs the feedforward itself. Its kS and kG are in volts, and its kV and kA per
+    // motor RPM, so they are converted from per {{gainUnit}}.
+    double rpmPerGainUnit = {{#if (eq mechanismType "Arm")}}RadiansPerSecond{{else}}RotationsPerSecond{{/if}}.of(GEAR_RATIO).in(RPM){{#if linear}} / TRAVEL_PER_ROTATION.in(Meters){{/if}};
+    config.closedLoop.feedForward.kS({{kS}}).kV({{kV}} / rpmPerGainUnit).kA({{kA}} / rpmPerGainUnit);
 {{#if (eq mechanismType "Arm")}}
+    if (!RobotBase.isSimulation()) {
       // kCos scales kG by the cosine of the arm's angle, which is 0 when the arm points straight out.
-      // kCosRatio turns the encoder's motor rotations into arm rotations.
+      // kCosRatio turns the encoder's motor rotations into arm rotations. In simulation the
+      // SystemCore adds gravity instead: REVLib's simulated SPARK works kCos out from the setpoint
+      // in degrees, not from the arm's angle.
       config.closedLoop.feedForward.kCos({{kG}}).kCosRatio(1.0 / GEAR_RATIO);
+    }
 {{/if}}
 {{#if (eq mechanismType "Elevator")}}
-      config.closedLoop.feedForward.kG({{kG}});
+    config.closedLoop.feedForward.kG({{kG}});
 {{/if}}
 {{#unless velocityControl}}
-      // MAXMotion runs a trapezoidal profile to the goal, in motor RPM and RPM per second.
-      config.closedLoop.maxMotion
-          .positionMode(MAXMotionPositionMode.kMAXMotionTrapezoidal)
+    // MAXMotion runs a trapezoidal profile to the goal, in motor RPM and RPM per second.
+    config.closedLoop.maxMotion
+        .positionMode(MAXMotionPositionMode.kMAXMotionTrapezoidal)
 {{#if linear}}
-          .cruiseVelocity(RotationsPerSecond.of(MAX_VELOCITY.div(TRAVEL_PER_ROTATION).in(MetersPerSecond.per(Meter))).times(GEAR_RATIO).in(RPM))
-          .maxAcceleration(RotationsPerSecondPerSecond.of(MAX_ACCELERATION.div(TRAVEL_PER_ROTATION).in(MetersPerSecondPerSecond.per(Meter))).times(GEAR_RATIO).in(RPM.per(Second)));
+        .cruiseVelocity(RotationsPerSecond.of(MAX_VELOCITY.div(TRAVEL_PER_ROTATION).in(MetersPerSecond.per(Meter))).times(GEAR_RATIO).in(RPM))
+        .maxAcceleration(RotationsPerSecondPerSecond.of(MAX_ACCELERATION.div(TRAVEL_PER_ROTATION).in(MetersPerSecondPerSecond.per(Meter))).times(GEAR_RATIO).in(RPM.per(Second)));
 {{else}}
-          .cruiseVelocity(MAX_VELOCITY.times(GEAR_RATIO).in(RPM))
-          .maxAcceleration(MAX_ACCELERATION.times(GEAR_RATIO).in(RPM.per(Second)));
+        .cruiseVelocity(MAX_VELOCITY.times(GEAR_RATIO).in(RPM))
+        .maxAcceleration(MAX_ACCELERATION.times(GEAR_RATIO).in(RPM.per(Second)));
 {{/if}}
-    }
 {{/unless}}
 {{#if enableSoftLimits}}
     config.softLimit

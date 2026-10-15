@@ -108,8 +108,15 @@ public class {{className}} extends SubsystemBase {
 {{/if}}
 
 {{#if systemCoreProfile}}
+{{#if onboardControl}}
+  // Used only in simulation, for the part of the feedforward the SPARK does not apply in Position
+  // mode: kV and kA, and gravity, since REVLib's simulated SPARK works kCos out from the setpoint in
+  // degrees. The SPARK applies kS itself.
+  private final ArmFeedforward feedforward = new ArmFeedforward(0, {{kG}}, {{kV}}, {{kA}});
+{{else}}
   // Feedforward gains, in volts per radian per second (kV) and per radian per second squared (kA).
   private final ArmFeedforward feedforward = new ArmFeedforward({{kS}}, {{kG}}, {{kV}}, {{kA}});
+{{/if}}
 {{/if}}
 
 {{> fields}}

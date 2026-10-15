@@ -109,8 +109,14 @@ public class {{className}} extends SubsystemBase {
 {{/if}}
 
 {{#if systemCoreProfile}}
+{{#if onboardControl}}
+  // Used only in simulation, for the part of the feedforward the SPARK does not apply in Position
+  // mode: kV and kA. The SPARK applies kS itself.
+  private final SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward(0, {{kV}}, {{kA}});
+{{else}}
   // Feedforward gains, in volts per rotation per second (kV) and per rotation per second squared (kA).
   private final SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward({{kS}}, {{kV}}, {{kA}});
+{{/if}}
 {{/if}}
 
 {{> fields}}

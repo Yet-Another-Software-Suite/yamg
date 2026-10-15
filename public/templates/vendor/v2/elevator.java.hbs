@@ -128,8 +128,14 @@ public class {{className}} extends SubsystemBase {
 {{/if}}
 
 {{#if systemCoreProfile}}
+{{#if onboardControl}}
+  // Used only in simulation, for the part of the feedforward the SPARK does not apply in Position
+  // mode: kV and kA. The SPARK applies kS and kG itself.
+  private final ElevatorFeedforward feedforward = new ElevatorFeedforward(0, 0, {{kV}}, {{kA}});
+{{else}}
   // Feedforward gains, in volts per meter per second (kV) and per meter per second squared (kA).
   private final ElevatorFeedforward feedforward = new ElevatorFeedforward({{kS}}, {{kG}}, {{kV}}, {{kA}});
+{{/if}}
 {{/if}}
 
 {{> fields}}
