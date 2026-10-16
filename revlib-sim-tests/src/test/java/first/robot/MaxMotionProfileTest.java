@@ -12,7 +12,7 @@ import org.wpilib.simulation.DCMotorSim;
 /**
  * A NEO with a light load, driven by the simulated SPARK through DCMotorSim. MAXMotion position
  * should reach its cruise velocity in cruise / acceleration seconds and stop at the goal. In
- * REVLib 2027.0.0-alpha-7 it doesn't: maxMotionFollowsItsProfile fails. Plain velocity control with
+ * REVLib 2027.0.0-alpha-7 and alpha-8 it doesn't: maxMotionFollowsItsProfile fails. Plain velocity control with
  * the same kV is the control case, and passes.
  */
 class MaxMotionProfileTest {

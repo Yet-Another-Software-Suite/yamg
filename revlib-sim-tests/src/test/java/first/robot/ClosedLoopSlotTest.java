@@ -11,7 +11,7 @@ import org.junit.jupiter.params.provider.EnumSource;
 
 /**
  * The same gain in each closed loop slot, in velocity control at 1000 RPM with the motor held still,
- * should give the same output. In REVLib 2027.0.0-alpha-7 the simulated SPARK only applies kV in
+ * should give the same output. In REVLib 2027.0.0-alpha-7 and alpha-8 the simulated SPARK only applies kV in
  * slot 0 (slots 1 to 3 give 0 V), and kP in slot 1 gives 1.3 V rather than 1.2 V.
  */
 class ClosedLoopSlotTest {

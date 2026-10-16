@@ -4,7 +4,7 @@ A small WPILib 2027 robot project for trying REVLib's simulated SPARK MAX closed
 in the simulator and with JUnit tests. It goes with
 [wpilibsuite/SystemcoreTesting#425](https://github.com/wpilibsuite/SystemcoreTesting/issues/425).
 
-Built with WPILib / GradleRIO `2027.0.0-alpha-7` and REVLib `2027.0.0-alpha-7`.
+Built with WPILib / GradleRIO `2027.0.0-alpha-7` and REVLib `2027.0.0-alpha-8`.
 
 ## What it shows
 

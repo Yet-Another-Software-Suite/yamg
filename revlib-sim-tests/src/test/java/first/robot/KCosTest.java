@@ -11,7 +11,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 /**
  * kCos "is multiplied by the cosine of the absolute position of the mechanism". With kCos 1 V and
  * kCosRatio 1 (position in rotations), the output should be cos(position) volts wherever the setpoint
- * is. In REVLib 2027.0.0-alpha-7 the simulated SPARK gives cos(setpoint, read as degrees) instead,
+ * is. In REVLib 2027.0.0-alpha-7 and alpha-8 the simulated SPARK gives cos(setpoint, read as degrees) instead,
  * and ignores the position, so most of these fail.
  */
 class KCosTest {
