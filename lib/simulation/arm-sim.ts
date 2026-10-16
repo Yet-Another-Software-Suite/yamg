@@ -11,6 +11,8 @@ export interface ArmSimOptions extends ControlsBaseSimOptions {
   minAngle?: number
   maxAngle?: number
   startingAngle?: number
+  /** False for a pivot or a turret, which gravity does not pull on. */
+  simulateGravity?: boolean
 }
 
 /**
@@ -23,6 +25,7 @@ export class ArmSim extends ControlsBaseSim {
   minAngle: number
   maxAngle: number
   startingAngle: number
+  simulateGravity: boolean
 
   constructor(canvas: HTMLCanvasElement, options: ArmSimOptions = {}) {
     super(canvas, options)
@@ -34,34 +37,31 @@ export class ArmSim extends ControlsBaseSim {
     this.minAngle = options.minAngle !== undefined ? options.minAngle : -Math.PI / 2
     this.maxAngle = options.maxAngle !== undefined ? options.maxAngle : Math.PI / 2
     this.startingAngle = options.startingAngle !== undefined ? options.startingAngle : 0
+    this.simulateGravity = options.simulateGravity ?? true
 
     // Initialize position
     this.position = this.startingAngle
     this.arm = true
+    this.restartProfile()
 
     // Override kG with calculated gravity compensation
     this.kG =
-      options.kG !== undefined ? options.kG : (this.mass * 9.81 * this.length) / 2 / (this.motor.kt / this.motor.R)
+      options.kG !== undefined
+        ? options.kG
+        : this.simulateGravity
+          ? (this.mass * 9.81 * this.length) / 2 / (this.motor.kt / this.motor.R)
+          : 0
   }
 
   override updatePhysics(): void {
-    // Calculate torque from voltage
-    const backEmf = this.velocity * (1 / this.motor.kv) * ((2 * Math.PI) / 60) // V
-    this.current = (this.voltage - backEmf) / this.motor.R // A
-    const motorTorque = this.current * this.motor.kt // N-m
+    // Gravity pulls hardest with the arm straight out, at 0, and not at all pointing straight up
+    const gravityTorque = this.simulateGravity ? this.mass * 9.81 * (this.length / 2) * Math.cos(this.position) : 0 // N-m
 
-    // Calculate gravity torque
-    const gravityTorque = this.mass * 9.81 * (this.length / 2) * Math.sin(this.position) // N-m
-
-    // Calculate net torque
-    const netTorque = motorTorque - gravityTorque // N-m
-
-    // Calculate acceleration
-    this.acceleration = netTorque / this.moi // rad/s^2
-
-    // Update velocity and position using semi-implicit Euler
-    this.velocity += this.acceleration * this.dt // rad/s
-    this.position += this.velocity * this.dt // rad
+    const last = this.velocity
+    const step = this.stepMotor(this.velocity, this.moi, gravityTorque)
+    this.velocity = step.velocity // rad/s
+    this.position += step.distance // rad
+    this.acceleration = (this.velocity - last) / this.dt // rad/s^2
 
     // Apply limits
     if (this.position < this.minAngle) {

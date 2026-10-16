@@ -26,17 +26,12 @@ export class FlywheelSim extends ControlsBaseSim {
   }
 
   override updatePhysics(): void {
-    // Calculate torque from voltage
-    const backEmf = this.velocity * (1 / this.motor.kv) * ((2 * Math.PI) / 60) // V
-    this.current = (this.voltage - backEmf) / this.motor.R // A
-    const motorTorque = this.current * this.motor.kt // N-m
-
     // No gravity or position limits - pure rotational inertia
-    this.acceleration = motorTorque / this.momentOfInertia // rad/s^2
-
-    // Update velocity and position using semi-implicit Euler
-    this.velocity += this.acceleration * this.dt // rad/s
-    this.position += this.velocity * this.dt // rad (unbounded, used for spin visualization only)
+    const last = this.velocity
+    const step = this.stepMotor(this.velocity, this.momentOfInertia, 0)
+    this.velocity = step.velocity // rad/s
+    this.position += step.distance // rad (unbounded, used for spin visualization only)
+    this.acceleration = (this.velocity - last) / this.dt // rad/s^2
 
     // Debug log every 50 frames (approximately once per second)
     if (Math.round(this.time * 50) % 50 === 0) {

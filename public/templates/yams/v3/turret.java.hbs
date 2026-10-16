@@ -44,7 +44,9 @@ public class {{className}} implements Mechanism {
       .withClosedLoopController({{kP}}, {{kI}}, {{kD}})
       .withSimClosedLoopController({{kP}}, {{kI}}, {{kD}})
       // The fastest the closed loop is allowed to move and accelerate the turret.
+{{#if useProfile}}
       .withTrapezoidalProfile(RadiansPerSecond.of({{maxVelocity}}), RadiansPerSecondPerSecond.of({{maxAcceleration}}))
+{{/if}}
       // Feedforward constants, in volts per rotation per second, on the real robot and in simulation.
       .withFeedforward(new SimpleMotorFeedforward({{kS}}, {{kV}}, {{kA}}))
       .withSimFeedforward(new SimpleMotorFeedforward({{kS}}, {{kV}}, {{kA}}))

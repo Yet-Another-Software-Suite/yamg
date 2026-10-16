@@ -38,6 +38,7 @@ export class ElevatorSim extends ControlsBaseSim {
 
     // Initialize position
     this.position = this.startingHeight
+    this.restartProfile()
 
     // Override kG with calculated gravity compensation
     this.kG = this.level
@@ -48,33 +49,20 @@ export class ElevatorSim extends ControlsBaseSim {
   }
 
   override updatePhysics(): void {
-    // Convert linear position/velocity to rotational
-    const rotPosition = this.position / this.drumRadius
-    const rotVelocity = this.velocity / this.drumRadius
-
-    // Calculate torque from voltage
-    const backEmf = rotVelocity * (1 / this.motor.kv) * ((2 * Math.PI) / 60) // V
-    this.current = (this.voltage - backEmf) / this.motor.R // A
-    const motorTorque = this.current * this.motor.kt // N-m
+    // The drum turns at the carriage's speed over its radius
+    const rotVelocity = this.velocity / this.drumRadius // rad/s
 
     // Calculate gravity torque
     const gravityTorque = this.level ? 0 : this.mass * 9.81 * this.drumRadius // N-m
 
-    // Calculate net torque
-    const netTorque = motorTorque - gravityTorque // N-m
-
     // Calculate rotational inertia (J = m*r²)
     const rotInertia = this.mass * this.drumRadius * this.drumRadius
 
-    // Calculate rotational acceleration
-    const rotAcceleration = netTorque / rotInertia // rad/s²
-
-    // Convert back to linear acceleration
-    this.acceleration = rotAcceleration * this.drumRadius // m/s²
-
-    // Update velocity and position using semi-implicit Euler
-    this.velocity += this.acceleration * this.dt // m/s
-    this.position += this.velocity * this.dt // m
+    const last = this.velocity
+    const step = this.stepMotor(rotVelocity, rotInertia, gravityTorque)
+    this.velocity = step.velocity * this.drumRadius // m/s
+    this.position += step.distance * this.drumRadius // m
+    this.acceleration = (this.velocity - last) / this.dt // m/s²
 
     // Apply limits
     if (this.position < this.minHeight) {

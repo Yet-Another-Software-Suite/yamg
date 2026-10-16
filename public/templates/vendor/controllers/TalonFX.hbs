@@ -2,6 +2,7 @@
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
+import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -16,9 +17,12 @@ import static org.wpilib.units.Units.RotationsPerSecondPerSecond;
   private final TalonFX motor = new TalonFX(CAN_ID, new CANBus(CANPort.{{canPort}}));
 {{#if velocityControl}}
   private final VelocityVoltage velocityRequest = new VelocityVoltage(0);
-{{else}}
+{{else if useProfile}}
   // Motion Magic runs a trapezoidal profile to the goal.
   private final MotionMagicVoltage profileRequest = new MotionMagicVoltage(0);
+{{else}}
+  // With no profile, the Talon's closed loop goes straight to the goal.
+  private final PositionVoltage positionRequest = new PositionVoltage(0);
 {{/if}}
   private final VoltageOut voltageRequest = new VoltageOut(0);
 {{/inline}}
@@ -53,7 +57,7 @@ import static org.wpilib.units.Units.RotationsPerSecondPerSecond;
 {{#if (eq mechanismType "Flywheel")}}
     config.Slot0.withKS({{kS}}).withKV({{kV}}).withKA({{kA}});
 {{/if}}
-{{#unless velocityControl}}
+{{#if useProfile}}
     // Motion Magic: the fastest the profile moves and accelerates the mechanism.
 {{#if linear}}
     config.MotionMagic
@@ -62,7 +66,7 @@ import static org.wpilib.units.Units.RotationsPerSecondPerSecond;
 {{else}}
     config.MotionMagic.withMotionMagicCruiseVelocity(MAX_VELOCITY).withMotionMagicAcceleration(MAX_ACCELERATION);
 {{/if}}
-{{/unless}}
+{{/if}}
     config.MotorOutput.withNeutralMode(BRAKE_MODE ? NeutralModeValue.Brake : NeutralModeValue.Coast);
 {{#if enableStatorLimit}}
     config.CurrentLimits.withStatorCurrentLimit(STATOR_CURRENT_LIMIT).withStatorCurrentLimitEnable(true);
@@ -109,7 +113,7 @@ import static org.wpilib.units.Units.RotationsPerSecondPerSecond;
     return motor.getDeviceTemp().getValue();
 {{/inline}}
 {{#*inline "setMechanismGoal"}}
-    motor.setControl(profileRequest.withPosition(goal));
+    motor.setControl({{#if useProfile}}profileRequest{{else}}positionRequest{{/if}}.withPosition(goal));
 {{/inline}}
 {{#*inline "setMechanismGoalVelocity"}}
     motor.setControl(velocityRequest.withVelocity(goal));

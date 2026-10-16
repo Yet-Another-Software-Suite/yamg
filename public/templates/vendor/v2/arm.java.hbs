@@ -100,10 +100,12 @@ public class {{className}} extends SubsystemBase {
   private static final Angle REVERSE_SOFT_LIMIT = Degrees.of({{reverseSoftLimit}});
 {{/if}}
 
+{{#if useProfile}}
   // The fastest the closed loop moves the arm.
   private static final AngularVelocity MAX_VELOCITY = RadiansPerSecond.of({{maxVelocity}});
   private static final AngularAcceleration MAX_ACCELERATION = RadiansPerSecondPerSecond.of({{maxAcceleration}});
-{{#if systemCoreProfile}}
+{{/if}}
+{{#if (and systemCoreProfile useProfile)}}
   private final TrapezoidProfile profile = new TrapezoidProfile(
       new TrapezoidProfile.Constraints(MAX_VELOCITY.in(RadiansPerSecond), MAX_ACCELERATION.in(RadiansPerSecondPerSecond)));
 {{/if}}
@@ -276,7 +278,12 @@ public class {{className}} extends SubsystemBase {
         // REVLib's simulated SPARK applies the onboard feedforward, but its MAXMotion profile neither
         // keeps to the acceleration nor stops at the goal, so in simulation the profile runs here.
         // Step the profile one loop, and give the motor controller the next setpoint and feedforward.
+{{#if useProfile}}
         TrapezoidProfile.State next = profile.calculate(LOOP_PERIOD.in(Seconds), setpoint, new TrapezoidProfile.State(goal.in(Radians), 0));
+{{else}}
+        // With no profile, the setpoint is the goal.
+        TrapezoidProfile.State next = new TrapezoidProfile.State(goal.in(Radians), 0);
+{{/if}}
         Voltage feedforwardVoltage = Volts.of(feedforward.calculate(setpoint.position, setpoint.velocity, next.velocity));
         setpoint = next;
         setMechanismPosition(Radians.of(next.position), feedforwardVoltage);
@@ -290,7 +297,12 @@ public class {{className}} extends SubsystemBase {
 {{/if}}
 {{else}}
       // Step the profile one loop, and give the motor controller the next setpoint and feedforward.
+{{#if useProfile}}
       TrapezoidProfile.State next = profile.calculate(LOOP_PERIOD.in(Seconds), setpoint, new TrapezoidProfile.State(goal.in(Radians), 0));
+{{else}}
+      // With no profile, the setpoint is the goal.
+      TrapezoidProfile.State next = new TrapezoidProfile.State(goal.in(Radians), 0);
+{{/if}}
       Voltage feedforwardVoltage = Volts.of(feedforward.calculate(setpoint.position, setpoint.velocity, next.velocity));
       setpoint = next;
       setMechanismPosition(Radians.of(next.position), feedforwardVoltage);

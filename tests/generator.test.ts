@@ -113,10 +113,21 @@ function form(
 const CASES = OUTPUTS.flatMap((o) =>
   COMMANDS.flatMap((c) =>
     MECHANISMS.flatMap((m) =>
-      CONTROLLERS.flatMap((mc) => [form(m, mc, o, c, true), form(m, mc, o, c, false), form(m, mc, o, c, true, "epilogue")]),
+      CONTROLLERS.flatMap((mc) => [
+        form(m, mc, o, c, true),
+        form(m, mc, o, c, false),
+        form(m, mc, o, c, true, "epilogue"),
+        ...(m === "Flywheel" ? [] : [direct(form(m, mc, o, c, false))]),
+      ]),
     ),
   ),
 );
+
+/** A form with the profile off: a max velocity and acceleration of 0. */
+function direct(f: FormValues): FormValues {
+  const name = f.subsystemName.replace(/Basic$/, "Direct");
+  return { ...f, subsystemName: name, maxVelocity: 0, maxAcceleration: 0, telemetry: { ...f.telemetry, ntKey: name } };
+}
 
 describe("generateFiles", () => {
   it.each(CASES.map((f) => [`${f.outputType}/${f.commandsVersion}/${f.subsystemName}`, f]))("renders %s", async (_, f) => {
@@ -156,6 +167,33 @@ describe("generateFiles", () => {
         const target = i === 0 ? path.join(project, file.filename) : path.join(project, "robots", form.subsystemName, file.filename);
         fs.mkdirSync(path.dirname(target), { recursive: true });
         fs.writeFileSync(target, file.content);
+      }
+    }
+  });
+
+  it("turns the profile off when the max velocity and acceleration are both 0", async () => {
+    for (const m of MECHANISMS.filter((m) => m !== "Flywheel")) {
+      for (const mc of CONTROLLERS) {
+        const [yams] = await generateFiles(form(m, mc, "yams", "v2", false));
+        const [yamsDirect] = await generateFiles(direct(form(m, mc, "yams", "v2", false)));
+        expect(yams.content).toContain(".withTrapezoidalProfile(");
+        expect(yamsDirect.content).not.toContain("withTrapezoidalProfile");
+
+        const [vendor] = await generateFiles(form(m, mc, "vendor", "v2", false));
+        const [vendorDirect] = await generateFiles(direct(form(m, mc, "vendor", "v2", false)));
+        expect(vendor.content).toContain("MAX_VELOCITY");
+        expect(vendorDirect.content).not.toMatch(/MAX_VELOCITY|MAX_ACCELERATION|profile\.calculate|MotionMagic\b|MotionMagicVoltage\(|maxMotion|kMAXMotion/);
+        if (mc === "TalonFX" || mc === "TalonFXS") {
+          expect(vendor.content).toContain("profileRequest.withPosition(goal)");
+          expect(vendorDirect.content).toContain("positionRequest.withPosition(goal)");
+        } else if (mc === "ThriftyNova" || mc.startsWith("Spark")) {
+          // The setpoint the SystemCore gives the motor controller is the goal itself.
+          expect(vendorDirect.content).toContain("TrapezoidProfile.State next = new TrapezoidProfile.State(goal.in(");
+        }
+        if (mc.startsWith("Spark")) {
+          expect(vendor.content).toContain("ControlType.kMAXMotionPositionControl");
+          expect(vendorDirect.content).toContain("ControlType.kPosition, ClosedLoopSlot.kSlot0);");
+        }
       }
     }
   });

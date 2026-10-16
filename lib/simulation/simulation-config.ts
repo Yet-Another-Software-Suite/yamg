@@ -6,6 +6,29 @@ import type { ElevatorSimOptions } from "./elevator-sim"
 import type { FlywheelSimOptions } from "./flywheel-sim"
 import type { ControlsBaseSimOptions } from "./controls-base-sim"
 
+/** One radian in rotations. */
+const ROTATIONS_PER_RADIAN = 1 / (2 * Math.PI)
+
+/**
+ * The units the form's gains are in, as the generated code takes them. The sim works in radians (or
+ * meters), so this says how many gain units one radian is. PID gains are per rotation (per rotation
+ * per second for a flywheel), and per meter for an elevator. kV and kA are per radian for an arm,
+ * per rotation for a pivot, a turret or a flywheel, and per meter for an elevator.
+ */
+export function gainUnits(mechanismType: FormValues["mechanismType"]): {
+  pidUnitsPerSimUnit: number
+  feedforwardUnitsPerSimUnit: number
+} {
+  switch (mechanismType) {
+    case "Elevator":
+      return { pidUnitsPerSimUnit: 1, feedforwardUnitsPerSimUnit: 1 }
+    case "Arm":
+      return { pidUnitsPerSimUnit: ROTATIONS_PER_RADIAN, feedforwardUnitsPerSimUnit: 1 }
+    default:
+      return { pidUnitsPerSimUnit: ROTATIONS_PER_RADIAN, feedforwardUnitsPerSimUnit: ROTATIONS_PER_RADIAN }
+  }
+}
+
 /**
  * Creates simulation options based on form values
  * This centralizes the configuration for all simulation types
@@ -27,11 +50,17 @@ export function createSimulationOptions(
     kV: formValues.feedforward?.kV || 0,
     kA: formValues.feedforward?.kA || 0,
     kG: formValues.feedforward?.kG || 0,
+    // The profile the generated code runs. Flywheels have none.
+    maxVelocity: formValues.mechanismType === "Flywheel" ? 0 : (formValues.maxVelocity ?? 1),
+    maxAcceleration: formValues.mechanismType === "Flywheel" ? 0 : (formValues.maxAcceleration ?? 1),
+    ...gainUnits(formValues.mechanismType),
   }
 
   // Mechanism-specific options
   switch (formValues.mechanismType) {
-    case "Arm": {
+    case "Arm":
+    case "Pivot":
+    case "Turret": {
       // Convert mass from lbs to kg if needed
       let mass = formValues.armParams?.mass || 5.0
       if (formValues.armParams?.massUnit === "lbs") {
@@ -54,6 +83,11 @@ export function createSimulationOptions(
           formValues.armParams?.startingPosition !== undefined
             ? (Math.PI * formValues.armParams.startingPosition) / 180
             : 0,
+      }
+      if (formValues.mechanismType !== "Arm") {
+        // A pivot or a turret has no gravity to hold against, as in the generated code.
+        armOptions.kG = 0
+        armOptions.simulateGravity = false
       }
       return { simType: "ArmSim", options: armOptions }
     }
@@ -78,21 +112,6 @@ export function createSimulationOptions(
       return { simType: "ElevatorSim", options: elevatorOptions }
     }
 
-    case "Pivot":
-    case "Turret": {
-      // For pivot, we'll use the arm simulation with different parameters
-      const pivotOptions: ArmSimOptions = {
-        ...commonOptions,
-        length: 0.3, // Short arm for pivot visualization
-        mass: 2.0,
-        minAngle: -Math.PI / 2,
-        maxAngle: Math.PI / 2,
-        startingAngle: 0,
-        kG: 0, // No gravity compensation for pivot
-      }
-      return { simType: "ArmSim", options: pivotOptions }
-    }
-
     case "Flywheel": {
       const flywheelOptions: FlywheelSimOptions = {
         ...commonOptions,
@@ -114,6 +133,8 @@ export function getSliderRangeConfig(formValues: FormValues, simType: string) {
   if (simType === "position") {
     switch (formValues.mechanismType) {
       case "Arm":
+      case "Pivot":
+      case "Turret":
         return {
           min: formValues.armParams?.hardLimitMin !== undefined ? formValues.armParams.hardLimitMin : -90,
           max: formValues.armParams?.hardLimitMax !== undefined ? formValues.armParams.hardLimitMax : 90,
@@ -128,15 +149,6 @@ export function getSliderRangeConfig(formValues: FormValues, simType: string) {
           step: 0.01,
           unit: "m",
           initialValue: formValues.elevatorParams?.startingHeight || 0,
-        }
-      case "Pivot":
-      case "Turret":
-        return {
-          min: -90,
-          max: 90,
-          step: 1,
-          unit: "°",
-          initialValue: 0,
         }
       default:
         return { min: -1, max: 1, step: 0.1, unit: "", initialValue: 0 }

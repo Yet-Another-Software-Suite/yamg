@@ -158,6 +158,9 @@ export function buildTemplateData(data: FormValues) {
     kG: num(data.feedforward?.kG, 0),
     maxVelocity: num(data.maxVelocity, 1),
     maxAcceleration: num(data.maxAcceleration, 1),
+    // A max velocity and acceleration of 0 turn the trapezoidal profile off: the closed loop goes
+    // straight to the goal. Flywheels have no profile.
+    useProfile: !isFlywheel && !((data.maxVelocity ?? 1) === 0 && (data.maxAcceleration ?? 1) === 0),
     // The unit the PID gains are per: YAMS uses mechanism rotations, or meters for an elevator.
     gainUnit: isElevator ? "meter" : isFlywheel ? "rotation per second" : "rotation",
     velocityControl: isFlywheel,

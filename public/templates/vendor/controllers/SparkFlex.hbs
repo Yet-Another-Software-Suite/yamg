@@ -64,7 +64,7 @@ import static org.wpilib.units.Units.Milliseconds;
 {{#if (eq mechanismType "Elevator")}}
     config.closedLoop.feedForward.kG({{kG}});
 {{/if}}
-{{#unless velocityControl}}
+{{#if useProfile}}
     // MAXMotion runs a trapezoidal profile to the goal, in motor RPM and RPM per second.
     config.closedLoop.maxMotion
         .positionMode(MAXMotionPositionMode.kMAXMotionTrapezoidal)
@@ -75,7 +75,7 @@ import static org.wpilib.units.Units.Milliseconds;
         .cruiseVelocity(MAX_VELOCITY.times(GEAR_RATIO).in(RPM))
         .maxAcceleration(MAX_ACCELERATION.times(GEAR_RATIO).in(RPM.per(Second)));
 {{/if}}
-{{/unless}}
+{{/if}}
 {{#if enableSoftLimits}}
     config.softLimit
         .forwardSoftLimit(FORWARD_SOFT_LIMIT.times(GEAR_RATIO).in(Rotations))
@@ -103,7 +103,7 @@ import static org.wpilib.units.Units.Milliseconds;
     return Celsius.of(motor.getMotorTemperature().get());
 {{/inline}}
 {{#*inline "setMechanismGoal"}}
-    closedLoop.setSetpoint(goal.times(GEAR_RATIO).in(Rotations), ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0);
+    closedLoop.setSetpoint(goal.times(GEAR_RATIO).in(Rotations), ControlType.{{#if useProfile}}kMAXMotionPositionControl{{else}}kPosition{{/if}}, ClosedLoopSlot.kSlot0);
 {{/inline}}
 {{#*inline "setMechanismGoalVelocity"}}
     closedLoop.setSetpoint(goal.times(GEAR_RATIO).in(RPM), ControlType.kVelocity, ClosedLoopSlot.kSlot0);
