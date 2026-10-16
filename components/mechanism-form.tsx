@@ -41,7 +41,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
   const isElevator = mechanismType === "Elevator"
   const isFlywheel = mechanismType === "Flywheel"
   const pidUnit = isElevator ? "meter" : isFlywheel ? "rotation per second" : "rotation"
-  const feedforwardUnit = isElevator ? "m" : mechanismType === "Arm" ? "rad" : "rot"
+  const feedforwardUnit = isElevator ? "m" : "rot"
 
   // Get all available controllers and motors from the configuration
   const allControllers = Object.values(MOTOR_CONTROLLERS)
@@ -617,7 +617,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             onChange={(e) => handleNumberChange(e, field.onChange)}
                           />
                         </FormControl>
-                        <FormDescription>Velocity feedforward in V/({feedforwardUnit}/s){(mechanismType === "Arm" || isElevator) ? " (auto-calculable with ReCalc)" : ""}</FormDescription>
+                        <FormDescription>Velocity feedforward in V/({feedforwardUnit}/s){isElevator ? " (auto-calculable with ReCalc)" : mechanismType === "Arm" ? " (auto-calculable with ReCalc, which gives it per radian: multiply by 2π)" : ""}</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -638,7 +638,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             onChange={(e) => handleNumberChange(e, field.onChange)}
                           />
                         </FormControl>
-                        <FormDescription>Acceleration feedforward in V/({feedforwardUnit}/s²){(mechanismType === "Arm" || isElevator) ? " (auto-calculable with ReCalc)" : ""}</FormDescription>
+                        <FormDescription>Acceleration feedforward in V/({feedforwardUnit}/s²){isElevator ? " (auto-calculable with ReCalc)" : mechanismType === "Arm" ? " (auto-calculable with ReCalc, which gives it per radian: multiply by 2π)" : ""}</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}

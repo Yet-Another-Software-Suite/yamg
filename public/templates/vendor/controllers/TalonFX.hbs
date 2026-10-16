@@ -1,8 +1,11 @@
 {{#*inline "imports"}}
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.configs.TalonFXConfiguration;
+{{#if useProfile}}
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
+{{else if (not velocityControl)}}
 import com.ctre.phoenix6.controls.PositionVoltage;
+{{/if}}
 import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -10,7 +13,9 @@ import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.sim.TalonFXSimState;
 import org.wpilib.hardware.bus.CANPort;
+{{#if useProfile}}
 import static org.wpilib.units.Units.RotationsPerSecondPerSecond;
+{{/if}}
 {{/inline}}
 {{#*inline "fields"}}
   // The Talon FX, and the requests that control it.
@@ -21,7 +26,7 @@ import static org.wpilib.units.Units.RotationsPerSecondPerSecond;
   // Motion Magic runs a trapezoidal profile to the goal.
   private final MotionMagicVoltage profileRequest = new MotionMagicVoltage(0);
 {{else}}
-  // With no profile, the Talon's closed loop goes straight to the goal.
+  // PositionVoltage: the Talon's closed loop goes straight to the goal.
   private final PositionVoltage positionRequest = new PositionVoltage(0);
 {{/if}}
   private final VoltageOut voltageRequest = new VoltageOut(0);
@@ -41,10 +46,9 @@ import static org.wpilib.units.Units.RotationsPerSecondPerSecond;
     // The Talon runs the feedforward itself, with its gains per turn of the mechanism.
 {{#if (eq mechanismType "Arm")}}
     // Arm_Cosine scales kG by the cosine of the arm's angle, which is 0 when the arm points straight out.
-    // kV and kA are per radian, so they go to per turn.
+    // kV and kA are per turn already.
     config.Slot0.withGravityType(GravityTypeValue.Arm_Cosine).withKG({{kG}});
-    double radiansPerRotation = Rotations.of(1).in(Radians);
-    config.Slot0.withKS({{kS}}).withKV({{kV}} * radiansPerRotation).withKA({{kA}} * radiansPerRotation);
+    config.Slot0.withKS({{kS}}).withKV({{kV}}).withKA({{kA}});
 {{/if}}
 {{#if (eq mechanismType "Elevator")}}
     // Elevator_Static applies kG all the time. kV and kA are per meter, so they go to per turn.

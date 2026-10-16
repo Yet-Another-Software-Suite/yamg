@@ -171,31 +171,42 @@ describe("generateFiles", () => {
     }
   });
 
-  it("turns the profile off when the max velocity and acceleration are both 0", async () => {
+  it("has no motion profile at all when the max velocity and acceleration are both 0", async () => {
     for (const m of MECHANISMS.filter((m) => m !== "Flywheel")) {
       for (const mc of CONTROLLERS) {
-        const [yams] = await generateFiles(form(m, mc, "yams", "v2", false));
-        const [yamsDirect] = await generateFiles(direct(form(m, mc, "yams", "v2", false)));
-        expect(yams.content).toContain(".withTrapezoidalProfile(");
-        expect(yamsDirect.content).not.toContain("withTrapezoidalProfile");
-
-        const [vendor] = await generateFiles(form(m, mc, "vendor", "v2", false));
-        const [vendorDirect] = await generateFiles(direct(form(m, mc, "vendor", "v2", false)));
-        expect(vendor.content).toContain("MAX_VELOCITY");
-        expect(vendorDirect.content).not.toMatch(/MAX_VELOCITY|MAX_ACCELERATION|profile\.calculate|MotionMagic\b|MotionMagicVoltage\(|maxMotion|kMAXMotion/);
-        if (mc === "TalonFX" || mc === "TalonFXS") {
-          expect(vendor.content).toContain("profileRequest.withPosition(goal)");
-          expect(vendorDirect.content).toContain("positionRequest.withPosition(goal)");
-        } else if (mc === "ThriftyNova" || mc.startsWith("Spark")) {
-          // The setpoint the SystemCore gives the motor controller is the goal itself.
-          expect(vendorDirect.content).toContain("TrapezoidProfile.State next = new TrapezoidProfile.State(goal.in(");
+        for (const output of OUTPUTS) {
+          for (const commands of COMMANDS) {
+            const [withProfile] = await generateFiles(form(m, mc, output, commands, false));
+            expect(withProfile.content).toMatch(output === "yams" ? /\.withTrapezoidalProfile\(/ : /MAX_VELOCITY/);
+            for (const everything of [false, true]) {
+              const files = await generateFiles(direct(form(m, mc, output, commands, everything)));
+              for (const file of files) {
+                expect(file.content).not.toMatch(/profile|MotionMagic|MAXMotion|MAX_VELOCITY|MAX_ACCELERATION|PerSecondPerSecond|LinearAcceleration/i);
+              }
+            }
+          }
         }
-        if (mc.startsWith("Spark")) {
-          expect(vendor.content).toContain("ControlType.kMAXMotionPositionControl");
-          expect(vendorDirect.content).toContain("ControlType.kPosition, ClosedLoopSlot.kSlot0);");
+        const [vendor] = await generateFiles(direct(form(m, mc, "vendor", "v2", false)));
+        if (mc === "TalonFX" || mc === "TalonFXS") {
+          expect(vendor.content).toContain("positionRequest.withPosition(goal)");
+        } else if (mc === "ThriftyNova") {
+          expect(vendor.content).toContain("// Go straight to the goal, with the feedforward that holds it there.");
+        } else {
+          expect(vendor.content).toContain("ControlType.kPosition, ClosedLoopSlot.kSlot0);");
         }
       }
     }
+  });
+
+  it("takes an arm's kV and kA per rotation, like every other mechanism", async () => {
+    const [talon] = await generateFiles(form("Arm", "TalonFX", "vendor", "v2", false));
+    expect(talon.content).toContain("config.Slot0.withKS(0.1).withKV(1.2).withKA(0.0);");
+    const [spark] = await generateFiles(form("Arm", "SparkMAX", "vendor", "v2", false));
+    expect(spark.content).toContain("double rpmPerGainUnit = RotationsPerSecond.of(GEAR_RATIO).in(RPM);");
+    const [nova] = await generateFiles(form("Arm", "ThriftyNova", "vendor", "v2", false));
+    expect(nova.content).toContain("new ArmFeedforward(0.1, 0.3, 1.2 / (2 * Math.PI), 0.0 / (2 * Math.PI))");
+    const [yams] = await generateFiles(form("Arm", "SparkMAX", "yams", "v2", false));
+    expect(yams.content).toContain("new ArmFeedforward(0.1, 0.3, 1.2, 0.0)");
   });
 
   it("gives a Thrifty Nova only the open loop ramp, since it has one ramp rate", async () => {

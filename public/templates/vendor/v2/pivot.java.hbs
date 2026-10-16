@@ -8,7 +8,9 @@ import static org.wpilib.units.Units.Meters;
 import static org.wpilib.units.Units.RPM;
 import static org.wpilib.units.Units.Radians;
 import static org.wpilib.units.Units.RadiansPerSecond;
+{{#if useProfile}}
 import static org.wpilib.units.Units.RadiansPerSecondPerSecond;
+{{/if}}
 import static org.wpilib.units.Units.Rotations;
 import static org.wpilib.units.Units.RotationsPerSecond;
 import static org.wpilib.units.Units.Seconds;
@@ -21,7 +23,7 @@ import org.wpilib.command2.Command;
 import org.wpilib.command2.SubsystemBase;
 import org.wpilib.command2.button.Trigger;
 import org.wpilib.framework.RobotBase;
-{{#if systemCoreProfile}}
+{{#if (or systemCoreProfile goalFeedforward)}}
 import org.wpilib.math.controller.SimpleMotorFeedforward;
 {{/if}}
 import org.wpilib.math.system.DCMotor;
@@ -105,12 +107,12 @@ public class {{className}} extends SubsystemBase {
   private static final AngularVelocity MAX_VELOCITY = RadiansPerSecond.of({{maxVelocity}});
   private static final AngularAcceleration MAX_ACCELERATION = RadiansPerSecondPerSecond.of({{maxAcceleration}});
 {{/if}}
-{{#if (and systemCoreProfile useProfile)}}
+{{#if systemCoreProfile}}
   private final TrapezoidProfile profile = new TrapezoidProfile(
       new TrapezoidProfile.Constraints(MAX_VELOCITY.in(RadiansPerSecond), MAX_ACCELERATION.in(RadiansPerSecondPerSecond)));
 {{/if}}
 
-{{#if systemCoreProfile}}
+{{#if (or systemCoreProfile goalFeedforward)}}
 {{#if onboardControl}}
   // Used only in simulation, for the part of the feedforward the SPARK does not apply in Position
   // mode: kV and kA. The SPARK applies kS itself.
@@ -211,12 +213,12 @@ public class {{className}} extends SubsystemBase {
   }
 
 {{#if onboardControl}}
-  /** Send the motor controller the goal. It runs the profile and the feedforward itself. */
+  /** Send the motor controller the goal. It runs the {{#if useProfile}}profile{{else}}closed loop{{/if}} and the feedforward itself. */
   private void setMechanismGoal(Angle goal) {
 {{> setMechanismGoal}}
   }
 {{/if}}
-{{#if systemCoreProfile}}
+{{#if (or systemCoreProfile goalFeedforward)}}
   private void setMechanismPosition(Angle mechanismPosition, Voltage feedforward) {
 {{> setMechanismPosition}}
   }
@@ -237,7 +239,7 @@ public class {{className}} extends SubsystemBase {
     Angle clamped = angle.lt(MIN_ANGLE) ? MIN_ANGLE : angle.gt(MAX_ANGLE) ? MAX_ANGLE : angle;
 {{#if sendGoalOnce}}
     if (goal == null || !clamped.isEquivalent(goal)) {
-      // The Talon runs the profile itself, so it only needs the goal when it changes.
+      // The Talon runs the {{#if useProfile}}profile{{else}}closed loop{{/if}} itself, so it only needs the goal when it changes.
       setMechanismGoal(clamped);
     }
 {{/if}}
@@ -277,12 +279,7 @@ public class {{className}} extends SubsystemBase {
         // REVLib's simulated SPARK applies the onboard feedforward, but its MAXMotion profile neither
         // keeps to the acceleration nor stops at the goal, so in simulation the profile runs here.
         // Step the profile one loop, and give the motor controller the next setpoint and feedforward.
-{{#if useProfile}}
         TrapezoidProfile.State next = profile.calculate(LOOP_PERIOD.in(Seconds), setpoint, new TrapezoidProfile.State(goal.in(Radians), 0));
-{{else}}
-        // With no profile, the setpoint is the goal.
-        TrapezoidProfile.State next = new TrapezoidProfile.State(goal.in(Radians), 0);
-{{/if}}
         Voltage feedforwardVoltage = Volts.of(feedforward.calculate(
             RadiansPerSecond.of(setpoint.velocity).in(RotationsPerSecond), RadiansPerSecond.of(next.velocity).in(RotationsPerSecond)));
         setpoint = next;
@@ -292,21 +289,19 @@ public class {{className}} extends SubsystemBase {
         setMechanismGoal(goal);
       }
 {{else}}
-      // The motor controller runs the trapezoidal profile and the feedforward itself.
+      // The motor controller runs the {{#if useProfile}}trapezoidal profile{{else}}closed loop{{/if}} and the feedforward itself.
       setMechanismGoal(goal);
 {{/if}}
-{{else}}
+{{else if systemCoreProfile}}
       // Step the profile one loop, and give the motor controller the next setpoint and feedforward.
-{{#if useProfile}}
       TrapezoidProfile.State next = profile.calculate(LOOP_PERIOD.in(Seconds), setpoint, new TrapezoidProfile.State(goal.in(Radians), 0));
-{{else}}
-      // With no profile, the setpoint is the goal.
-      TrapezoidProfile.State next = new TrapezoidProfile.State(goal.in(Radians), 0);
-{{/if}}
       Voltage feedforwardVoltage = Volts.of(feedforward.calculate(
           RadiansPerSecond.of(setpoint.velocity).in(RotationsPerSecond), RadiansPerSecond.of(next.velocity).in(RotationsPerSecond)));
       setpoint = next;
       setMechanismPosition(Radians.of(next.position), feedforwardVoltage);
+{{else}}
+      // Go straight to the goal, with the feedforward that holds it there.
+      setMechanismPosition(goal, Volts.of(feedforward.calculate(0)));
 {{/if}}
     }
 {{/unless}}

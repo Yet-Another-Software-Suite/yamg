@@ -5,7 +5,9 @@ import static org.wpilib.units.Units.Degrees;
 import static org.wpilib.units.Units.Kilograms;
 import static org.wpilib.units.Units.Meters;
 import static org.wpilib.units.Units.RadiansPerSecond;
+{{#if useProfile}}
 import static org.wpilib.units.Units.RadiansPerSecondPerSecond;
+{{/if}}
 import static org.wpilib.units.Units.Seconds;
 
 {{> imports}}
@@ -47,7 +49,7 @@ public class {{className}} extends SubsystemBase {
 {{#if useProfile}}
       .withTrapezoidalProfile(RadiansPerSecond.of({{maxVelocity}}), RadiansPerSecondPerSecond.of({{maxAcceleration}}))
 {{/if}}
-      // Feedforward constants, in volts per radian per second, on the real robot and in simulation.
+      // Feedforward constants, in volts per rotation per second, on the real robot and in simulation.
       .withFeedforward(new ArmFeedforward({{kS}}, {{kG}}, {{kV}}, {{kA}}))
       .withSimFeedforward(new ArmFeedforward({{kS}}, {{kG}}, {{kV}}, {{kA}}))
       // Gearing from the motor rotor to the arm: {{gearRatio}} motor rotations per arm rotation.

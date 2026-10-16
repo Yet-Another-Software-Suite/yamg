@@ -10,12 +10,18 @@ import com.revrobotics.spark.SparkLowLevel.ControlType;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkSim;
+{{#if useProfile}}
 import com.revrobotics.spark.config.MAXMotionConfig.MAXMotionPositionMode;
+{{/if}}
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkFlexConfig;
 import org.wpilib.hardware.bus.CANPort;
+{{#if useProfile}}
 import static org.wpilib.units.Units.RotationsPerSecondPerSecond;
+{{/if}}
+{{#if useProfile}}
 import static org.wpilib.units.Units.Second;
+{{/if}}
 import static org.wpilib.units.Units.Milliseconds;
 {{/inline}}
 {{#*inline "fields"}}
@@ -50,7 +56,7 @@ import static org.wpilib.units.Units.Milliseconds;
         .pid(KP / gainScale, KI * sparkLoopPeriod.in(Seconds) / gainScale, KD / sparkLoopPeriod.in(Seconds) / gainScale);
     // The SPARK runs the feedforward itself. Its kS and kG are in volts, and its kV and kA per
     // motor RPM, so they are converted from per {{gainUnit}}.
-    double rpmPerGainUnit = {{#if (eq mechanismType "Arm")}}RadiansPerSecond{{else}}RotationsPerSecond{{/if}}.of(GEAR_RATIO).in(RPM){{#if linear}} / TRAVEL_PER_ROTATION.in(Meters){{/if}};
+    double rpmPerGainUnit = RotationsPerSecond.of(GEAR_RATIO).in(RPM){{#if linear}} / TRAVEL_PER_ROTATION.in(Meters){{/if}};
     config.closedLoop.feedForward.kS({{kS}}).kV({{kV}} / rpmPerGainUnit).kA({{kA}} / rpmPerGainUnit);
 {{#if (eq mechanismType "Arm")}}
     if (!RobotBase.isSimulation()) {

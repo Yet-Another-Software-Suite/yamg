@@ -17,7 +17,7 @@ import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Trigger;
 import org.wpilib.framework.RobotBase;
-{{#if systemCoreProfile}}
+{{#if systemCoreFeedforward}}
 import org.wpilib.math.controller.SimpleMotorFeedforward;
 {{/if}}
 import org.wpilib.math.system.DCMotor;
@@ -81,7 +81,7 @@ public class {{className}} implements Mechanism {
   private static final double KI = {{kI}};
   private static final double KD = {{kD}};
 
-{{#if systemCoreProfile}}
+{{#if systemCoreFeedforward}}
   // Feedforward gains, in volts per rotation per second (kV) and per rotation per second squared (kA).
   private final SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward({{kS}}, {{kV}}, {{kA}});
 {{/if}}
@@ -166,7 +166,7 @@ public class {{className}} implements Mechanism {
 {{> setMechanismGoalVelocity}}
   }
 {{/if}}
-{{#if systemCoreProfile}}
+{{#if systemCoreFeedforward}}
   private void setMechanismVelocity(AngularVelocity mechanismVelocity, Voltage feedforward) {
 {{> setMechanismVelocity}}
   }
@@ -229,7 +229,7 @@ public class {{className}} implements Mechanism {
 {{#unless sendGoalOnce}}
     if (goalVelocity != null) {
 {{#if onboardControl}}
-{{#if systemCoreProfile}}
+{{#if systemCoreFeedforward}}
       if (RobotBase.isSimulation()) {
         // REVLib's simulated SPARK runs neither the onboard profile nor the onboard feedforward,
         // so in simulation they run here instead.

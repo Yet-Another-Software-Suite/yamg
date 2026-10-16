@@ -11,9 +11,8 @@ const ROTATIONS_PER_RADIAN = 1 / (2 * Math.PI)
 
 /**
  * The units the form's gains are in, as the generated code takes them. The sim works in radians (or
- * meters), so this says how many gain units one radian is. PID gains are per rotation (per rotation
- * per second for a flywheel), and per meter for an elevator. kV and kA are per radian for an arm,
- * per rotation for a pivot, a turret or a flywheel, and per meter for an elevator.
+ * meters), so this says how many gain units one radian is. The gains are per rotation (per
+ * rotation per second for a flywheel's PID), and per meter for an elevator.
  */
 export function gainUnits(mechanismType: FormValues["mechanismType"]): {
   pidUnitsPerSimUnit: number
@@ -22,8 +21,6 @@ export function gainUnits(mechanismType: FormValues["mechanismType"]): {
   switch (mechanismType) {
     case "Elevator":
       return { pidUnitsPerSimUnit: 1, feedforwardUnitsPerSimUnit: 1 }
-    case "Arm":
-      return { pidUnitsPerSimUnit: ROTATIONS_PER_RADIAN, feedforwardUnitsPerSimUnit: 1 }
     default:
       return { pidUnitsPerSimUnit: ROTATIONS_PER_RADIAN, feedforwardUnitsPerSimUnit: ROTATIONS_PER_RADIAN }
   }

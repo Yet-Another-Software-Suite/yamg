@@ -84,6 +84,8 @@ Handlebars.registerHelper("eq", (a, b) => a === b);
 Handlebars.registerHelper("and", (...args) => args.slice(0, -1).every(Boolean));
 // True when any argument is.
 Handlebars.registerHelper("or", (...args) => args.slice(0, -1).some(Boolean));
+// True when its argument is not.
+Handlebars.registerHelper("not", (a) => !a);
 
 const MECHANISM_FILES: Record<FormValues["mechanismType"], string> = {
   Arm: "arm",
@@ -129,6 +131,11 @@ export function buildTemplateData(data: FormValues) {
   const motor = getMotor(data.motorType);
   const isElevator = data.mechanismType === "Elevator";
   const isFlywheel = data.mechanismType === "Flywheel";
+  const isNova = data.motorControllerType === "ThriftyNova";
+  const isSpark = data.motorControllerType === "SparkMAX" || data.motorControllerType === "SparkFlex";
+  // A max velocity and acceleration of 0 turn the trapezoidal profile off: the closed loop goes
+  // straight to the goal. Flywheels have no profile.
+  const useProfile = !isFlywheel && !((data.maxVelocity ?? 1) === 0 && (data.maxAcceleration ?? 1) === 0);
   const forward = data.softLimits?.forward;
   const reverse = data.softLimits?.reverse;
 
@@ -158,9 +165,7 @@ export function buildTemplateData(data: FormValues) {
     kG: num(data.feedforward?.kG, 0),
     maxVelocity: num(data.maxVelocity, 1),
     maxAcceleration: num(data.maxAcceleration, 1),
-    // A max velocity and acceleration of 0 turn the trapezoidal profile off: the closed loop goes
-    // straight to the goal. Flywheels have no profile.
-    useProfile: !isFlywheel && !((data.maxVelocity ?? 1) === 0 && (data.maxAcceleration ?? 1) === 0),
+    useProfile,
     // The unit the PID gains are per: YAMS uses mechanism rotations, or meters for an elevator.
     gainUnit: isElevator ? "meter" : isFlywheel ? "rotation per second" : "rotation",
     velocityControl: isFlywheel,
@@ -169,11 +174,14 @@ export function buildTemplateData(data: FormValues) {
     onboardControl: data.motorControllerType !== "ThriftyNova",
     // WPILib's profile and feedforward: for a Nova, and for a SPARK's position control in
     // simulation. REVLib's simulated SPARK applies the onboard feedforward, but its MAXMotion profile
-    // neither keeps to the acceleration nor stops at the goal. A SPARK flywheel needs no profile, so
-    // it runs its own feedforward in simulation too.
-    systemCoreProfile:
-      data.motorControllerType === "ThriftyNova" ||
-      (["SparkMAX", "SparkFlex"].includes(data.motorControllerType) && !isFlywheel),
+    // neither keeps to the acceleration nor stops at the goal.
+    systemCoreProfile: useProfile && (isNova || isSpark),
+    // With no profile, the SystemCore gives a Nova the goal and the feedforward to hold it, and a
+    // SPARK arm in simulation its gravity: REVLib's simulated SPARK works kCos out from the setpoint
+    // in degrees.
+    goalFeedforward: !useProfile && !isFlywheel && (isNova || (isSpark && data.mechanismType === "Arm")),
+    // A Nova flywheel's feedforward runs on the SystemCore. A SPARK flywheel runs its own.
+    systemCoreFeedforward: isNova && isFlywheel,
     // A Talon runs its closed loop from the last request it was sent, so it is sent the goal once,
     // when the goal changes. A SPARK and a Nova are given their setpoint in periodic(): a Nova's
     // profile, and a SPARK's in simulation, run there.

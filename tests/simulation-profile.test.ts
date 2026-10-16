@@ -181,10 +181,10 @@ describe("the web sim's physics and gain units", () => {
     expect(elevator.calculatePID(1)).toBeCloseTo(3)
   })
 
-  it("takes kV per radian for an arm, per rotation for a pivot, and per meter for an elevator", () => {
+  it("takes kV per rotation for an arm, a pivot and a flywheel, and per meter for an elevator", () => {
     // At a steady speed, only kV acts.
     const arm = new ArmSim(canvas, { kV: 2, kA: 0.1, ...gainUnits("Arm") })
-    expect(arm.calculateFeedforward(Math.PI / 2, 1, 1)).toBeCloseTo(2)
+    expect(arm.calculateFeedforward(Math.PI / 2, 2 * Math.PI, 2 * Math.PI)).toBeCloseTo(2)
     const pivotSim = new ArmSim(canvas, { kV: 2, kA: 0.1, ...gainUnits("Pivot") })
     expect(pivotSim.calculateFeedforward(Math.PI / 2, 2 * Math.PI, 2 * Math.PI)).toBeCloseTo(2)
     const elevator = new ElevatorSim(canvas, { kV: 2, kA: 0.1, ...gainUnits("Elevator") })
