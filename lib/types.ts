@@ -6,7 +6,7 @@ export interface FormValues {
   commandsVersion?: "v2" | "v3"
   mechanismType: "Elevator" | "Arm" | "Pivot" | "Turret" | "Flywheel"
   motorControllerType: "ThriftyNova" | "SparkMAX" | "SparkFlex" | "TalonFX" | "TalonFXS" 
-  motorType: "NEO" | "NEO550" | "Minion" | "Krakenx44" | "Krakenx60" | "Vortex"
+  motorType: "NEO" | "NEO550" | "Minion" | "Pulsar" | "Krakenx44" | "Krakenx60" | "Vortex"
   canId: number
   /** The SystemCore CAN bus the motor controller is on: 0 to 4, for CAN_S0 to CAN_S4. */
   canBus?: number

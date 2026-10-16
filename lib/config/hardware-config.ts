@@ -75,6 +75,19 @@ export const MOTORS: Record<string, MotorDefinition> = {
     compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova"],
     description: "CTRE Minion Brushless Motor",
   },
+  Pulsar: {
+    name: "Pulsar",
+    displayName: "Thrifty Pulsar",
+    // From Thrifty's specs (12 V, 3.1 N-m and 189 A stalled, 2.7 A and 7500 RPM free), worked out the way WPILib's DCMotor does
+    kv: 634.0,
+    kt: 0.0164,
+    km: 0.065,
+    resistance: 0.0635,
+    mass: 0.2948, // 0.65 lb
+    // A Talon FXS drives it as a NEO (NEO_JST)
+    compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova"],
+    description: "Thrifty Pulsar 775 Brushless Motor",
+  },
   Vortex: {
     name: "Vortex",
     displayName: "NEO Vortex",
@@ -291,6 +304,9 @@ export function getWPILibMotorType(motorName: string): string {
       return "DCMotor.getNeo550(1)"
     case "Minion":
       return "DCMotor.getMinion(1)"
+    case "Pulsar":
+      // WPILib has no Thrifty Pulsar, so it's built from Thrifty's specs: 12 V, stall torque and current, free current and speed
+      return "new DCMotor(12.0, 3.1, 189.0, 2.7, 7500 * 2 * Math.PI / 60, 1)"
     case "Vortex":
       return "DCMotor.getNeoVortex(1)"
     case "Krakenx44":
@@ -303,23 +319,9 @@ export function getWPILibMotorType(motorName: string): string {
 }
 
 /**
- * Get the simulation motor type string for a given motor
+ * Get the simulation motor type for a given motor: the key the simulation looks it up by in MOTORS,
+ * or the NEO for an unknown motor
  */
 export function getSimMotorType(motorName: string): string {
-  switch (motorName) {
-    case "NEO":
-      return "NEO"
-    case "NEO550":
-      return "NEO550"
-    case "Krakenx60":
-      return "KrakenX60"
-    case "Krakenx44":
-      return "KrakenX44"
-    case "Minion":
-      return "Minion" 
-    case "Vortex":
-      return "NEOVortex"
-    default:
-      return "NEO"
-  }
+  return MOTORS[motorName] ? motorName : "NEO"
 }

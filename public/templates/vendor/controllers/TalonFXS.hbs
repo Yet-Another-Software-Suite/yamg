@@ -10,6 +10,9 @@ import com.ctre.phoenix6.controls.VelocityVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFXS;
 import com.ctre.phoenix6.signals.MotorArrangementValue;
+{{#if minion}}
+import com.ctre.phoenix6.signals.AdvancedHallSupportValue;
+{{/if}}
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import org.wpilib.hardware.bus.CANPort;
@@ -35,6 +38,10 @@ import static org.wpilib.units.Units.RotationsPerSecondPerSecond;
     TalonFXSConfiguration config = new TalonFXSConfiguration();
     // The motor the Talon FXS drives.
     config.Commutation.withMotorArrangement(MotorArrangementValue.{{talonFXSArrangement}});
+{{#if minion}}
+    // The Talon FXS commutates a Minion with its advanced hall support.
+    config.Commutation.withAdvancedHallSupport(AdvancedHallSupportValue.Enabled);
+{{/if}}
     // Phoenix applies the gearing, so positions, speeds, soft limits and gains are all in turns of
     // the mechanism, and its closed loop outputs volts.
     config.ExternalFeedback.withSensorToMechanismRatio(GEAR_RATIO);

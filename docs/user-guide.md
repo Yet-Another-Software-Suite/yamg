@@ -46,6 +46,7 @@ Configure the motor and motor controller settings:
    - **NEO**: REV Robotics NEO brushless motor
    - **NEO550**: REV Robotics NEO 550 brushless motor
    - **Minion**: CTRE Minion motor
+   - **Pulsar**: Thrifty Pulsar 775 motor (not with TalonFX)
    - **Vortex**: REV Robotics NEO Vortex motor
    - **Krakenx44**: CTRE Kraken X44 motor (only with TalonFX)
    - **Krakenx60**: CTRE Kraken X60 motor (only with TalonFX)

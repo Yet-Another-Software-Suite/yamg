@@ -87,6 +87,13 @@ describe("Hardware Configuration", () => {
       expect(motorNames).not.toContain("Krakenx60")
     })
 
+    it("offers the Thrifty Pulsar on every motor controller but the Talon FX", () => {
+      for (const controller of ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova"]) {
+        expect(getCompatibleMotors(controller).map((m) => m.name)).toContain("Pulsar")
+      }
+      expect(getCompatibleMotors("TalonFX").map((m) => m.name)).not.toContain("Pulsar")
+    })
+
     it("returns empty array for unknown controller", () => {
       const motors = getCompatibleMotors("INVALID_CONTROLLER")
       expect(motors).toHaveLength(0)
@@ -105,6 +112,10 @@ describe("Hardware Configuration", () => {
       expect(getWPILibMotorType("Krakenx44")).toBe("DCMotor.getKrakenX44(1)")
     })
 
+    it("builds the Thrifty Pulsar from its specs, as WPILib has no model for it", () => {
+      expect(getWPILibMotorType("Pulsar")).toBe("new DCMotor(12.0, 3.1, 189.0, 2.7, 7500 * 2 * Math.PI / 60, 1)")
+    })
+
     it("falls back to NEO for unknown motor", () => {
       expect(getWPILibMotorType("UNKNOWN")).toBe("DCMotor.getNEO(1)")
     })
@@ -113,8 +124,15 @@ describe("Hardware Configuration", () => {
   describe("getSimMotorType", () => {
     it("returns correct sim motor type", () => {
       expect(getSimMotorType("NEO")).toBe("NEO")
-      expect(getSimMotorType("Krakenx44")).toBe("KrakenX44")
-      expect(getSimMotorType("Vortex")).toBe("NEOVortex")
+      expect(getSimMotorType("Krakenx44")).toBe("Krakenx44")
+      expect(getSimMotorType("Vortex")).toBe("Vortex")
+      expect(getSimMotorType("Pulsar")).toBe("Pulsar")
+    })
+
+    it("simulates every motor as itself, not as a NEO", () => {
+      for (const motor of Object.keys(MOTORS)) {
+        expect(getMotor(getSimMotorType(motor))).toBe(MOTORS[motor])
+      }
     })
 
     it("falls back to NEO for unknown motor", () => {

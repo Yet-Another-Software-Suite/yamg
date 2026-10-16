@@ -27,7 +27,7 @@ export const formSchema = z.object({
     "TalonFX",
     "TalonFXS",
   ]),
-  motorType: z.enum(["NEO", "NEO550", "Minion", "Vortex", "Krakenx44", "Krakenx60"]),
+  motorType: z.enum(["NEO", "NEO550", "Minion", "Pulsar", "Vortex", "Krakenx44", "Krakenx60"]),
   canId: z.number().int().min(0).max(62),
   canBus: z.number().int().min(0).max(4).optional(),
   pidValues: z.object({

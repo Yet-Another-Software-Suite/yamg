@@ -11,7 +11,7 @@ This tool helps FRC teams quickly generate well-structured, command-based Java c
 - Generated Java code for a Commands v2 subsystem or a Commands v3 mechanism
 - Plain code that uses WPILib and the vendor library, or code that uses [YAMS](https://yams.yassrobotics.com)
 - Support for different motor controllers (SparkMAX, SparkFlex, TalonFX, TalonFXS, ThriftyNova)
-- Support for different motor types (NEO, NEO550, NEO Vortex, Minion, Krakenx44, Krakenx60)
+- Support for different motor types (NEO, NEO550, NEO Vortex, Minion, Thrifty Pulsar, Krakenx44, Krakenx60)
 
 ## Features
 

@@ -256,6 +256,63 @@ describe("generateFiles", () => {
     expect(vendor.content).toContain("TRAVEL_PER_ROTATION = DRIVE_CIRCUMFERENCE.times(CASCADE_STAGES);");
   });
 
+  it("drives a Thrifty Pulsar, with a DCMotor built from its specs", async () => {
+    const PULSAR_CONTROLLERS: FormValues["motorControllerType"][] = ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova"];
+    for (const controller of PULSAR_CONTROLLERS) {
+      for (const output of OUTPUTS) {
+        for (const commands of COMMANDS) {
+          const pulsar: FormValues = {
+            ...form("Arm", controller, output, commands, true),
+            subsystemName: `ArmPulsar${controller}`,
+            motorType: "Pulsar",
+          };
+          const files = await generateFiles(pulsar);
+          expect(files[0].content).toContain("new DCMotor(12.0, 3.1, 189.0, 2.7, 7500 * 2 * Math.PI / 60, 1)");
+          expect(files[0].content).toContain("WPILib has no model of the Thrifty Pulsar");
+          if (controller === "ThriftyNova") expect(files[0].content).toContain("MotorType.PULSAR");
+          // A Talon FXS drives a Pulsar as a NEO. YAMS sets the arrangement from the DCMotor.
+          if (controller === "TalonFXS" && output === "vendor") expect(files[0].content).toContain("MotorArrangementValue.NEO_JST");
+
+          const out = process.env.YAMG_RENDER_DIR;
+          if (out) {
+            const project = path.join(out, `${output}-${commands}`);
+            for (const [i, file] of files.entries()) {
+              const target = i === 0 ? path.join(project, file.filename) : path.join(project, "robots", pulsar.subsystemName, file.filename);
+              fs.mkdirSync(path.dirname(target), { recursive: true });
+              fs.writeFileSync(target, file.content);
+            }
+          }
+        }
+      }
+    }
+  });
+
+  it("commutates a Minion: advanced hall support on a Talon FXS, and 120 degrees of advance on a SPARK", async () => {
+    const minion = async (controller: FormValues["motorControllerType"], motorType: FormValues["motorType"]) => {
+      const minionForm: FormValues = { ...form("Arm", controller, "vendor", "v2", true), subsystemName: `Arm${motorType}${controller}`, motorType };
+      const files = await generateFiles(minionForm);
+      const out = process.env.YAMG_RENDER_DIR;
+      if (out) {
+        const target = path.join(out, "vendor-v2", files[0].filename);
+        fs.mkdirSync(path.dirname(target), { recursive: true });
+        fs.writeFileSync(target, files[0].content);
+      }
+      return files;
+    };
+    const [fxs] = await minion("TalonFXS", "Minion");
+    expect(fxs.content).toContain("MotorArrangementValue.Minion_JST");
+    expect(fxs.content).toContain("withAdvancedHallSupport(AdvancedHallSupportValue.Enabled)");
+    for (const spark of ["SparkMAX", "SparkFlex"] as const) {
+      const [file] = await minion(spark, "Minion");
+      expect(file.content).toContain("config.advanceCommutation(120);");
+    }
+    // Only a Minion
+    const [neoFxs] = await minion("TalonFXS", "NEO");
+    expect(neoFxs.content).not.toContain("AdvancedHallSupport");
+    const [neoSpark] = await minion("SparkMAX", "NEO");
+    expect(neoSpark.content).not.toContain("advanceCommutation");
+  });
+
   it("gives a Thrifty Nova a supply current limit", async () => {
     const [vendor] = await generateFiles(form("Arm", "ThriftyNova", "vendor", "v2", true));
     expect(vendor.content).toContain("NovaConfig.supplyCurrent(SUPPLY_CURRENT_LIMIT.in(Amps))");

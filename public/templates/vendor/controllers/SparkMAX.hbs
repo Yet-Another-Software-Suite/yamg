@@ -39,6 +39,10 @@ import static org.wpilib.units.Units.Milliseconds;
     Time sparkLoopPeriod = RobotBase.isSimulation() ? Seconds.of(1) : Milliseconds.of(1);
 
     SparkMaxConfig config = new SparkMaxConfig();
+{{#if minion}}
+    // A SPARK has to advance its commutation by 120 degrees to drive a Minion.
+    config.advanceCommutation(120);
+{{/if}}
     config.idleMode(BRAKE_MODE ? IdleMode.kBrake : IdleMode.kCoast);
     // Scale the duty cycle to a 12 volt battery, so that the gains act the same as the battery drains.
     config.voltageCompensation(12.0);

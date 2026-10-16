@@ -9,5 +9,9 @@ import yams.core.motorcontrollers.local.NovaWrapper;
 {{/inline}}
 {{#*inline "fields"}}
   // The SmartMotorController applies the config to the Nova, which drives one {{motorDisplayName}}.
-  private final SmartMotorController motor = new NovaWrapper(nova, {{dcMotor}}, smcConfig);
+{{#if dcMotorFromSpecs}}
+  // WPILib has no model of the Thrifty Pulsar, so it is built from Thrifty's specs: 12 V, 3.1 N-m and
+  // 189 A stalled, and 2.7 A at 7500 RPM free.
+{{/if}}
+  private final SmartMotorController motor = new NovaWrapper(nova, {{{dcMotor}}}, smcConfig);
 {{/inline}}

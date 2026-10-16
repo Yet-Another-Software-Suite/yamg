@@ -11,5 +11,9 @@ import yams.core.motorcontrollers.remote.TalonFXSWrapper;
 {{#*inline "fields"}}
   // The SmartMotorController applies the config to the Talon FXS, which drives one {{motorDisplayName}}.
   // YAMS sets the Talon FXS motor arrangement from the DCMotor.
-  private final SmartMotorController motor = new TalonFXSWrapper(talon, {{dcMotor}}, smcConfig);
+{{#if dcMotorFromSpecs}}
+  // WPILib has no model of the Thrifty Pulsar, so it is built from Thrifty's specs: 12 V, 3.1 N-m and
+  // 189 A stalled, and 2.7 A at 7500 RPM free.
+{{/if}}
+  private final SmartMotorController motor = new TalonFXSWrapper(talon, {{{dcMotor}}}, smcConfig);
 {{/inline}}

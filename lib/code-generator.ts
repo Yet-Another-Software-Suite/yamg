@@ -102,6 +102,7 @@ const THRIFTY_MOTOR_TYPES: Record<string, string> = {
   NEO: "NEO",
   NEO550: "NEO",
   Minion: "MINION",
+  Pulsar: "PULSAR",
 };
 
 const TALON_FXS_ARRANGEMENTS: Record<string, string> = {
@@ -109,6 +110,8 @@ const TALON_FXS_ARRANGEMENTS: Record<string, string> = {
   NEO550: "NEO550_JST",
   Vortex: "VORTEX_JST",
   Minion: "Minion_JST",
+  // The Pulsar is wired and commutated like a NEO
+  Pulsar: "NEO_JST",
 };
 
 // Java number literals: always with a decimal point, so that integer division never happens.
@@ -154,6 +157,8 @@ export function buildTemplateData(data: FormValues) {
     canBus: data.canBus ?? 0,
     canPort: `CAN_S${data.canBus ?? 0}`,
     dcMotor: getWPILibMotorType(data.motorType),
+    // WPILib has no model of the Thrifty Pulsar, so the code explains where its DCMotor comes from.
+    dcMotorFromSpecs: data.motorType === "Pulsar",
     gearRatio: num(data.gearRatio, 1),
     brakeMode: data.brakeMode,
     kP: num(data.pidValues.kP, 0),
@@ -211,6 +216,8 @@ export function buildTemplateData(data: FormValues) {
     useEpilogue: data.telemetry.logger === "epilogue" && output !== "yams",
     thriftyMotorType: THRIFTY_MOTOR_TYPES[data.motorType] ?? "NEO",
     talonFXSArrangement: TALON_FXS_ARRANGEMENTS[data.motorType] ?? "NEO_JST",
+    // A Minion needs its own commutation: advanced hall support on a Talon FXS, and 120 degrees of advance on a SPARK.
+    minion: data.motorType === "Minion",
     // The motor a simulated Talon FX models.
     talonSimMotorType: data.motorType === "Krakenx44" ? "KrakenX44" : "KrakenX60",
   };
