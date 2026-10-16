@@ -617,7 +617,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             onChange={(e) => handleNumberChange(e, field.onChange)}
                           />
                         </FormControl>
-                        <FormDescription>Velocity feedforward in V/({feedforwardUnit}/s){isElevator ? " (auto-calculable with ReCalc)" : mechanismType === "Arm" ? " (auto-calculable with ReCalc, which gives it per radian: multiply by 2π)" : ""}</FormDescription>
+                        <FormDescription>Velocity feedforward in V/({feedforwardUnit}/s){(mechanismType === "Arm" || isElevator) ? " (auto-calculable with ReCalc)" : ""}</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -638,7 +638,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                             onChange={(e) => handleNumberChange(e, field.onChange)}
                           />
                         </FormControl>
-                        <FormDescription>Acceleration feedforward in V/({feedforwardUnit}/s²){isElevator ? " (auto-calculable with ReCalc)" : mechanismType === "Arm" ? " (auto-calculable with ReCalc, which gives it per radian: multiply by 2π)" : ""}</FormDescription>
+                        <FormDescription>Acceleration feedforward in V/({feedforwardUnit}/s²){(mechanismType === "Arm" || isElevator) ? " (auto-calculable with ReCalc)" : ""}</FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
