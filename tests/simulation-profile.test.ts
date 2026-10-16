@@ -206,6 +206,7 @@ describe("the web sim's settings from the form", () => {
       canId: 1,
       pidValues: { kP: 1, kI: 0, kD: 0 },
       feedforward: { kS: 0, kV: 0, kA: 0, kG: 0.5 },
+      useMotionProfile: true,
       maxVelocity: 2,
       maxAcceleration: 3,
       gearRatio: 25,
@@ -222,6 +223,9 @@ describe("the web sim's settings from the form", () => {
     const flywheel = createSimulationOptions(formValues({ mechanismType: "Flywheel" }), canvas)
     expect(flywheel.options.maxVelocity).toBe(0)
     expect(flywheel.options.maxAcceleration).toBe(0)
+    const off = createSimulationOptions(formValues({ useMotionProfile: false }), canvas)
+    expect(off.options.maxVelocity).toBe(0)
+    expect(off.options.maxAcceleration).toBe(0)
   })
 
   it("gives a pivot or a turret its own size and limits, with no gravity", () => {

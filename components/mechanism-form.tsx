@@ -33,6 +33,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
   const elevatorCascade = form.watch("elevatorParams.cascade") ?? false
   const elevatorRack = form.watch("elevatorParams.rackAndPinion") ?? false
   // A level rack and pinion slide has no gravity, so no kG.
+  const useMotionProfile = form.watch("useMotionProfile") ?? false
   const levelSlide = mechanismType === "Elevator" && elevatorDrive(form.watch("elevatorParams")).level
   // Arms, pivots and turrets share their parameters.
   const isAngular = takesAbsoluteEncoder(mechanismType)
@@ -484,48 +485,71 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
               </div>
 
               {!isFlywheel && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Motion Profile (Trapezoidal)</Label>
                 <FormField
                   control={form.control}
-                  name="maxVelocity"
+                  name="useMotionProfile"
                   render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Max Velocity</FormLabel>
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                      <div className="space-y-0.5">
+                        <FormLabel>Use a Motion Profile</FormLabel>
+                        <FormDescription>
+                          Limit how fast the closed loop moves and accelerates the mechanism on the way to the goal. Off, it goes straight to the goal.
+                        </FormDescription>
+                      </div>
                       <FormControl>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          {...field}
-                          value={field.value ?? ""}
-                          onChange={(e) => handleNumberChange(e, field.onChange)}
-                        />
+                        <Switch checked={field.value ?? false} onCheckedChange={field.onChange} />
                       </FormControl>
-                      <FormDescription>The fastest the closed loop moves the mechanism, in {isElevator ? "meters" : "radians"} per second</FormDescription>
-                      <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                <FormField
-                  control={form.control}
-                  name="maxAcceleration"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Max Acceleration</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          {...field}
-                          value={field.value ?? ""}
-                          onChange={(e) => handleNumberChange(e, field.onChange)}
-                        />
-                      </FormControl>
-                      <FormDescription>The fastest the closed loop accelerates the mechanism, in {isElevator ? "meters" : "radians"} per second²</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {useMotionProfile && (
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="maxVelocity"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Max Velocity</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.1"
+                            {...field}
+                            value={field.value ?? ""}
+                            onChange={(e) => handleNumberChange(e, field.onChange)}
+                          />
+                        </FormControl>
+                        <FormDescription>The fastest the closed loop moves the mechanism, in {isElevator ? "meters" : "radians"} per second</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="maxAcceleration"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Max Acceleration</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.1"
+                            {...field}
+                            value={field.value ?? ""}
+                            onChange={(e) => handleNumberChange(e, field.onChange)}
+                          />
+                        </FormControl>
+                        <FormDescription>The fastest the closed loop accelerates the mechanism, in {isElevator ? "meters" : "radians"} per second²</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                )}
               </div>
               )}
 

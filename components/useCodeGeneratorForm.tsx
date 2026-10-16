@@ -35,6 +35,7 @@ export const formSchema = z.object({
     kI: z.number().min(0.0),
     kD: z.number().min(0.0),
   }),
+  useMotionProfile: z.boolean().optional(),
   maxAcceleration: z.number().optional(),
   maxVelocity: z.number().optional(),
   feedforward: z
@@ -146,6 +147,7 @@ export const DEFAULT_VALUES: FormSchema = {
   canId: 1,
   canBus: 0,
   pidValues: { kP: 1.0, kI: 0.0, kD: 0.0 },
+  useMotionProfile: false,
   maxAcceleration: 1.0,
   maxVelocity: 1.0,
   feedforward: { kS: 0.0, kV: 0.0, kA: 0.0, kG: 0.0 },

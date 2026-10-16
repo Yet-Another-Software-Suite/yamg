@@ -65,6 +65,7 @@ function form(
     // With every option on, the devices are on other CAN buses.
     canBus: everything ? 1 : 0,
     pidValues: { kP: 2, kI: 0, kD: 0.1 },
+    useMotionProfile: true,
     maxVelocity: 2,
     maxAcceleration: 4,
     feedforward: { kS: 0.1, kV: 1.2, kA: 0, kG: 0.3 },
@@ -171,7 +172,7 @@ describe("generateFiles", () => {
     }
   });
 
-  it("has no motion profile at all when the max velocity and acceleration are both 0", async () => {
+  it("has no motion profile at all when it is off, or the max velocity and acceleration are both 0", async () => {
     for (const m of MECHANISMS.filter((m) => m !== "Flywheel")) {
       for (const mc of CONTROLLERS) {
         for (const output of OUTPUTS) {
@@ -179,13 +180,20 @@ describe("generateFiles", () => {
             const [withProfile] = await generateFiles(form(m, mc, output, commands, false));
             expect(withProfile.content).toMatch(output === "yams" ? /\.withTrapezoidalProfile\(/ : /MAX_VELOCITY/);
             for (const everything of [false, true]) {
-              const files = await generateFiles(direct(form(m, mc, output, commands, everything)));
+              const profiled = form(m, mc, output, commands, everything);
+              const files = [
+                ...(await generateFiles(direct(profiled))),
+                ...(await generateFiles({ ...profiled, useMotionProfile: false })),
+              ];
               for (const file of files) {
                 expect(file.content).not.toMatch(/profile|MotionMagic|MAXMotion|MAX_VELOCITY|MAX_ACCELERATION|PerSecondPerSecond|LinearAcceleration/i);
               }
             }
           }
         }
+        // The profile is off unless it is turned on
+        const [off] = await generateFiles({ ...form(m, mc, "vendor", "v2", false), useMotionProfile: undefined });
+        expect(off.content).not.toMatch(/MAX_VELOCITY/);
         const [vendor] = await generateFiles(direct(form(m, mc, "vendor", "v2", false)));
         if (mc === "TalonFX" || mc === "TalonFXS") {
           expect(vendor.content).toContain("positionRequest.withPosition(goal)");

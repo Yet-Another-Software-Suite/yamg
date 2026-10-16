@@ -136,9 +136,10 @@ export function buildTemplateData(data: FormValues) {
   const isFlywheel = data.mechanismType === "Flywheel";
   const isNova = data.motorControllerType === "ThriftyNova";
   const isSpark = data.motorControllerType === "SparkMAX" || data.motorControllerType === "SparkFlex";
-  // A max velocity and acceleration of 0 turn the trapezoidal profile off: the closed loop goes
-  // straight to the goal. Flywheels have no profile.
-  const useProfile = !isFlywheel && !((data.maxVelocity ?? 1) === 0 && (data.maxAcceleration ?? 1) === 0);
+  // Without a trapezoidal profile (it is off by default, or with a max velocity and acceleration of
+  // 0), the closed loop goes straight to the goal. Flywheels have no profile.
+  const useProfile =
+    !isFlywheel && data.useMotionProfile === true && !((data.maxVelocity ?? 1) === 0 && (data.maxAcceleration ?? 1) === 0);
   const forward = data.softLimits?.forward;
   const reverse = data.softLimits?.reverse;
 

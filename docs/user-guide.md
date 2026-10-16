@@ -76,9 +76,9 @@ Configure the control system parameters:
    - **kI**: Integral gain (typically start with 0)
    - **kD**: Derivative gain (typically start with 0)
 
-2. **Max Velocity/Acceleration**: (Optional) Set maximum velocity and acceleration
-   - For position control profiles
-   - Units are radians per second (or meters per second for elevators)
+2. **Motion Profile (Trapezoidal)**: (Optional, off by default) Turn it on to limit how fast the closed loop moves and accelerates the mechanism on the way to the goal. Off, it goes straight to the goal
+   - **Max Velocity**: in radians per second (meters per second for elevators)
+   - **Max Acceleration**: in radians per second² (meters per second² for elevators)
 
 3. **Feedforward**: (Optional) Configure feedforward constants
    - **kS**: Static friction compensation (volts)

@@ -35,6 +35,8 @@ export function createSimulationOptions(
   canvas: HTMLCanvasElement,
   motorCount = 1,
 ): { simType: string; options: ControlsBaseSimOptions } {
+  const profiled = formValues.mechanismType !== "Flywheel" && formValues.useMotionProfile === true
+
   // Common options for all simulation types
   const commonOptions: ControlsBaseSimOptions = {
     motorType: getSimMotorType(formValues.motorType),
@@ -47,9 +49,9 @@ export function createSimulationOptions(
     kV: formValues.feedforward?.kV || 0,
     kA: formValues.feedforward?.kA || 0,
     kG: formValues.feedforward?.kG || 0,
-    // The profile the generated code runs. Flywheels have none.
-    maxVelocity: formValues.mechanismType === "Flywheel" ? 0 : (formValues.maxVelocity ?? 1),
-    maxAcceleration: formValues.mechanismType === "Flywheel" ? 0 : (formValues.maxAcceleration ?? 1),
+    // The profile the generated code runs: 0 and 0 for none, when it is off. Flywheels have none.
+    maxVelocity: profiled ? (formValues.maxVelocity ?? 1) : 0,
+    maxAcceleration: profiled ? (formValues.maxAcceleration ?? 1) : 0,
     ...gainUnits(formValues.mechanismType),
   }
 

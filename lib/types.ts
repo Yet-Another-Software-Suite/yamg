@@ -15,6 +15,8 @@ export interface FormValues {
     kI: number
     kD: number
   }
+  /** Whether the closed loop follows a trapezoidal motion profile to the goal, at maxVelocity and maxAcceleration. */
+  useMotionProfile?: boolean
   maxAcceleration?: number
   maxVelocity?: number
   feedforward?: {
