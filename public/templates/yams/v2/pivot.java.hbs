@@ -96,11 +96,14 @@ public class {{className}} extends SubsystemBase {
   // The pivot mechanism.
   private final Pivot pivot = new Pivot(pivotConfig, motor);
 {{> homingFields}}
-{{#if absoluteSeed}}
+{{#if (or absoluteSeed homing)}}
 
   public {{className}}() {
 {{> encoderSeed}}
+{{> homingBind}}
   }
+{{/if}}
+{{#if absoluteSeed}}
 
 {{> encoderMethods}}
 {{/if}}

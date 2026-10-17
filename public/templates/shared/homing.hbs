@@ -1,5 +1,8 @@
 {{#*inline "homingImports"}}
 {{#if homing}}
+{{#if (eq commands "v2")}}
+import org.wpilib.command2.Commands;
+{{/if}}
 import org.wpilib.hardware.discrete.DigitalInput;
 {{#if (eq output "yams")}}
 {{#unless absoluteSeed}}
@@ -16,7 +19,7 @@ import org.wpilib.simulation.DIOSim;
 {{#if homing}}
 
   // The homing switches, on SystemCore Smart IO ports. The {{mechanismNoun}} presses one at the end of its
-  // travel, which sets the motor's encoder to that end.
+  // travel, which sets the motor's encoder to that end: see the constructor.
 {{#each homingSwitches}}
   private final DigitalInput {{field}}Input = new DigitalInput({{channel}});
 {{/each}}
@@ -37,9 +40,6 @@ import org.wpilib.simulation.DIOSim;
   private DIOSim {{field}}Sim;
 {{/each}}
 {{/if}}
-{{#each homingSwitches}}
-  private boolean {{field}}WasPressed = false;
-{{/each}}
 {{/if}}
 {{/inline}}
 {{#*inline "homingMethods"}}
@@ -59,20 +59,6 @@ import org.wpilib.simulation.DIOSim;
   }
 
 {{/each}}
-  /**
-   * Set the motor's encoder to the end of the travel a homing switch is at, as the {{mechanismNoun}}
-   * presses it. The encoder is set once each time the switch is pressed.
-   */
-  private void updateHoming() {
-{{#each homingSwitches}}
-    boolean {{field}}Pressed = is{{name}}Pressed();
-    if ({{field}}Pressed && !{{field}}WasPressed) {
-      {{../homingSeedCall}}({{position}});
-    }
-    {{field}}WasPressed = {{field}}Pressed;
-{{/each}}
-  }
-
 {{#unless (eq output "yams")}}
 {{#unless absoluteSeed}}
 {{#if (eq mechanismType "Elevator")}}
@@ -90,13 +76,25 @@ import org.wpilib.simulation.DIOSim;
 {{/inline}}
 {{#*inline "homingPeriodic"}}
 {{#if homing}}
-    // Home on the switches before anything reads the encoder.
-    updateHoming();
 {{#unless useEpilogue}}
 {{#each homingSwitches}}
     Telemetry.log("{{../ntKey}}/{{name}}", is{{name}}Pressed());
 {{/each}}
 {{/unless}}
+{{/if}}
+{{/inline}}
+{{#*inline "homingBind"}}
+{{#if homing}}
+    // Home on each switch as the {{mechanismNoun}} presses it: the trigger sets the motor's encoder to the
+    // end of the travel the switch is at, once each time the switch is pressed.
+{{#each homingSwitches}}
+    new Trigger(this::is{{name}}Pressed)
+{{#if (eq ../commands "v2")}}
+        .onTrue(Commands.runOnce(() -> {{../homingSeedCall}}({{position}})).withName("{{../className}} Home {{name}}"));
+{{else}}
+        .onTrue(Command.noRequirements(coroutine -> {{../homingSeedCall}}({{position}})).named("{{../className}} Home {{name}}"));
+{{/if}}
+{{/each}}
 {{/if}}
 {{/inline}}
 {{#*inline "homingSimInit"}}

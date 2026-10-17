@@ -99,11 +99,14 @@ public class {{className}} implements Mechanism {
   // The arm mechanism.
   private final Arm arm = new Arm(armConfig, motor);
 {{> homingFields}}
-{{#if absoluteSeed}}
+{{#if (or absoluteSeed homing)}}
 
   public {{className}}() {
 {{> encoderSeed}}
+{{> homingBind}}
   }
+{{/if}}
+{{#if absoluteSeed}}
 
 {{> encoderMethods}}
 {{/if}}

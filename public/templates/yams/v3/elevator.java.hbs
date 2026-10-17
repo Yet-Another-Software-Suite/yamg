@@ -110,6 +110,12 @@ public class {{className}} implements Mechanism {
   // The elevator mechanism.
   private final Elevator elevator = new Elevator(elevatorConfig, motor);
 {{> homingFields}}
+{{#if homing}}
+
+  public {{className}}() {
+{{> homingBind}}
+  }
+{{/if}}
 
   /** Go to a height and hold it. This command does not end on its own. */
   public Command setHeight(Distance height) {

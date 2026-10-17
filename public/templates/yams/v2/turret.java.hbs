@@ -97,11 +97,14 @@ public class {{className}} extends SubsystemBase {
   // YAMS drives a turret as a Pivot.
   private final Pivot turret = new Pivot(turretConfig, motor);
 {{> homingFields}}
-{{#if absoluteSeed}}
+{{#if (or absoluteSeed homing)}}
 
   public {{className}}() {
 {{> encoderSeed}}
+{{> homingBind}}
   }
+{{/if}}
+{{#if absoluteSeed}}
 
 {{> encoderMethods}}
 {{/if}}
