@@ -115,6 +115,10 @@ export default function SimulationTab({ formValues }: SimulationTabProps) {
               max="4"
               value={motorCount}
               onChange={handleMotorCountChange}
+              // Select the whole number, so typing replaces it. The click keeps the selection that
+              // the mouse would otherwise drop.
+              onFocus={(e) => e.currentTarget.select()}
+              onClick={(e) => e.currentTarget.select()}
               className="w-20"
             />
             <span className="text-sm text-muted-foreground">Number of motors in the gearbox (1-4)</span>
