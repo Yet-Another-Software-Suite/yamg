@@ -137,6 +137,17 @@ export class ArmSim extends ControlsBaseSim {
     this.drawTelemetry(ctx)
   }
 
+  /** How close to a hard stop a homing switch is pressed: a twentieth of a degree, as in the generated code. */
+  static readonly SWITCH_TRAVEL = (0.05 * Math.PI) / 180
+
+  override lowerSwitchPressed(): boolean {
+    return this.lowerSwitch && this.position <= this.minAngle + ArmSim.SWITCH_TRAVEL
+  }
+
+  override upperSwitchPressed(): boolean {
+    return this.upperSwitch && this.position >= this.maxAngle - ArmSim.SWITCH_TRAVEL
+  }
+
   drawAngleMarkers(ctx: CanvasRenderingContext2D, x: number, y: number): void {
     const radius = 40
 
@@ -146,6 +157,15 @@ export class ArmSim extends ControlsBaseSim {
     ctx.beginPath()
     ctx.arc(x, y, radius, -this.maxAngle, -this.minAngle)
     ctx.stroke()
+
+    // Draw the homing switches at the hard stops, just outside the arc
+    const switchRadius = radius + 16
+    if (this.lowerSwitch) {
+      this.drawSwitch(ctx, x + switchRadius * Math.cos(this.minAngle), y - switchRadius * Math.sin(this.minAngle), this.lowerSwitchPressed())
+    }
+    if (this.upperSwitch) {
+      this.drawSwitch(ctx, x + switchRadius * Math.cos(this.maxAngle), y - switchRadius * Math.sin(this.maxAngle), this.upperSwitchPressed())
+    }
 
     // Draw current angle marker
     ctx.strokeStyle = "#00cc00"
@@ -183,5 +203,9 @@ export class ArmSim extends ControlsBaseSim {
     ctx.fillText(`Voltage: ${this.voltage.toFixed(2)} V`, textX, textY)
     textY += lineHeight
     ctx.fillText(`Current: ${this.current.toFixed(2)} A`, textX, textY)
+    for (const line of this.switchTelemetry()) {
+      textY += lineHeight
+      ctx.fillText(line, textX, textY)
+    }
   }
 }

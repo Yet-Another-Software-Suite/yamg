@@ -90,6 +90,12 @@ export interface FormValues {
   }
   /** An absolute encoder that tells an arm, pivot or turret where it is when the robot turns on. */
   absoluteEncoder?: AbsoluteEncoderParams
+  /** Switches at the ends of the travel, which set the mechanism's position when it presses them. */
+  homing?: {
+    enabled?: boolean
+    lower?: HomingSwitchParams
+    upper?: HomingSwitchParams
+  }
   turretParams?: {
     /** Find an arm's, pivot's or turret's angle from two absolute encoders on pinions with different tooth counts. */
     crt?: boolean
@@ -100,6 +106,18 @@ export interface FormValues {
     encoderA?: CrtEncoderParams
     encoderB?: CrtEncoderParams
   }
+}
+
+/** A homing switch on a SystemCore Smart IO port, at one end of the mechanism's travel. */
+export interface HomingSwitchParams {
+  enabled?: boolean
+  /** The SystemCore Smart IO channel the switch is plugged into. */
+  channel?: number
+  /**
+   * What the input reads while the switch is pressed: high for a normally open switch between the
+   * signal and power (3.3 V) pins, which the Smart IO port's pull-down holds low until it is pressed.
+   */
+  pressedReads?: "low" | "high"
 }
 
 /** The absolute encoders YAMG supports. */

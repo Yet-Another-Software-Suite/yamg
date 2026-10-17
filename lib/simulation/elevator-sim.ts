@@ -130,11 +130,31 @@ export class ElevatorSim extends ControlsBaseSim {
     ctx.rect(leftMargin - 20, height - baseHeight, elevatorWidth + 40, baseHeight)
     ctx.fill()
 
+    // Draw the homing switches beside the shaft, where the carriage presses them at the hard stops
+    const switchX = leftMargin + elevatorWidth + 24
+    if (this.lowerSwitch) {
+      this.drawSwitch(ctx, switchX, height - baseHeight - 8, this.lowerSwitchPressed())
+    }
+    if (this.upperSwitch) {
+      this.drawSwitch(ctx, switchX, height - baseHeight - elevatorHeight - maxElevatorHeight + 8, this.upperSwitchPressed())
+    }
+
     // Draw height markers
     this.drawHeightMarkers(ctx, leftMargin, height - baseHeight, maxElevatorHeight)
 
     // Draw telemetry
     this.drawTelemetry(ctx)
+  }
+
+  /** How close to a hard stop a homing switch is pressed: half a millimeter, as in the generated code. */
+  static readonly SWITCH_TRAVEL = 0.0005
+
+  override lowerSwitchPressed(): boolean {
+    return this.lowerSwitch && this.position <= this.minHeight + ElevatorSim.SWITCH_TRAVEL
+  }
+
+  override upperSwitchPressed(): boolean {
+    return this.upperSwitch && this.position >= this.maxHeight - ElevatorSim.SWITCH_TRAVEL
   }
 
   drawHeightMarkers(ctx: CanvasRenderingContext2D, x: number, baseY: number, maxHeight: number): void {
@@ -204,5 +224,9 @@ export class ElevatorSim extends ControlsBaseSim {
     ctx.fillText(`Voltage: ${this.voltage.toFixed(2)}V`, textX, textY)
     textY += lineHeight
     ctx.fillText(`Current: ${this.current.toFixed(2)}A`, textX, textY)
+    for (const line of this.switchTelemetry()) {
+      textY += lineHeight
+      ctx.fillText(line, textX, textY)
+    }
   }
 }

@@ -37,12 +37,12 @@ function handleNumberChange(e: React.ChangeEvent<HTMLInputElement>, onChange: (.
 }
 
 /** A problem with the inputs, shown under the field it belongs to. */
-function Issue({ message }: { message?: string }) {
+export function Issue({ message }: { message?: string }) {
   return message ? <p className="text-sm font-medium text-destructive">{message}</p> : null
 }
 
 /** A labelled number input. */
-function NumberField({
+export function NumberField({
   form,
   name,
   label,
@@ -82,7 +82,7 @@ function NumberField({
 }
 
 /** A labelled switch. */
-function SwitchField({
+export function SwitchField({
   form,
   name,
   label,

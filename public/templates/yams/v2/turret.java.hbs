@@ -12,6 +12,7 @@ import static org.wpilib.units.Units.Seconds;
 
 {{> imports}}
 {{> encoderImports}}
+{{> homingImports}}
 import org.wpilib.command2.Command;
 import org.wpilib.command2.SubsystemBase;
 import org.wpilib.command2.button.Trigger;
@@ -95,6 +96,7 @@ public class {{className}} extends SubsystemBase {
 
   // YAMS drives a turret as a Pivot.
   private final Pivot turret = new Pivot(turretConfig, motor);
+{{> homingFields}}
 {{#if absoluteSeed}}
 
   public {{className}}() {
@@ -124,8 +126,10 @@ public class {{className}} extends SubsystemBase {
     return turret.near(angle, tolerance);
   }
 
+{{> homingMethods}}
   @Override
   public void periodic() {
+{{> homingPeriodic}}
     // Publishes the turret's telemetry, and applies anything changed through live tuning.
     turret.updateTelemetry();
 {{> encoderTelemetry}}

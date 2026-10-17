@@ -18,6 +18,7 @@ import static org.wpilib.units.Units.Volts;
 
 {{> imports}}
 {{> encoderImports}}
+{{> homingImports}}
 import java.util.Optional;
 import org.wpilib.command2.Command;
 import org.wpilib.command2.SubsystemBase;
@@ -137,6 +138,7 @@ public class {{className}} extends SubsystemBase {
 {{/if}}
 
 {{> fields}}
+{{> homingFields}}
 {{> encoderFields}}
 
 {{#if systemCoreProfile}}
@@ -172,6 +174,7 @@ public class {{className}} extends SubsystemBase {
 {{> encoderSeed}}
     if (RobotBase.isSimulation()) {
 {{> simInit}}
+{{> homingSimInit}}
     }
   }
 
@@ -282,8 +285,10 @@ public class {{className}} extends SubsystemBase {
     return new Trigger(() -> getAngle().isNear(angle, tolerance));
   }
 
+{{> homingMethods}}
   @Override
   public void periodic() {
+{{> homingPeriodic}}
 {{#unless sendGoalOnce}}
     if (goal != null) {
 {{#if onboardControl}}
@@ -368,5 +373,6 @@ public class {{className}} extends SubsystemBase {
     AngularAcceleration mechanismAcceleration = mechanismVelocity.minus(lastMechanismVelocity).div(LOOP_PERIOD);
     lastMechanismVelocity = mechanismVelocity;
 {{> simUpdate}}
+{{> homingSim}}
   }
 }

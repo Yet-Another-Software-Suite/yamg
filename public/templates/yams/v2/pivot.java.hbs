@@ -12,6 +12,7 @@ import static org.wpilib.units.Units.Seconds;
 
 {{> imports}}
 {{> encoderImports}}
+{{> homingImports}}
 import org.wpilib.command2.Command;
 import org.wpilib.command2.SubsystemBase;
 import org.wpilib.command2.button.Trigger;
@@ -94,6 +95,7 @@ public class {{className}} extends SubsystemBase {
 
   // The pivot mechanism.
   private final Pivot pivot = new Pivot(pivotConfig, motor);
+{{> homingFields}}
 {{#if absoluteSeed}}
 
   public {{className}}() {
@@ -123,8 +125,10 @@ public class {{className}} extends SubsystemBase {
     return pivot.near(angle, tolerance);
   }
 
+{{> homingMethods}}
   @Override
   public void periodic() {
+{{> homingPeriodic}}
     // Publishes the pivot's telemetry, and applies anything changed through live tuning.
     pivot.updateTelemetry();
 {{> encoderTelemetry}}

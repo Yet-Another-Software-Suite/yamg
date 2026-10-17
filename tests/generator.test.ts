@@ -100,6 +100,11 @@ function form(
     },
     flywheelParams: { momentOfInertia: 0.002, diameter: 0.1 },
     absoluteEncoder: absoluteEncoder(motorControllerType, everything, logger),
+    // With every option on, homing switches at both ends; with Epilogue, a lower one that reads low when pressed.
+    homing:
+      logger === "epilogue"
+        ? { enabled: true, lower: { enabled: true, channel: 4, pressedReads: "low" }, upper: { enabled: false, channel: 5 } }
+        : { enabled: everything, lower: { enabled: true, channel: 4 }, upper: { enabled: true, channel: 5 } },
     // With every option on, a turret finds its angle with CRT, from a CANcoder and a Through Bore.
     turretParams: {
       crt: mechanismType === "Turret" && everything && logger === "telemetry",
@@ -236,10 +241,11 @@ describe("generateFiles", () => {
     expect(telemetry.content).not.toContain("@Logged");
   });
 
-  it("leaves telemetry to YAMS when YAMS is used, but for encoders the code reads itself", async () => {
+  it("leaves telemetry to YAMS when YAMS is used, but for encoders and switches the code reads itself", async () => {
     const [yams] = await generateFiles(form("Arm", "SparkMAX", "yams", "v2", true, "epilogue"));
     expect(yams.content).not.toContain("@Logged");
     expect(yams.content.match(/Telemetry\.log\("[^"]*"/g)).toEqual([
+      'Telemetry.log("ArmSparkMAXEpilogue/LowerSwitch"',
       'Telemetry.log("ArmSparkMAXEpilogue/AbsoluteEncoder/Reading"',
       'Telemetry.log("ArmSparkMAXEpilogue/AbsoluteEncoder/Angle"',
     ]);
@@ -319,6 +325,50 @@ describe("generateFiles", () => {
     expect(neoFxs.content).not.toContain("AdvancedHallSupport");
     const [neoSpark] = await minion("SparkMAX", "NEO");
     expect(neoSpark.content).not.toContain("advanceCommutation");
+  });
+
+  it("homes on switches wrapped in YAMS Sensors, which the simulation presses at the hard stops", async () => {
+    const [arm] = await generateFiles(form("Arm", "TalonFX", "yams", "v3", true));
+    expect(arm.content).toContain("private final DigitalInput lowerSwitchInput = new DigitalInput(4);");
+    expect(arm.content).toContain('new SensorConfig("ArmTalonFXAllLowerSwitch")');
+    expect(arm.content).toContain('.withField("Pressed", () -> lowerSwitchInput.get(), false)');
+    // The simulated switch is pressed by where the mechanism really is, not by what the encoder says.
+    expect(arm.content).toContain(".map(sim -> sim.getMechanismPosition().lte(Degrees.of(-9.95)))");
+    expect(arm.content).toContain(".map(sim -> sim.getMechanismPosition().gte(Degrees.of(99.95)))");
+    expect(arm.content).toContain("motor.setEncoderPosition(Degrees.of(-10.0));");
+    expect(arm.content).toContain("motor.setEncoderPosition(Degrees.of(100.0));");
+    expect(arm.content).not.toContain("DIOSim");
+
+    const [elevator] = await generateFiles(form("Elevator", "SparkMAX", "yams", "v2", true));
+    expect(elevator.content).toContain(".map(sim -> smcConfig.convertFromMechanism(sim.getMechanismPosition()).lte(Meters.of(0.0005)))");
+    expect(elevator.content).toContain("motor.setEncoderPosition(Meters.of(1.5));");
+  });
+
+  it("homes plain vendor code on digital inputs, which the simulation presses at the hard stops", async () => {
+    const [pivot] = await generateFiles(form("Pivot", "ThriftyNova", "vendor", "v2", true));
+    expect(pivot.content).toContain("private final DigitalInput upperSwitchInput = new DigitalInput(5);");
+    expect(pivot.content).toContain("upperSwitchSim = new DIOSim(upperSwitchInput);");
+    // A normally open switch to the port's power pin reads high when it is pressed.
+    expect(pivot.content).toContain("lowerSwitchSim.setValue(Radians.of(pivotSim.getAngle()).lte(Degrees.of(-9.95)));");
+    expect(pivot.content).toContain("setEncoderPosition(MIN_ANGLE);");
+    expect(pivot.content).not.toContain("SensorConfig");
+
+    const [elevator] = await generateFiles(form("Elevator", "TalonFX", "vendor", "v3", true, "epilogue"));
+    expect(elevator.content).toContain("setEncoderPosition(toMechanismPosition(MIN_HEIGHT));");
+    // This one reads low when pressed, and Epilogue logs it.
+    expect(elevator.content).toContain("lowerSwitchSim.setValue(!Meters.of(elevatorSim.getPosition()).lte(Meters.of(0.0005)));");
+    expect(elevator.content).toContain('@Logged(name = "LowerSwitch")');
+    expect(elevator.content).not.toContain("upperSwitch");
+  });
+
+  it("has no homing code when homing is off, and none for a flywheel", async () => {
+    for (const output of OUTPUTS) {
+      const [basic] = await generateFiles(form("Arm", "SparkMAX", output, "v2", false));
+      expect(basic.content).not.toContain("DigitalInput");
+      expect(basic.content).not.toContain("updateHoming");
+      const [flywheel] = await generateFiles(form("Flywheel", "SparkMAX", output, "v2", true));
+      expect(flywheel.content).not.toContain("DigitalInput");
+    }
   });
 
   it("gives a Thrifty Nova a supply current limit", async () => {

@@ -15,6 +15,7 @@ import {
   usesCrt,
 } from "./absolute-encoder";
 import { elevatorDrive } from "./elevator-drive";
+import { homingSwitches } from "./homing";
 import { formatJava } from "./format-java";
 
 /**
@@ -95,8 +96,8 @@ const MECHANISM_FILES: Record<FormValues["mechanismType"], string> = {
   Flywheel: "flywheel",
 };
 
-/** Shared partials, put in front of every mechanism template: the absolute encoder and CRT code. */
-const SHARED_PARTIALS = "shared/absolute-encoder.hbs";
+/** Shared partials, put in front of every mechanism template: the absolute encoder and CRT code, and homing. */
+const SHARED_PARTIALS = ["shared/absolute-encoder.hbs", "shared/homing.hbs"];
 
 const THRIFTY_MOTOR_TYPES: Record<string, string> = {
   NEO: "NEO",
@@ -255,8 +256,64 @@ export function buildTemplateData(data: FormValues) {
     });
   }
 
+  Object.assign(templateData, homingTemplateData(data));
   Object.assign(templateData, robotTemplateData(data, templateData));
   return templateData;
+}
+
+/**
+ * How far from its hard stop a simulated homing switch is pressed: a twentieth of a degree, or half a
+ * millimeter. A real switch at a hard stop is only pressed while the mechanism is pushed against the
+ * stop, and the simulation stops the mechanism exactly there.
+ */
+const HOMING_SWITCH_TRAVEL = { degrees: 0.05, meters: 0.0005 };
+
+/**
+ * What the homing partials need: the switches, where each sets the encoder to, and what the
+ * simulation compares with the hard stops to press them.
+ */
+function homingTemplateData(data: FormValues) {
+  const switches = homingSwitches(data);
+  if (switches.length === 0) return { homing: false, homingSwitches: [] };
+  const yams = data.outputType === "yams";
+  const elevator = data.mechanismType === "Elevator";
+  const field = data.mechanismType.toLowerCase();
+  const unit = elevator ? "Meters" : "Degrees";
+  const travel = elevator ? HOMING_SWITCH_TRAVEL.meters : HOMING_SWITCH_TRAVEL.degrees;
+  const limits = elevator
+    ? { lower: data.elevatorParams?.hardLimitMin ?? 0, upper: data.elevatorParams?.hardLimitMax ?? 1 }
+    : { lower: data.armParams?.hardLimitMin ?? 0, upper: data.armParams?.hardLimitMax ?? 90 };
+  // The vendor code's constants for the hard stops.
+  const vendorLimit = { lower: elevator ? "MIN_HEIGHT" : "MIN_ANGLE", upper: elevator ? "MAX_HEIGHT" : "MAX_ANGLE" };
+  const round = (value: number) => Math.round(value * 1e6) / 1e6;
+  return {
+    homing: true,
+    homingSwitches: switches.map(({ end, params }) => {
+      const bound = limits[end];
+      const pressedAt = round(end === "lower" ? bound + travel : bound - travel);
+      return {
+        end,
+        field: `${end}Switch`,
+        name: end === "lower" ? "LowerSwitch" : "UpperSwitch",
+        channel: params.channel ?? 0,
+        // A Smart IO port has a pull-down, so a switch to its power pin reads high when pressed.
+        pressedHigh: params.pressedReads !== "low",
+        compare: end === "lower" ? "lte" : "gte",
+        pressedAt: `${unit}.of(${num(pressedAt, 0)})`,
+        // Where the switch sets the encoder: the hard stop it is at.
+        position: yams
+          ? `${unit}.of(${num(bound, 0)})`
+          : elevator
+            ? `toMechanismPosition(${vendorLimit[end]})`
+            : vendorLimit[end],
+      };
+    }),
+    homingSeedCall: yams ? "motor.setEncoderPosition" : "setEncoderPosition",
+    // Where the simulated mechanism really is, which presses a switch: YAMS's physics simulation,
+    // through the motor's sim supplier, and the vendor code's own.
+    homingMeasurement: elevator ? "smcConfig.convertFromMechanism(sim.getMechanismPosition())" : "sim.getMechanismPosition()",
+    homingSimMeasurement: elevator ? "Meters.of(elevatorSim.getPosition())" : `Radians.of(${field}Sim.getAngle())`,
+  };
 }
 
 /**
@@ -541,8 +598,8 @@ export async function renderJava(data: FormValues): Promise<string> {
   // Throws for an unknown mechanism, which the caller reports.
   getMechanism(data.mechanismType);
   const paths = templatePaths(data);
-  const source =
-    (await loadTemplate(SHARED_PARTIALS)) + (await loadTemplate(paths.controller)) + (await loadTemplate(paths.mechanism));
+  const shared = await Promise.all(SHARED_PARTIALS.map((path) => loadTemplate(path)));
+  const source = shared.join("") + (await loadTemplate(paths.controller)) + (await loadTemplate(paths.mechanism));
   const template = Handlebars.compile(source, { noEscape: true });
   // Drop the blank lines the partial definitions leave at the top of the file.
   return template(buildTemplateData(data)).replace(/^\s+/, "");

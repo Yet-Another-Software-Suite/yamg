@@ -22,6 +22,8 @@ import { renameForMechanism } from "@/lib/mechanism-name"
 import { takesAbsoluteEncoder } from "@/lib/absolute-encoder"
 import { elevatorDrive } from "@/lib/elevator-drive"
 import { AbsoluteEncoderSection, CanBusField } from "./absolute-encoder-form"
+import { HomingSection } from "./homing-form"
+import { takesHomingSwitches } from "@/lib/homing"
 
 export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
   const mechanismType = form.watch("mechanismType")
@@ -1369,6 +1371,8 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
         )}
 
         {isAngular && <AbsoluteEncoderSection form={form} />}
+
+        {takesHomingSwitches(mechanismType) && <HomingSection form={form} />}
 
         {mechanismType === "Flywheel" && (
           <AccordionItem value="flywheelParams">

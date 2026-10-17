@@ -12,6 +12,7 @@ import static org.wpilib.units.Units.Seconds;
 
 {{> imports}}
 {{> encoderImports}}
+{{> homingImports}}
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Trigger;
@@ -97,6 +98,7 @@ public class {{className}} implements Mechanism {
 
   // The arm mechanism.
   private final Arm arm = new Arm(armConfig, motor);
+{{> homingFields}}
 {{#if absoluteSeed}}
 
   public {{className}}() {
@@ -133,8 +135,10 @@ public class {{className}} implements Mechanism {
         .named("{{className}} Hold");
   }
 
+{{> homingMethods}}
   /** Call this from Robot.robotPeriodic(), before the scheduler runs. */
   public void periodic() {
+{{> homingPeriodic}}
     // Publishes the arm's telemetry, and applies anything changed through live tuning.
     arm.updateTelemetry();
 {{> encoderTelemetry}}

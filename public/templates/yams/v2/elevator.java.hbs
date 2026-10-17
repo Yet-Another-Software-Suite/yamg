@@ -16,6 +16,7 @@ import static org.wpilib.units.Units.MetersPerSecondPerSecond;
 import static org.wpilib.units.Units.Seconds;
 
 {{> imports}}
+{{> homingImports}}
 import org.wpilib.command2.Command;
 import org.wpilib.command2.SubsystemBase;
 import org.wpilib.command2.button.Trigger;
@@ -108,6 +109,7 @@ public class {{className}} extends SubsystemBase {
 
   // The elevator mechanism.
   private final Elevator elevator = new Elevator(elevatorConfig, motor);
+{{> homingFields}}
 
   /** Go to a height and hold it. This command does not end on its own. */
   public Command run(Distance height) {
@@ -129,8 +131,10 @@ public class {{className}} extends SubsystemBase {
     return elevator.near(height, tolerance);
   }
 
+{{> homingMethods}}
   @Override
   public void periodic() {
+{{> homingPeriodic}}
     // Publishes the elevator's telemetry, and applies anything changed through live tuning.
     elevator.updateTelemetry();
   }

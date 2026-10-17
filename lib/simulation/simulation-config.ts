@@ -1,5 +1,6 @@
 import { getMotorController, getSimMotorType } from "@/lib/config/hardware-config"
 import { elevatorDrive } from "@/lib/elevator-drive"
+import { usesHomingSwitch } from "@/lib/homing"
 import type { FormValues } from "@/lib/types"
 import type { ArmSimOptions } from "./arm-sim"
 import type { ElevatorSimOptions } from "./elevator-sim"
@@ -73,6 +74,8 @@ export function createSimulationOptions(
     ...gainUnits(formValues.mechanismType),
     ...currentLimits(formValues),
     batteryResistance: BATTERY_RESISTANCE,
+    lowerSwitch: usesHomingSwitch(formValues, "lower"),
+    upperSwitch: usesHomingSwitch(formValues, "upper"),
   }
 
   // Mechanism-specific options

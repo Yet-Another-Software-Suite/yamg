@@ -15,6 +15,13 @@ const crtEncoderSchema = z.object({
   inverted: z.boolean().optional(),
 });
 
+/** A homing switch at one end of the travel. */
+const homingSwitchSchema = z.object({
+  enabled: z.boolean().optional(),
+  channel: z.number().int().min(0).optional(),
+  pressedReads: z.enum(["low", "high"]).optional(),
+});
+
 export const formSchema = z.object({
   subsystemName: z.string().min(1, "Subsystem name is required"),
   outputType: z.enum(["vendor", "yams"]),
@@ -123,6 +130,13 @@ export const formSchema = z.object({
       ratio: z.number().optional(),
     })
     .optional(),
+  homing: z
+    .object({
+      enabled: z.boolean().optional(),
+      lower: homingSwitchSchema.optional(),
+      upper: homingSwitchSchema.optional(),
+    })
+    .optional(),
   turretParams: z
     .object({
       crt: z.boolean().optional(),
@@ -203,6 +217,11 @@ export const DEFAULT_VALUES: FormSchema = {
     offset: 0,
     inverted: false,
     ratio: 1,
+  },
+  homing: {
+    enabled: false,
+    lower: { enabled: true, channel: 4, pressedReads: "high" },
+    upper: { enabled: false, channel: 5, pressedReads: "high" },
   },
   turretParams: {
     crt: false,

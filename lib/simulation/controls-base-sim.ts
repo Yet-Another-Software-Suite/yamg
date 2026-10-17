@@ -36,6 +36,10 @@ export interface ControlsBaseSimOptions {
   // The battery's internal resistance, in ohms: its voltage sags by the supply current times this.
   batteryResistance?: number
 
+  // Homing switches at the lower and upper hard stops, which the mechanism presses at the stop.
+  lowerSwitch?: boolean
+  upperSwitch?: boolean
+
   // Timing
   dt?: number
 }
@@ -109,7 +113,42 @@ export class ControlsBaseSim {
   }
   arm: boolean
 
+  /** Whether there are homing switches at the lower and upper hard stops. */
+  lowerSwitch: boolean
+  upperSwitch: boolean
+
+  /** True while the mechanism presses its lower homing switch. Mechanisms with hard stops say when. */
+  lowerSwitchPressed(): boolean {
+    return false
+  }
+
+  /** True while the mechanism presses its upper homing switch. */
+  upperSwitchPressed(): boolean {
+    return false
+  }
+
+  /** A homing switch at (x, y): lit while it is pressed. */
+  drawSwitch(ctx: CanvasRenderingContext2D, x: number, y: number, pressed: boolean): void {
+    ctx.fillStyle = pressed ? "#22c55e" : "#444"
+    ctx.strokeStyle = pressed ? "#86efac" : "rgba(200, 200, 200, 0.7)"
+    ctx.lineWidth = 2
+    ctx.beginPath()
+    ctx.rect(x - 7, y - 5, 14, 10)
+    ctx.fill()
+    ctx.stroke()
+  }
+
+  /** The telemetry lines for the homing switches there are. */
+  switchTelemetry(): string[] {
+    const lines: string[] = []
+    if (this.lowerSwitch) lines.push(`Lower switch: ${this.lowerSwitchPressed() ? "pressed" : "open"}`)
+    if (this.upperSwitch) lines.push(`Upper switch: ${this.upperSwitchPressed() ? "pressed" : "open"}`)
+    return lines
+  }
+
   constructor(canvas: HTMLCanvasElement, options: ControlsBaseSimOptions = {}) {
+    this.lowerSwitch = options.lowerSwitch ?? false
+    this.upperSwitch = options.upperSwitch ?? false
     this.arm = false
     this.canvas = canvas
     this.ctx = canvas.getContext("2d")!

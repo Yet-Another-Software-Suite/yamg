@@ -18,6 +18,7 @@ import static org.wpilib.units.Units.Volts;
 
 {{> imports}}
 {{> encoderImports}}
+{{> homingImports}}
 import java.util.Optional;
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
@@ -129,6 +130,7 @@ public class {{className}} implements Mechanism {
 {{/if}}
 
 {{> fields}}
+{{> homingFields}}
 {{> encoderFields}}
 
 {{#if systemCoreProfile}}
@@ -164,6 +166,7 @@ public class {{className}} implements Mechanism {
 {{> encoderSeed}}
     if (RobotBase.isSimulation()) {
 {{> simInit}}
+{{> homingSimInit}}
     }
   }
 
@@ -292,8 +295,10 @@ public class {{className}} implements Mechanism {
     }).withPriority(Command.LOWEST_PRIORITY).named("{{className}} Hold");
   }
 
+{{> homingMethods}}
   /** Call this from Robot.robotPeriodic(), before the scheduler runs. */
   public void periodic() {
+{{> homingPeriodic}}
 {{#unless sendGoalOnce}}
     if (goal != null) {
 {{#if onboardControl}}
@@ -371,5 +376,6 @@ public class {{className}} implements Mechanism {
     AngularAcceleration mechanismAcceleration = mechanismVelocity.minus(lastMechanismVelocity).div(LOOP_PERIOD);
     lastMechanismVelocity = mechanismVelocity;
 {{> simUpdate}}
+{{> homingSim}}
   }
 }

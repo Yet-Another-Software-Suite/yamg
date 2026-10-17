@@ -12,6 +12,7 @@ import static org.wpilib.units.Units.Seconds;
 
 {{> imports}}
 {{> encoderImports}}
+{{> homingImports}}
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Trigger;
@@ -95,6 +96,7 @@ public class {{className}} implements Mechanism {
 
   // YAMS drives a turret as a Pivot.
   private final Pivot turret = new Pivot(turretConfig, motor);
+{{> homingFields}}
 {{#if absoluteSeed}}
 
   public {{className}}() {
@@ -131,8 +133,10 @@ public class {{className}} implements Mechanism {
         .named("{{className}} Hold");
   }
 
+{{> homingMethods}}
   /** Call this from Robot.robotPeriodic(), before the scheduler runs. */
   public void periodic() {
+{{> homingPeriodic}}
     // Publishes the turret's telemetry, and applies anything changed through live tuning.
     turret.updateTelemetry();
 {{> encoderTelemetry}}
