@@ -1,10 +1,28 @@
-import { getSimMotorType } from "@/lib/config/hardware-config"
+import { getMotorController, getSimMotorType } from "@/lib/config/hardware-config"
 import { elevatorDrive } from "@/lib/elevator-drive"
 import type { FormValues } from "@/lib/types"
 import type { ArmSimOptions } from "./arm-sim"
 import type { ElevatorSimOptions } from "./elevator-sim"
 import type { FlywheelSimOptions } from "./flywheel-sim"
 import type { ControlsBaseSimOptions } from "./controls-base-sim"
+import type { ChartUnits } from "./sim-chart"
+
+/** A typical FRC battery's internal resistance, in ohms: ReCalc's default. */
+export const BATTERY_RESISTANCE = 0.015
+
+/**
+ * The current limits the generated code sets, per motor: the stator limit, and the supply limit on
+ * a motor controller that has one. A limit of 0 is none.
+ */
+export function currentLimits(formValues: FormValues): { statorCurrentLimit?: number; supplyCurrentLimit?: number } {
+  const stator = formValues.currentLimits?.stator ?? 0
+  const supply = formValues.currentLimits?.supply ?? 0
+  const controller = getMotorController(formValues.motorControllerType)
+  return {
+    statorCurrentLimit: stator > 0 ? stator : undefined,
+    supplyCurrentLimit: supply > 0 && controller.supportsSupplyCurrentLimit ? supply : undefined,
+  }
+}
 
 /** One radian in rotations. */
 const ROTATIONS_PER_RADIAN = 1 / (2 * Math.PI)
@@ -53,6 +71,8 @@ export function createSimulationOptions(
     maxVelocity: profiled ? (formValues.maxVelocity ?? 1) : 0,
     maxAcceleration: profiled ? (formValues.maxAcceleration ?? 1) : 0,
     ...gainUnits(formValues.mechanismType),
+    ...currentLimits(formValues),
+    batteryResistance: BATTERY_RESISTANCE,
   }
 
   // Mechanism-specific options
@@ -212,4 +232,15 @@ export function convertTargetValue(value: number, formValues: FormValues, simTyp
       return value
     }
   }
+}
+
+/** What the chart plots, and in which units: the slider's. */
+export function chartUnits(formValues: FormValues, simType: string): ChartUnits {
+  const degrees = 180 / Math.PI
+  const angular = formValues.mechanismType !== "Elevator" && formValues.mechanismType !== "Flywheel"
+  if (simType === "position") {
+    return angular ? { name: "Angle", unit: "°", scale: degrees } : { name: "Height", unit: "m", scale: 1 }
+  }
+  if (formValues.mechanismType === "Flywheel") return { name: "Velocity", unit: "RPM", scale: 60 / (2 * Math.PI) }
+  return angular ? { name: "Velocity", unit: "°/s", scale: degrees } : { name: "Velocity", unit: "m/s", scale: 1 }
 }

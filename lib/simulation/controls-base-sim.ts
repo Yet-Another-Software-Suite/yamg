@@ -1,6 +1,7 @@
 // First, let's create a proper interface for the constructor options
 import { getMotor } from "@/lib/config/hardware-config"
 import { TrapezoidProfile, type ProfileState } from "@/lib/simulation/trapezoid-profile"
+import { trimSamples, type ChartSample } from "@/lib/simulation/sim-chart"
 
 export interface ControlsBaseSimOptions {
   // Motor configuration
@@ -29,9 +30,24 @@ export interface ControlsBaseSimOptions {
   pidUnitsPerSimUnit?: number
   feedforwardUnitsPerSimUnit?: number
 
+  // Current limits per motor, in amps, as the motor controllers apply them. Unset means none.
+  statorCurrentLimit?: number
+  supplyCurrentLimit?: number
+  // The battery's internal resistance, in ohms: its voltage sags by the supply current times this.
+  batteryResistance?: number
+
   // Timing
   dt?: number
 }
+
+/** The battery's voltage with no load. */
+const NOMINAL_VOLTAGE = 12
+
+/** How often a motor controller applies its current limits, in seconds. */
+const CURRENT_LIMIT_PERIOD = 0.001
+
+/** How long the motors stay stalled at a high current before the sim warns. */
+const STALL_WARNING_SECONDS = 2
 
 /**
  * Base simulation class for FRC mechanism simulations
@@ -68,6 +84,17 @@ export class ControlsBaseSim {
   profile: TrapezoidProfile | null
   /** Where the profile is now: the position and velocity the closed loop follows. */
   setpoint: ProfileState
+  statorCurrentLimit: number | undefined
+  supplyCurrentLimit: number | undefined
+  batteryResistance: number
+  /** The battery's voltage, sagging with the supply current. */
+  batteryVoltage: number
+  /** The current all the motors draw from the battery, in amps. */
+  supplyCurrent: number
+  /** How long the motors have been stalled at a high current, in seconds. */
+  stalledTime: number
+  /** The last 15 seconds, for the chart. */
+  history: ChartSample[]
   motor!: {
     kv: number
     kt: number
@@ -75,6 +102,10 @@ export class ControlsBaseSim {
     m: number
     gearing: number
     count: number
+    /** Each motor's free current at 12 V, in amps. */
+    freeCurrent: number
+    /** Each motor's stall current at 12 V, in amps. */
+    stallCurrent: number
   }
   arm: boolean
 
@@ -124,6 +155,14 @@ export class ControlsBaseSim {
     this.prevError = 0
     this.setpoint = { position: 0, velocity: 0 }
 
+    this.statorCurrentLimit = options.statorCurrentLimit
+    this.supplyCurrentLimit = options.supplyCurrentLimit
+    this.batteryResistance = options.batteryResistance ?? 0
+    this.batteryVoltage = NOMINAL_VOLTAGE
+    this.supplyCurrent = 0
+    this.stalledTime = 0
+    this.history = []
+
     // Motor configuration
     this.configureMotor(options)
   }
@@ -147,6 +186,8 @@ export class ControlsBaseSim {
         m: motorDef.mass * motorCount, // kg (total mass increases)
         gearing: gearing,
         count: motorCount,
+        freeCurrent: motorDef.freeCurrent,
+        stallCurrent: NOMINAL_VOLTAGE / motorDef.resistance,
       }
 
       console.log(`Configured ${motorCount} ${motorType} motor(s) with gearing ${gearing}:1`, {
@@ -166,6 +207,8 @@ export class ControlsBaseSim {
         m: neoMotor.mass * motorCount,
         gearing: gearing,
         count: motorCount,
+        freeCurrent: neoMotor.freeCurrent,
+        stallCurrent: NOMINAL_VOLTAGE / neoMotor.resistance,
       }
     }
   }
@@ -179,6 +222,10 @@ export class ControlsBaseSim {
     this.integral = 0
     this.prevError = 0
     this.time = 0
+    this.batteryVoltage = NOMINAL_VOLTAGE
+    this.supplyCurrent = 0
+    this.stalledTime = 0
+    this.history = []
     this.restartProfile()
   }
 
@@ -197,6 +244,8 @@ export class ControlsBaseSim {
 
   setControlMode(mode: string): void {
     this.controlMode = mode
+    // The chart plots position or velocity, so it starts over.
+    this.history = []
     this.integral = 0
     this.prevError = 0
     this.restartProfile()
@@ -279,11 +328,12 @@ export class ControlsBaseSim {
 
     this.voltage = controlOutput + ffOutput
 
-    // Limit voltage to battery voltage
-    this.voltage = Math.max(-12, Math.min(12, this.voltage))
+    // Limit voltage to what the battery has left
+    this.voltage = Math.max(-this.batteryVoltage, Math.min(this.batteryVoltage, this.voltage))
 
     // Calculate motor physics - this updates position, velocity, etc.
     this.updatePhysics()
+    this.record()
 
     // Log debug info occasionally
     if (Math.round(this.time * 50) % 50 === 0) {
@@ -305,23 +355,114 @@ export class ControlsBaseSim {
     // Override in subclasses
   }
 
+  /** Add this loop to the chart's history: the position (or velocity), its setpoint and the current. */
+  record(): void {
+    const velocityControl = this.controlMode === "velocity"
+    this.history.push({
+      time: this.time,
+      value: velocityControl ? this.velocity : this.position,
+      setpoint: velocityControl ? this.targetVelocity : this.setpoint.position,
+      current: this.current / this.motor.count,
+    })
+    trimSamples(this.history)
+  }
+
   /**
-   * Step the motor one loop, with a load torque held for the loop, and set the current. Velocities
-   * are in radians per second at the mechanism. The speed settles toward where the motor's torque
-   * balances the load, as fast as the back-EMF allows: this solves that exactly, where explicit
+   * The voltage the motor controllers let through, given the back-EMF: they cut it so that each
+   * motor draws no more than its stator limit, and no more than its supply limit from the battery.
+   */
+  limitVoltage(voltage: number, backEmf: number): number {
+    const R = this.motor.R
+    let limited = voltage
+    if (this.statorCurrentLimit !== undefined) {
+      const maxCurrent = this.statorCurrentLimit * this.motor.count
+      limited = Math.max(backEmf - maxCurrent * R, Math.min(backEmf + maxCurrent * R, limited))
+    }
+    if (this.supplyCurrentLimit !== undefined && this.batteryVoltage > 0) {
+      // Supply current is the stator current scaled by the duty cycle: V (V - E) / (R Vbattery).
+      // The most voltage that keeps it to the limit solves V² - E V - limit R Vbattery = 0.
+      const direction = Math.sign(limited) || 1
+      const maxSupply = this.supplyCurrentLimit * this.motor.count
+      const emf = backEmf * direction
+      const maxVoltage = (emf + Math.sqrt(emf * emf + 4 * maxSupply * R * this.batteryVoltage)) / 2
+      limited = direction * Math.min(limited * direction, maxVoltage)
+    }
+    return limited
+  }
+
+  /**
+   * Step the motor one loop, with a load torque held for the loop, and set the currents, the
+   * battery's voltage and how long the motor has been stalled. Velocities are in radians per second
+   * at the mechanism. The speed settles toward where the motor's torque balances the load, as fast
+   * as the back-EMF and the motor's own friction allow: this solves that exactly, where explicit
    * Euler goes unstable for a high gearing on a small inertia.
    */
   stepMotor(velocity: number, inertia: number, loadTorque: number): { velocity: number; distance: number } {
+    const kt = this.motor.kt
+    const R = this.motor.R
     const voltsPerRadPerSec = 60 / (2 * Math.PI) / this.motor.kv
-    // How fast the back-EMF slows the mechanism, per second.
-    const rate = (this.motor.kt * voltsPerRadPerSec) / (this.motor.R * inertia)
-    const settledVelocity = (this.voltage - (loadTorque * this.motor.R) / this.motor.kt) / voltsPerRadPerSec
-    const decay = Math.exp(-rate * this.dt)
-    const next = settledVelocity + (velocity - settledVelocity) * decay
-    const distance = settledVelocity * this.dt + ((velocity - settledVelocity) * (1 - decay)) / rate
-    this.current = (this.voltage - voltsPerRadPerSec * next) / this.motor.R
+    // The motor's free current is its friction: it rises with speed to the free current at free
+    // speed, as ReCalc models it, and its torque is lost.
+    const freeSpeed = NOMINAL_VOLTAGE / voltsPerRadPerSec
+    const friction = (kt * this.motor.freeCurrent * this.motor.count) / freeSpeed // N-m per rad/s
+    // How hard the back-EMF and the friction slow the mechanism, in N-m per rad/s.
+    const damping = (kt * voltsPerRadPerSec) / R + friction
+    const rate = damping / inertia
+
+    // The motor controllers apply their current limits every millisecond, as the speed changes.
+    const commanded = this.voltage
+    const substeps = Math.max(1, Math.round(this.dt / CURRENT_LIMIT_PERIOD))
+    const h = this.dt / substeps
+    const decay = Math.exp(-rate * h)
+    let next = velocity
+    let distance = 0
+    for (let i = 0; i < substeps; i++) {
+      this.voltage = this.limitVoltage(commanded, voltsPerRadPerSec * next)
+      const settledVelocity = ((kt * this.voltage) / R - loadTorque) / damping
+      distance += settledVelocity * h + ((next - settledVelocity) * (1 - decay)) / rate
+      next = settledVelocity + (next - settledVelocity) * decay
+      this.current = (this.voltage - voltsPerRadPerSec * next) / R
+      this.supplyCurrent = this.batteryVoltage > 0 ? (this.current * this.voltage) / this.batteryVoltage : 0
+      // The battery sags with what it supplies.
+      this.batteryVoltage = Math.max(0, NOMINAL_VOLTAGE - this.batteryResistance * this.supplyCurrent)
+    }
+
+    // Stalled: barely turning while each motor draws close to its stator limit, or a quarter of its
+    // stall current with no limit.
+    const perMotorCurrent = Math.abs(this.current) / this.motor.count
+    const stallThreshold =
+      this.statorCurrentLimit !== undefined ? 0.95 * this.statorCurrentLimit : 0.25 * this.motor.stallCurrent
+    const stalled = Math.abs(next) < 0.05 * freeSpeed && perMotorCurrent >= stallThreshold
+    this.stalledTime = stalled ? this.stalledTime + this.dt : 0
+
     return { velocity: next, distance }
   }
+
+  /** A warning when the motors have been stalled at a high current for a while, or null. */
+  stallWarning(): string | null {
+    if (this.stalledTime < STALL_WARNING_SECONDS) return null
+    const perMotor = Math.abs(this.current) / this.motor.count
+    return `Stalled at ${perMotor.toFixed(0)} A for ${this.stalledTime.toFixed(1)} s: can't move this load, would overheat`
+  }
+
+  /** Draw the mechanism, then any warning over it. */
+  render(): void {
+    this.draw()
+    const warning = this.stallWarning()
+    if (warning === null || !this.ctx?.fillText) return
+    const ctx = this.ctx
+    ctx.save()
+    ctx.fillStyle = "rgba(127, 29, 29, 0.85)"
+    // Along the bottom, clear of the readout in the top left.
+    ctx.fillRect(0, this.height - 32, this.width, 32)
+    ctx.fillStyle = "#fecaca"
+    ctx.font = "bold 14px sans-serif"
+    ctx.textAlign = "center"
+    ctx.textBaseline = "middle"
+    ctx.fillText(warning, this.width / 2, this.height - 16)
+    ctx.restore()
+  }
+
 
   draw(): void {
     // Override in subclasses

@@ -9,7 +9,8 @@ import type { ControlsBaseSim } from "@/lib/simulation/controls-base-sim"
 import { ArmSim } from "@/lib/simulation/arm-sim"
 import { ElevatorSim } from "@/lib/simulation/elevator-sim"
 import { FlywheelSim } from "@/lib/simulation/flywheel-sim"
-import { createSimulationOptions, getSliderRangeConfig, convertTargetValue } from "@/lib/simulation/simulation-config"
+import { createSimulationOptions, getSliderRangeConfig, convertTargetValue, chartUnits } from "@/lib/simulation/simulation-config"
+import { drawChart } from "@/lib/simulation/sim-chart"
 
 // Add this function right after the imports but before the component definition
 function suppressResizeObserverErrors() {
@@ -35,6 +36,7 @@ interface SimulationComponentProps {
 
 export default function SimulationComponent({ formValues, simType, motorCount }: SimulationComponentProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const chartRef = useRef<HTMLCanvasElement>(null)
   const [isRunning, setIsRunning] = useState(false)
   const [simInstance, setSimInstance] = useState<ControlsBaseSim | null>(null)
   const animationRef = useRef<number | null>(null)
@@ -61,6 +63,16 @@ export default function SimulationComponent({ formValues, simType, motorCount }:
     }
   }, [])
 
+  // Draw the mechanism, and the chart of its last 15 seconds beside it.
+  const renderAll = (sim: ControlsBaseSim) => {
+    sim.render()
+    const chart = chartRef.current
+    const ctx = chart?.getContext("2d")
+    if (chart && ctx) {
+      drawChart(ctx, chart.width, chart.height, sim.history, chartUnits(latestFormValuesRef.current, simType), sim.statorCurrentLimit)
+    }
+  }
+
   // Function to create/recreate simulation instance
   const createSimulationInstance = (useLatestValues = false) => {
     if (!canvasRef.current) return null
@@ -85,7 +97,7 @@ export default function SimulationComponent({ formValues, simType, motorCount }:
 
       if (sim) {
         sim.setControlMode(simType)
-        sim.draw() // Initial draw
+        renderAll(sim) // Initial draw
         setError(null)
 
         // Set initial target value
@@ -123,7 +135,7 @@ export default function SimulationComponent({ formValues, simType, motorCount }:
       simInstance.update(0.02) // 20ms fixed time step
 
       // Draw the updated state
-      simInstance.draw()
+      renderAll(simInstance)
 
       // Continue the animation loop
       if (isRunning) {
@@ -171,7 +183,7 @@ export default function SimulationComponent({ formValues, simType, motorCount }:
 
       // Force an initial update to get things moving
       simInstance.update(0.02)
-      simInstance.draw()
+      renderAll(simInstance)
 
       console.log("Starting simulation with target:", targetValue)
     }
@@ -211,7 +223,7 @@ export default function SimulationComponent({ formValues, simType, motorCount }:
 
       // Redraw if not running
       if (!isRunning) {
-        simInstance.draw()
+        renderAll(simInstance)
       }
     } catch (error) {
       console.error("Error setting target:", error)
@@ -232,12 +244,19 @@ export default function SimulationComponent({ formValues, simType, motorCount }:
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-center">
+      <div className="grid gap-4 xl:grid-cols-2">
         <canvas
           ref={canvasRef}
           width={600}
           height={400}
-          className="border border-gray-300 rounded-md bg-slate-800 w-full max-w-[600px] h-auto"
+          className="border border-gray-300 rounded-md bg-slate-800 w-full h-auto"
+        ></canvas>
+        <canvas
+          ref={chartRef}
+          width={600}
+          height={400}
+          aria-label="The last 15 seconds of the mechanism's position and setpoint, with its stator current"
+          className="border border-gray-300 rounded-md bg-slate-800 w-full h-auto"
         ></canvas>
       </div>
 

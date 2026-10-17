@@ -1,5 +1,5 @@
 import { getMotor } from "@/lib/config/hardware-config"
-import { ArmSim } from "@/lib/simulation/arm-sim"
+import { ArmSim, type ArmSimOptions } from "@/lib/simulation/arm-sim"
 import { ElevatorSim } from "@/lib/simulation/elevator-sim"
 import { FlywheelSim } from "@/lib/simulation/flywheel-sim"
 import { TrapezoidProfile } from "@/lib/simulation/trapezoid-profile"
@@ -71,7 +71,7 @@ function pivot(options: { maxVelocity: number; maxAcceleration: number; kP?: num
     startingAngle: 0,
     simulateGravity: false,
     kP: options.kP ?? 2,
-    kV: VOLTS_PER_RAD_PER_SEC / rotationsPerRadian,
+    kV: (VOLTS_PER_RAD_PER_SEC * (1 + (NEO.resistance * NEO.freeCurrent) / 12)) / rotationsPerRadian,
     kA: moi / NM_PER_VOLT / rotationsPerRadian,
     maxVelocity: options.maxVelocity,
     maxAcceleration: options.maxAcceleration,
@@ -165,9 +165,10 @@ describe("the web sim's physics and gain units", () => {
     expect(fall(false)).toBe(0)
   })
 
-  it("reaches the speed kV asks for, from the motor's back-EMF", () => {
-    // A flywheel's kV is per rotation per second, and is exactly the motor's back-EMF.
-    const kV = VOLTS_PER_RAD_PER_SEC * 2 * Math.PI
+  it("reaches the speed kV asks for, from the motor's back-EMF and friction", () => {
+    // A flywheel's kV is per rotation per second: the motor's back-EMF, plus the voltage its free
+    // current takes, which rises with speed to the free current at 12 V.
+    const kV = VOLTS_PER_RAD_PER_SEC * (1 + (NEO.resistance * NEO.freeCurrent) / 12) * 2 * Math.PI
     const flywheel = new FlywheelSim(canvas, { motorType: "NEO", gearing: GEARING, kP: 0, kV, ...gainUnits("Flywheel") })
     flywheel.setTargetVelocity(5)
     for (let i = 0; i < 500; i++) flywheel.update(DT)
@@ -239,6 +240,81 @@ describe("the web sim's settings from the form", () => {
       expect(sim.position).toBeCloseTo((15 * Math.PI) / 180)
       expect(sim.kG).toBe(0)
       expect(sim.simulateGravity).toBe(false)
+    }
+  })
+})
+
+describe("the web sim's current limits, losses and battery", () => {
+  /** An arm far too heavy for its motor: it stalls against its lower hard limit. */
+  const overloaded = (options: Partial<ArmSimOptions> = {}) => {
+    const arm = new ArmSim(canvas, {
+      motorType: "NEO", gearing: 5, length: 1, mass: 20, minAngle: -Math.PI / 2, maxAngle: Math.PI / 2,
+      kP: 100, kG: 0, ...options,
+    })
+    arm.setTarget(Math.PI / 4)
+    return arm
+  }
+
+  it("holds each motor to its stator limit", () => {
+    const arm = overloaded({ statorCurrentLimit: 40, motorCount: 2 })
+    for (let i = 0; i < 100; i++) {
+      arm.update(DT)
+      expect(Math.abs(arm.current)).toBeLessThanOrEqual(2 * 40 * 1.01)
+    }
+    expect(Math.abs(arm.current)).toBeCloseTo(80, 0)
+  })
+
+  it("holds each motor to its supply limit", () => {
+    const arm = overloaded({ supplyCurrentLimit: 20, batteryResistance: 0.015 })
+    for (let i = 0; i < 100; i++) {
+      arm.update(DT)
+      expect(arm.supplyCurrent).toBeLessThanOrEqual(20 * 1.01)
+    }
+  })
+
+  it("lifts less with a lower stator limit", () => {
+    // 8 kg on a 0.5 m arm at 50:1: a NEO lifts it, but not on 5 A.
+    const lift = (statorCurrentLimit?: number) => {
+      const arm = new ArmSim(canvas, {
+        motorType: "NEO", gearing: 50, length: 0.5, mass: 8, minAngle: -Math.PI / 2, maxAngle: Math.PI / 2,
+        kP: 100, kG: 0, statorCurrentLimit,
+      })
+      arm.setTarget(Math.PI / 4)
+      for (let i = 0; i < 150; i++) arm.update(DT)
+      return arm.position
+    }
+    expect(lift()).toBeCloseTo(Math.PI / 4, 1)
+    expect(lift(5)).toBeLessThan(0)
+  })
+
+  it("sags the battery by the supply current", () => {
+    const arm = overloaded({ batteryResistance: 0.015 })
+    for (let i = 0; i < 20; i++) arm.update(DT)
+    expect(arm.batteryVoltage).toBeCloseTo(12 - 0.015 * arm.supplyCurrent, 6)
+    expect(arm.batteryVoltage).toBeLessThan(10)
+  })
+
+  it("draws the free current at free speed", () => {
+    const flywheel = new FlywheelSim(canvas, { motorType: "NEO", gearing: 1, kP: 0, kV: 100, ...gainUnits("Flywheel") })
+    flywheel.setTargetVelocity(1000)
+    for (let i = 0; i < 500; i++) flywheel.update(DT)
+    expect(flywheel.voltage).toBe(12)
+    expect(flywheel.current).toBeCloseTo(NEO.freeCurrent, 1)
+  })
+
+  it("warns after 2 s stalled at a high current, and not while moving or holding", () => {
+    const arm = overloaded({ statorCurrentLimit: 40 })
+    for (let i = 0; i < 90; i++) arm.update(DT)
+    expect(arm.stallWarning()).toBeNull()
+    for (let i = 0; i < 20; i++) arm.update(DT)
+    expect(arm.stallWarning()).toMatch(/^Stalled at 40 A for 2\.\d s/)
+
+    // A pivot with no load moving freely, then holding, never warns.
+    const free = pivot({ maxVelocity: 3, maxAcceleration: 6 })
+    free.setTarget(Math.PI / 2)
+    for (let i = 0; i < 300; i++) {
+      free.update(DT)
+      expect(free.stallWarning()).toBeNull()
     }
   })
 })

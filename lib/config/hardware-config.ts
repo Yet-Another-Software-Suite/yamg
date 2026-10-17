@@ -14,6 +14,7 @@ export interface MotorDefinition {
   kt: number // N-m/A
   km: number // N-m/sqrt(W)
   resistance: number // Ohms per motor
+  freeCurrent: number // A per motor at free speed on 12 V, from ReCalc's motor data
   mass: number // kg per motor
   // Compatibility
   compatibleControllers: string[]
@@ -49,6 +50,7 @@ export const MOTORS: Record<string, MotorDefinition> = {
     kt: 0.0181,
     km: 0.070,
     resistance: 0.066,
+    freeCurrent: 1.782,
     mass: 0.53977492,
     compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova"],
     description: "REV Robotics NEO Brushless Motor",
@@ -60,6 +62,7 @@ export const MOTORS: Record<string, MotorDefinition> = {
     kt: 0.0097,
     km: 0.030,
     resistance: 0.108,
+    freeCurrent: 1.1,
     mass: 0.2540117,
     compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova"],
     description: "REV Robotics NEO 550 Brushless Motor",
@@ -71,6 +74,7 @@ export const MOTORS: Record<string, MotorDefinition> = {
     kt: 0.0155,
     km: 0.063,
     resistance: 0.060,
+    freeCurrent: 2.206,
     mass: 0.4399846,
     compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova"],
     description: "CTRE Minion Brushless Motor",
@@ -83,6 +87,7 @@ export const MOTORS: Record<string, MotorDefinition> = {
     kt: 0.0164,
     km: 0.065,
     resistance: 0.0635,
+    freeCurrent: 2.7,
     mass: 0.2948, // 0.65 lb
     // A Talon FXS drives it as a NEO (NEO_JST)
     compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS", "ThriftyNova"],
@@ -95,6 +100,7 @@ export const MOTORS: Record<string, MotorDefinition> = {
     kt: 0.0171,
     km: 0.072,
     resistance: 0.057, 
+    freeCurrent: 5.434,
     mass: 0.5805982, 
     compatibleControllers: ["SparkMAX", "SparkFlex", "TalonFXS"],
     description: "REV Robotics NEO Vortex Brushless Motor",
@@ -106,6 +112,7 @@ export const MOTORS: Record<string, MotorDefinition> = {
     kt: 0.0147,
     km: 0.071,
     resistance: 0.044,
+    freeCurrent: 3.156,
     mass: 0.3401943,
     compatibleControllers: ["TalonFX"],
     description: "CTRE Kraken X44 Brushless Motor",
@@ -117,6 +124,7 @@ export const MOTORS: Record<string, MotorDefinition> = {
     kt: 0.0194,
     km: 0.107,
     resistance: 0.025,
+    freeCurrent: 2.83,
     mass: 0.544311,
     compatibleControllers: ["TalonFX"],
     description: "CTRE Kraken X60 Brushless Motor",
