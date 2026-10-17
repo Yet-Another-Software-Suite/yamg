@@ -93,9 +93,10 @@ export function drawChart(
 
   const left = 64
   const right = width - 56
-  const top = 40
+  const top = 52
   const bottom = height - 40
-  const end = Math.max(samples[samples.length - 1]?.time ?? 0, CHART_WINDOW_SECONDS)
+  // Now is always at the right edge, and the history fills in from it.
+  const end = samples[samples.length - 1]?.time ?? 0
   const start = end - CHART_WINDOW_SECONDS
   const x = (time: number) => left + ((time - start) / CHART_WINDOW_SECONDS) * (right - left)
 
@@ -125,11 +126,11 @@ export function drawChart(
   maxCurrent = Math.max(maxCurrent * 1.15, 1)
   const yCurrent = (current: number) => bottom - (current / maxCurrent) * (bottom - top)
 
-  ctx.font = "12px sans-serif"
+  ctx.font = "14px sans-serif"
   ctx.lineWidth = 1
 
   // Gridlines and the value axis, on the left.
-  const step = niceStep(high - low, 5)
+  const step = niceStep(high - low, 6)
   ctx.textAlign = "right"
   ctx.textBaseline = "middle"
   for (let tick = Math.ceil(low / step) * step; tick <= high; tick += step) {
@@ -210,7 +211,7 @@ export function drawChart(
 
   // The axis titles and the legend, across the top.
   ctx.textBaseline = "middle"
-  ctx.font = "bold 12px sans-serif"
+  ctx.font = "bold 14px sans-serif"
   ctx.textAlign = "left"
   ctx.fillStyle = COLORS.axis
   ctx.fillText(`${units.name} (${units.unit})`, 8, 16)
@@ -224,25 +225,28 @@ export function drawChart(
     ["Current", COLORS.current, "bar"],
   ]
   if (currentLimit !== undefined) legend.push(["Limit", COLORS.currentLimit, "dash"])
-  ctx.font = "12px sans-serif"
+  ctx.font = "13px sans-serif"
   ctx.textAlign = "left"
-  let lx = width / 2 - (currentLimit !== undefined ? 160 : 130)
+  // The legend, centered on its own row under the axis titles.
+  const LEGEND_Y = 38
+  const legendWidth = legend.reduce((sum, [label]) => sum + 24 + ctx.measureText(label).width + 18, -18)
+  let lx = (width - legendWidth) / 2
   for (const [label, color, kind] of legend) {
     if (kind === "bar") {
       ctx.fillStyle = color
-      ctx.fillRect(lx, 11, 18, 10)
+      ctx.fillRect(lx, LEGEND_Y - 5, 18, 10)
     } else {
       ctx.strokeStyle = color
       ctx.lineWidth = 2.5
       ctx.setLineDash(kind === "dash" ? [5, 3] : [])
       ctx.beginPath()
-      ctx.moveTo(lx, 16)
-      ctx.lineTo(lx + 18, 16)
+      ctx.moveTo(lx, LEGEND_Y)
+      ctx.lineTo(lx + 18, LEGEND_Y)
       ctx.stroke()
       ctx.setLineDash([])
     }
     ctx.fillStyle = COLORS.axis
-    ctx.fillText(label, lx + 24, 16)
+    ctx.fillText(label, lx + 24, LEGEND_Y)
     lx += 24 + ctx.measureText(label).width + 18
   }
   ctx.restore()
