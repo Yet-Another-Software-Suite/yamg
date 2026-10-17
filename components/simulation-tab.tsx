@@ -69,6 +69,8 @@ export default function SimulationTab({ formValues }: SimulationTabProps) {
   const isVelocityOnly = formValues.mechanismType === "Flywheel"
   const [simType, setSimType] = useState<string>(isVelocityOnly ? "velocity" : "position")
   const [motorCount, setMotorCount] = useState<number>(1)
+  // What is typed in the motor count while it has focus, or null to show the motor count.
+  const [motorCountText, setMotorCountText] = useState<string | null>(null)
 
   // Flywheels have no meaningful position mode - force velocity control
   useEffect(() => {
@@ -80,15 +82,24 @@ export default function SimulationTab({ formValues }: SimulationTabProps) {
   // Safe number input handler
   const handleMotorCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
-    if (value === "") {
-      setMotorCount(1)
-    } else {
-      const numValue = Number.parseInt(value, 10)
-      if (!isNaN(numValue) && numValue >= 1 && numValue <= 4) {
-        setMotorCount(numValue)
-      }
+    setMotorCountText(value)
+    const numValue = Number.parseInt(value, 10)
+    if (!isNaN(numValue) && numValue >= 1 && numValue <= 4) {
+      setMotorCount(numValue)
     }
   }
+
+  const handleMotorCountFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    if (window.matchMedia("(pointer: coarse)").matches) {
+      // A phone cannot select a number field's text, so clear it for the new count. Leaving it
+      // empty keeps the old one.
+      setMotorCountText("")
+    } else {
+      // Select the whole number, so typing replaces it.
+      e.currentTarget.select()
+    }
+  }
+
 
   return (
     <Card className="w-full">
@@ -113,12 +124,18 @@ export default function SimulationTab({ formValues }: SimulationTabProps) {
               type="number"
               min="1"
               max="4"
-              value={motorCount}
+              inputMode="numeric"
+              value={motorCountText ?? motorCount}
               onChange={handleMotorCountChange}
-              // Select the whole number, so typing replaces it. The click keeps the selection that
-              // the mouse would otherwise drop.
-              onFocus={(e) => e.currentTarget.select()}
-              onClick={(e) => e.currentTarget.select()}
+              onFocus={handleMotorCountFocus}
+              // The click keeps the selection that the mouse would otherwise drop.
+              onClick={(e) => {
+                if (!window.matchMedia("(pointer: coarse)").matches) e.currentTarget.select()
+              }}
+              // Show the motor count again, which an empty or invalid entry left unchanged.
+              onBlur={() => {
+                if (motorCountText !== null) setMotorCountText(null)
+              }}
               className="w-20"
             />
             <span className="text-sm text-muted-foreground">Number of motors in the gearbox (1-4)</span>
