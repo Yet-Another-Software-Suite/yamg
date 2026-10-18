@@ -19,7 +19,7 @@ import org.wpilib.simulation.DIOSim;
 {{#if homing}}
 
   // The homing switches, on SystemCore Smart IO ports. The {{mechanismNoun}} presses one at the end of its
-  // travel, which holds the motor's encoder at that end: see the constructor.
+  // travel, which sets the motor's encoder to that end: see the constructor.
 {{#each homingSwitches}}
   private final DigitalInput {{field}}Input = new DigitalInput({{channel}});
 {{/each}}
@@ -85,19 +85,17 @@ import org.wpilib.simulation.DIOSim;
 {{/inline}}
 {{#*inline "homingBind"}}
 {{#if homing}}
-    // Home on each switch while the {{mechanismNoun}} presses it: the trigger keeps the motor's encoder at
-    // the end of the travel the switch is at, every loop the switch is held.
+    // Home on each switch once the {{mechanismNoun}} has pressed it for 0.1 seconds: the trigger sets the
+    // motor's encoder to the end of the travel the switch is at, once each press. The debounce ignores
+    // contact bounce, and a mechanism that only taps the switch.
 {{#each homingSwitches}}
     new Trigger(this::is{{name}}Pressed)
 {{#if (eq ../commands "v2")}}
-        .whileTrue(Commands.run(() -> {{../homingSeedCall}}({{position}})).withName("{{../className}} Home {{name}}"));
+        .debounce(0.1)
+        .onTrue(Commands.runOnce(() -> {{../homingSeedCall}}({{position}})).withName("{{../className}} Home {{name}}"));
 {{else}}
-        .whileTrue(Command.noRequirements(coroutine -> {
-          while (true) {
-            {{../homingSeedCall}}({{position}});
-            coroutine.yield();
-          }
-        }).named("{{../className}} Home {{name}}"));
+        .debounce(Seconds.of(0.1))
+        .onTrue(Command.noRequirements(coroutine -> {{../homingSeedCall}}({{position}})).named("{{../className}} Home {{name}}"));
 {{/if}}
 {{/each}}
 {{/if}}

@@ -335,10 +335,10 @@ describe("generateFiles", () => {
     // The simulated switch is pressed by where the mechanism really is, not by what the encoder says.
     expect(arm.content).toContain(".map(sim -> sim.getMechanismPosition().lte(Degrees.of(-9.95)))");
     expect(arm.content).toContain(".map(sim -> sim.getMechanismPosition().gte(Degrees.of(99.95)))");
-    // A Commands v3 trigger keeps the encoder at the switch's hard stop while the switch is pressed.
+    // A debounced Commands v3 trigger sets the encoder once the switch has been pressed for 0.1 seconds.
     expect(arm.content).toContain("new Trigger(this::isLowerSwitchPressed)");
     expect(arm.content).toContain(
-      ".whileTrue(Command.noRequirements(coroutine -> {\n          while (true) {\n            motor.setEncoderPosition(Degrees.of(-10.0));\n            coroutine.yield();\n          }\n        }).named(\"ArmTalonFXAll Home LowerSwitch\"));",
+      '.debounce(Seconds.of(0.1))\n        .onTrue(Command.noRequirements(coroutine -> motor.setEncoderPosition(Degrees.of(-10.0))).named("ArmTalonFXAll Home LowerSwitch"));',
     );
     expect(arm.content).toContain("motor.setEncoderPosition(Degrees.of(100.0))");
     expect(arm.content).not.toContain("WasPressed");
@@ -349,7 +349,7 @@ describe("generateFiles", () => {
     // A Commands v2 trigger, in the constructor an elevator only has for homing.
     expect(elevator.content).toContain("public ElevatorSparkMAXAll() {");
     expect(elevator.content).toContain(
-      '.whileTrue(Commands.run(() -> motor.setEncoderPosition(Meters.of(1.5))).withName("ElevatorSparkMAXAll Home UpperSwitch"));',
+      '.debounce(0.1)\n        .onTrue(Commands.runOnce(() -> motor.setEncoderPosition(Meters.of(1.5))).withName("ElevatorSparkMAXAll Home UpperSwitch"));',
     );
     expect(elevator.content).toContain("import org.wpilib.command2.Commands;");
   });
@@ -360,11 +360,11 @@ describe("generateFiles", () => {
     expect(pivot.content).toContain("upperSwitchSim = new DIOSim(upperSwitchInput);");
     // A normally open switch to the port's power pin reads high when it is pressed.
     expect(pivot.content).toContain("lowerSwitchSim.setValue(Radians.of(pivotSim.getAngle()).lte(Degrees.of(-9.95)));");
-    expect(pivot.content).toContain(".whileTrue(Commands.run(() -> setEncoderPosition(MIN_ANGLE))");
+    expect(pivot.content).toContain(".onTrue(Commands.runOnce(() -> setEncoderPosition(MIN_ANGLE))");
     expect(pivot.content).not.toContain("SensorConfig");
 
     const [elevator] = await generateFiles(form("Elevator", "TalonFX", "vendor", "v3", true, "epilogue"));
-    expect(elevator.content).toContain("            setEncoderPosition(toMechanismPosition(MIN_HEIGHT));\n            coroutine.yield();");
+    expect(elevator.content).toContain("Command.noRequirements(coroutine -> setEncoderPosition(toMechanismPosition(MIN_HEIGHT)))");
     // This one reads low when pressed, and Epilogue logs it.
     expect(elevator.content).toContain("lowerSwitchSim.setValue(!Meters.of(elevatorSim.getPosition()).lte(Meters.of(0.0005)));");
     expect(elevator.content).toContain('@Logged(name = "LowerSwitch")');
