@@ -8,6 +8,9 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import type { FormValues } from "@/lib/types"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { TriangleAlert } from "lucide-react"
+import { holdingTorqueWarning } from "@/lib/simulation/holding-torque"
 import dynamic from "next/dynamic"
 
 // Dynamically import simulation components with no SSR
@@ -79,6 +82,8 @@ export default function SimulationTab({ formValues }: SimulationTabProps) {
     }
   }, [isVelocityOnly, simType])
 
+  const holdingWarning = holdingTorqueWarning(formValues, motorCount)
+
   // Safe number input handler
   const handleMotorCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
@@ -108,6 +113,14 @@ export default function SimulationTab({ formValues }: SimulationTabProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
+          {/* A heads up that the motors can't hold the load. The simulation still runs, to show it. */}
+          {holdingWarning && (
+            <Alert className="border-amber-500/50 bg-amber-500/10 [&>svg]:text-amber-500">
+              <TriangleAlert className="h-4 w-4" />
+              <AlertTitle>The motors can&apos;t hold this load</AlertTitle>
+              <AlertDescription>{holdingWarning}</AlertDescription>
+            </Alert>
+          )}
           <Tabs value={simType} onValueChange={setSimType}>
             <TabsList className={`grid w-full ${isVelocityOnly ? "grid-cols-1" : "grid-cols-2"}`}>
               {!isVelocityOnly && <TabsTrigger value="position">Position Control</TabsTrigger>}
