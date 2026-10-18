@@ -335,13 +335,14 @@ describe("generateFiles", () => {
     // The simulated switch is pressed by where the mechanism really is, not by what the encoder says.
     expect(arm.content).toContain(".map(sim -> sim.getMechanismPosition().lte(Degrees.of(-9.95)))");
     expect(arm.content).toContain(".map(sim -> sim.getMechanismPosition().gte(Degrees.of(99.95)))");
-    // A debounced Commands v3 trigger sets the encoder once the switch has been pressed for 0.1 seconds.
+    // A Commands v3 trigger sets the encoder once each time a switch is pressed.
     expect(arm.content).toContain("new Trigger(this::isLowerSwitchPressed)");
     expect(arm.content).toContain(
-      '.debounce(Seconds.of(0.1))\n        .onTrue(Command.noRequirements(coroutine -> motor.setEncoderPosition(Degrees.of(-10.0))).named("ArmTalonFXAll Home LowerSwitch"));',
+      '.onTrue(Command.noRequirements(coroutine -> motor.setEncoderPosition(Degrees.of(-10.0))).named("ArmTalonFXAll Home LowerSwitch"));',
     );
     expect(arm.content).toContain("motor.setEncoderPosition(Degrees.of(100.0))");
     expect(arm.content).not.toContain("WasPressed");
+    expect(arm.content).not.toContain("debounce");
     expect(arm.content).not.toContain("DIOSim");
 
     const [elevator] = await generateFiles(form("Elevator", "SparkMAX", "yams", "v2", true));
@@ -349,7 +350,7 @@ describe("generateFiles", () => {
     // A Commands v2 trigger, in the constructor an elevator only has for homing.
     expect(elevator.content).toContain("public ElevatorSparkMAXAll() {");
     expect(elevator.content).toContain(
-      '.debounce(0.1)\n        .onTrue(Commands.runOnce(() -> motor.setEncoderPosition(Meters.of(1.5))).withName("ElevatorSparkMAXAll Home UpperSwitch"));',
+      '.onTrue(Commands.runOnce(() -> motor.setEncoderPosition(Meters.of(1.5))).withName("ElevatorSparkMAXAll Home UpperSwitch"));',
     );
     expect(elevator.content).toContain("import org.wpilib.command2.Commands;");
   });

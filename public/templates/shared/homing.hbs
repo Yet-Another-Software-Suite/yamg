@@ -85,16 +85,13 @@ import org.wpilib.simulation.DIOSim;
 {{/inline}}
 {{#*inline "homingBind"}}
 {{#if homing}}
-    // Home on each switch once the {{mechanismNoun}} has pressed it for 0.1 seconds: the trigger sets the
-    // motor's encoder to the end of the travel the switch is at, once each press. The debounce ignores
-    // contact bounce, and a mechanism that only taps the switch.
+    // Home on each switch as the {{mechanismNoun}} presses it: the trigger sets the motor's encoder to the
+    // end of the travel the switch is at, once each time the switch is pressed.
 {{#each homingSwitches}}
     new Trigger(this::is{{name}}Pressed)
 {{#if (eq ../commands "v2")}}
-        .debounce(0.1)
         .onTrue(Commands.runOnce(() -> {{../homingSeedCall}}({{position}})).withName("{{../className}} Home {{name}}"));
 {{else}}
-        .debounce(Seconds.of(0.1))
         .onTrue(Command.noRequirements(coroutine -> {{../homingSeedCall}}({{position}})).named("{{../className}} Home {{name}}"));
 {{/if}}
 {{/each}}
