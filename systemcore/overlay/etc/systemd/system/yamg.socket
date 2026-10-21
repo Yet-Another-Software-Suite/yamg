@@ -1,0 +1,11 @@
+[Unit]
+Description=yamg socket
+
+[Socket]
+ListenStream=5814
+Accept=no
+NoDelay=true
+KeepAlive=true
+
+[Install]
+WantedBy=sockets.target

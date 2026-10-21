@@ -1,9 +1,12 @@
+import { ON_SYSTEMCORE, SITE_URL } from "@/lib/site"
+
 /**
  * Links between the YAMG for each WPILib season, at the top right of the page. The 2026 site is
- * served under /2026, and the 2027 site at the root.
+ * served under /2026, and the 2027 site at the root. A SystemCore package holds only its own
+ * season, so there the others link to the hosted site.
  */
 const SEASONS = [
-  { year: "2026", href: "/2026/" },
+  { year: "2026", href: ON_SYSTEMCORE ? `${SITE_URL}/2026/` : "/2026/" },
   { year: "2027", href: "/" },
 ]
 

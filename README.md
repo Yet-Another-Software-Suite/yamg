@@ -81,6 +81,15 @@ This project is configured for easy deployment to GitHub Pages:
 
    Alternatively, you can use a GitHub Action to automate deployment (see `.github/workflows/deploy.yml`).
 
+## SystemCore Package
+
+YAMG can be installed on SystemCore as a package (`yamg`), so it is served from the robot itself at `http://<systemcore>:5814/`. Install it by dragging the `.ipk` onto the SystemCore web interface at http://robot.local, then open the `yamg` tile. The package holds the 2027 site; its WPILib 2026 link goes to the hosted 2026 site.
+
+- `systemcore/` holds the package: the control scripts, the socket activated systemd units, the small Python web server, and the tile image.
+- `.github/workflows/build-ipk.yml` builds the site with `NEXT_PUBLIC_SYSTEMCORE=1` and packages it with opkg-build. It runs on every push and pull request.
+- The deploy builds the package too and serves it beside the site, so the **Download for SystemCore** button at the bottom of the page gets the package built from the same commit. The version shown beside it links to that commit.
+- `.github/workflows/release.yml` (run by hand from the **Actions** tab) builds a package with a release version and attaches it to a GitHub release.
+
 ## Project Structure
 
 - `/app`: Next.js app router pages

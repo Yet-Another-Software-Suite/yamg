@@ -1,0 +1,12 @@
+Package: yamg
+Version: ${VERSION}
+Description: YAMG, Yet Another Mechanisms Generator: generate and simulate FRC mechanism code
+Section: development
+Priority: optional
+Maintainer: Yet Another Software Suite
+Architecture: all
+Source: https://github.com/Yet-Another-Software-Suite/yamg
+X-Port: 5814
+X-Has-UI: true
+X-Auto-Start: true
+X-Icon-Path: /usr/share/yamg.png

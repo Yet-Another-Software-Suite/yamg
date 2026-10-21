@@ -1,0 +1,8 @@
+# Files packaged for SystemCore must keep Unix line endings
+systemcore/** text eol=lf
+*.sh text eol=lf
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.ico binary

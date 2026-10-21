@@ -24,13 +24,18 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy:
+  # The 2027 SystemCore package, served beside the site so the download button gets the one built from main
+  ipk:
     if: >
       ${{
           github.event_name == 'workflow_dispatch' ||
           (github.event.workflow_run.conclusion == 'success' &&
            github.event.workflow_run.event == 'push')
       }}
+    uses: ./.github/workflows/build-ipk.yml
+
+  deploy:
+    needs: ipk
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -68,6 +73,10 @@ jobs:
 
       - name: Build 2027
         working-directory: site-2027
+        env:
+          APP_VERSION: ${{ needs.ipk.outputs.version }}
+          NEXT_PUBLIC_IPK_FILE: ${{ needs.ipk.outputs.file }}
+          NEXT_PUBLIC_IPK_VERSION: ${{ needs.ipk.outputs.version }}
         run: |
           pnpm install --no-frozen-lockfile
           pnpm run build
@@ -78,6 +87,12 @@ jobs:
           cp -r site-2027/out/. site/
           mkdir site/2026
           cp -r site-2026/out/. site/2026/
+
+      - name: Add the IPK to the site
+        uses: actions/download-artifact@v4
+        with:
+          name: yamg-ipk
+          path: ./site
 
       # Each attempt names its artifact, so that re-running a failed deploy does not leave two
       # artifacts with the same name, which deploy-pages refuses.

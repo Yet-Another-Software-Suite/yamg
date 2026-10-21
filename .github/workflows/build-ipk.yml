@@ -1,0 +1,133 @@
+name: Build SystemCore IPK
+
+# Builds the website for SystemCore and packages it as an .ipk with opkg-build. Runs on every push and pull
+# request, and is called by deploy-pages.yml and release.yml, which download the "yamg-ipk" artifact.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      version:
+        description: Package version. Empty gives a development version, <package.json version>+<run>.<sha>
+        type: string
+        default: ""
+    outputs:
+      version:
+        description: The package version
+        value: ${{ jobs.build.outputs.version }}
+      file:
+        description: The .ipk's file name
+        value: ${{ jobs.build.outputs.file }}
+
+permissions:
+  contents: read
+
+env:
+  # opkg-build comes from opkg-utils, from the Yocto Project: https://git.yoctoproject.org/opkg-utils/
+  # Releases: https://git.yoctoproject.org/opkg-utils/refs/tags
+  # opkg-build's changes (opkg-utils has no changelog): https://git.yoctoproject.org/opkg-utils/log/opkg-build
+  # To update, set the release's tag and the SHA-256 of its opkg-build.
+  OPKG_UTILS_VERSION: 0.7.0
+  OPKG_BUILD_SHA256: bbd597c015202d6e959888571f56acf1c4e93f2a7bb88e448fabccbea78fb4db
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      file: ${{ steps.version.outputs.file }}
+    env:
+      # Where the package's files are put together
+      PKG_DIR: ${{ github.workspace }}/pkg
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Pick package version
+        id: version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          # Development builds get a unique, ordered suffix; releases pass their version
+          if [ -z "$VERSION" ]; then
+            VERSION="$(node -p "require('./package.json').version")+${GITHUB_RUN_NUMBER}.$(git rev-parse --short HEAD)"
+          fi
+          VERSION="${VERSION#v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "file=yamg_${VERSION}.ipk" >> "$GITHUB_OUTPUT"
+
+      - name: Install opkg-build
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/opkg-build" \
+            "https://git.yoctoproject.org/opkg-utils/plain/opkg-build?h=${OPKG_UTILS_VERSION}"
+          echo "$OPKG_BUILD_SHA256  $RUNNER_TEMP/opkg-build" | sha256sum -c -
+          chmod +x "$RUNNER_TEMP/opkg-build"
+
+      # On SystemCore the site is served from "/", so no base path
+      - name: Build website
+        run: pnpm build
+        env:
+          APP_VERSION: ${{ steps.version.outputs.version }}
+          NEXT_PUBLIC_BASE_PATH: ""
+          NEXT_PUBLIC_SYSTEMCORE: 1
+          NEXT_TELEMETRY_DISABLED: 1
+
+      # opkg-build takes the control files from CONTROL/ and leaves that folder out of the installed files
+      - name: Copy the package files
+        run: |
+          mkdir -p "$PKG_DIR/usr/share/yamg"
+          cp -r systemcore/overlay/. "$PKG_DIR"
+          cp -r systemcore/control "$PKG_DIR/CONTROL"
+          cp -r out "$PKG_DIR/usr/share/yamg/www"
+          cp systemcore/assets/icon.png "$PKG_DIR/usr/share/yamg.png"
+
+      - name: Set the package version
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: envsubst '${VERSION}' < systemcore/control/control > "$PKG_DIR/CONTROL/control"
+
+      - name: Set permissions
+        run: |
+          find "$PKG_DIR" -type d -exec chmod 755 {} +
+          find "$PKG_DIR" -type f -exec chmod 644 {} +
+          chmod 755 "$PKG_DIR/usr/local/bin/yamg/server.py" \
+            "$PKG_DIR/CONTROL/postinst" "$PKG_DIR/CONTROL/prerm" "$PKG_DIR/CONTROL/postrm"
+
+      - name: Build IPK
+        run: |
+          # Every file gets the commit's time, so the same commit gives the same package
+          export SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)"
+          # The output folder must be absolute: opkg-build changes directory before writing it
+          "$RUNNER_TEMP/opkg-build" -o 0 -g 0 "$PKG_DIR" "$PWD/dist"
+
+      # opkg-build names it <package>_<version>_<arch>.ipk; keep the name the site and releases use
+      - name: Rename IPK
+        env:
+          FILE: ${{ steps.version.outputs.file }}
+        run: |
+          mv dist/*.ipk "dist/$FILE"
+          echo "Created dist/$FILE ($(du -h "dist/$FILE" | cut -f1))"
+
+      - name: Upload IPK
+        uses: actions/upload-artifact@v4
+        with:
+          name: yamg-ipk
+          path: dist/*.ipk
+          if-no-files-found: error

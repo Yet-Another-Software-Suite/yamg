@@ -1,0 +1,99 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to release, without the leading "v" (for example 1.2.0)
+        required: true
+        type: string
+      prerelease:
+        description: Mark as a pre-release
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      tag: ${{ steps.meta.outputs.tag }}
+      prev_tag: ${{ steps.meta.outputs.prev_tag }}
+    env:
+      VERSION: ${{ inputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate version
+        id: meta
+        run: |
+          VERSION="${VERSION#v}"
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Version must look like 1.2.3 or 1.2.3-beta.1, got '$VERSION'"
+            exit 1
+          fi
+          TAG="v$VERSION"
+          if git rev-parse -q --verify "refs/tags/$TAG" >/dev/null; then
+            echo "::error::Tag $TAG already exists"
+            exit 1
+          fi
+          PREV_TAG="$(git describe --tags --abbrev=0 --match 'v*' HEAD 2>/dev/null || true)"
+          echo "Releasing $TAG (previous: ${PREV_TAG:-none})"
+          {
+            echo "version=$VERSION"
+            echo "tag=$TAG"
+            echo "prev_tag=$PREV_TAG"
+          } >> "$GITHUB_OUTPUT"
+
+  ipk:
+    needs: validate
+    uses: ./.github/workflows/build-ipk.yml
+    with:
+      version: ${{ needs.validate.outputs.version }}
+
+  release:
+    needs: [validate, ipk]
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download IPK
+        uses: actions/download-artifact@v4
+        with:
+          name: yamg-ipk
+          path: dist
+
+      - name: Write release notes
+        run: |
+          .github/scripts/release-notes.sh \
+            "${{ needs.validate.outputs.version }}" \
+            "dist/${{ needs.ipk.outputs.file }}" \
+            "${{ needs.validate.outputs.prev_tag }}" > release-notes.md
+          cat release-notes.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Create release
+        run: |
+          args=()
+          if [ "${{ inputs.prerelease }}" = "true" ]; then
+            args+=(--prerelease)
+          fi
+          gh release create "${{ needs.validate.outputs.tag }}" dist/*.ipk \
+            --target "$GITHUB_SHA" \
+            --title "YAMG ${{ needs.validate.outputs.tag }}" \
+            --notes-file release-notes.md \
+            "${args[@]}"
