@@ -1,16 +1,17 @@
-import { ON_SYSTEMCORE, SITE_URL } from "@/lib/site"
+import { ON_SYSTEMCORE } from "@/lib/site"
 
 /**
  * Links between the YAMG for each WPILib season, at the top right of the page. The 2026 site is
- * served under /2026, and the 2027 site at the root. A SystemCore package holds only its own
- * season, so there the others link to the hosted site.
+ * served under /2026, and the 2027 site at the root.
  */
 const SEASONS = [
-  { year: "2026", href: ON_SYSTEMCORE ? `${SITE_URL}/2026/` : "/2026/" },
+  { year: "2026", href: "/2026/" },
   { year: "2027", href: "/" },
 ]
 
 export function SeasonSwitch({ current }: { current: string }) {
+  // SystemCore only runs 2027 code, so its package has no other season to switch to.
+  if (ON_SYSTEMCORE) return null
   return (
     <nav aria-label="WPILib season" className="flex justify-center pt-4 md:absolute md:right-4 md:top-4 md:z-10 md:pt-0">
       <div className="inline-flex rounded-sm border bg-card p-1 font-mono text-xs uppercase tracking-wider">
