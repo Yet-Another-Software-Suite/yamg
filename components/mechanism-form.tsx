@@ -112,7 +112,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="border-l-primary">
         <CardContent className="pt-6">
           <div className="space-y-4">
             <FormField
@@ -311,15 +311,20 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
                       <FormLabel>Brake Mode</FormLabel>
                       <FormDescription>Enable brake mode (disable for coast)</FormDescription>
                     </div>
-                    <FormControl>
-                      <Switch checked={field.value} onCheckedChange={field.onChange} />
-                    </FormControl>
+                    <div className="flex items-center gap-2">
+                      <span className="w-12 text-right font-mono text-xs font-bold uppercase tracking-wider" aria-hidden>
+                        {field.value ? "Brake" : "Coast"}
+                      </span>
+                      <FormControl>
+                        <Switch checked={field.value} onCheckedChange={field.onChange} />
+                      </FormControl>
+                    </div>
                   </FormItem>
                 )}
               />
 
               <div className="space-y-2">
-                <Label>Ramp Rates (seconds)</Label>
+                <Label className="font-display text-base font-bold uppercase tracking-wide text-primary">Ramp Rates (seconds)</Label>
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -370,7 +375,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
               </div>
 
               <div className="space-y-2">
-                <Label>Current Limits</Label>
+                <Label className="font-display text-base font-bold uppercase tracking-wide text-primary">Current Limits</Label>
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -425,7 +430,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
           <AccordionContent>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>PID Values (volts per {pidUnit} of error)</Label>
+                <Label className="font-display text-base font-bold uppercase tracking-wide text-primary">PID Values (volts per {pidUnit} of error)</Label>
                 <div className="grid grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
@@ -488,7 +493,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
 
               {!isFlywheel && (
               <div className="space-y-2">
-                <Label>Motion Profile (Trapezoidal)</Label>
+                <Label className="font-display text-base font-bold uppercase tracking-wide text-primary">Motion Profile (Trapezoidal)</Label>
                 <FormField
                   control={form.control}
                   name="useMotionProfile"
@@ -557,7 +562,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
 
               {!isFlywheel && (
               <div className="space-y-2">
-                <Label>Soft Limits ({isElevator ? "meters" : "degrees"})</Label>
+                <Label className="font-display text-base font-bold uppercase tracking-wide text-primary">Soft Limits ({isElevator ? "meters" : "degrees"})</Label>
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -605,7 +610,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
               )}
 
               <div className="space-y-2">
-                <Label>Feedforward</Label>
+                <Label className="font-display text-base font-bold uppercase tracking-wide text-primary">Feedforward</Label>
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
@@ -750,7 +755,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
               />
 
               <div className="space-y-2">
-                <Label>Telemetry Values</Label>
+                <Label className="font-display text-base font-bold uppercase tracking-wide text-primary">Telemetry Values</Label>
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
