@@ -21,7 +21,7 @@ import ReCalcIntegration from "./recalc-integration"
 import { renameForMechanism } from "@/lib/mechanism-name"
 import { takesAbsoluteEncoder } from "@/lib/absolute-encoder"
 import { elevatorDrive } from "@/lib/elevator-drive"
-import { pidForMechanism } from "@/lib/default-gains"
+import { gearRatioForMechanism, pidForMechanism } from "@/lib/default-gains"
 import { AbsoluteEncoderSection, CanBusField } from "./absolute-encoder-form"
 import { HomingSection } from "./homing-form"
 import { takesHomingSwitches } from "@/lib/homing"
@@ -82,8 +82,10 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
   const handleMechanismTypeChange = (value: string) => {
     const from = form.getValues("mechanismType")
     renameIfDefault(from, value, form.getValues("commandsVersion"))
-    // Gains still at the old mechanism's defaults change to the new one's, in its units.
-    form.setValue("pidValues", pidForMechanism(form.getValues("pidValues"), from, value as typeof from))
+    // Gains and a gear ratio still at the old mechanism's defaults change to the new one's.
+    const to = value as typeof from
+    form.setValue("pidValues", pidForMechanism(form.getValues("pidValues"), from, to))
+    form.setValue("gearRatio", gearRatioForMechanism(form.getValues("gearRatio"), from, to))
     form.setValue("mechanismType", value)
   }
 

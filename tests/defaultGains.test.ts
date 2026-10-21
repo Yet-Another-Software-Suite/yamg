@@ -1,5 +1,5 @@
 import { DEFAULT_VALUES } from "@/components/useCodeGeneratorForm"
-import { DEFAULT_PID, pidForMechanism } from "@/lib/default-gains"
+import { DEFAULT_GEAR_RATIO, DEFAULT_PID, gearRatioForMechanism, pidForMechanism } from "@/lib/default-gains"
 
 describe("default gains", () => {
   it("starts the form with the elevator's firm gains", () => {
@@ -15,5 +15,12 @@ describe("default gains", () => {
   it("keeps gains that were edited", () => {
     const edited = { kP: 12, kI: 0, kD: 0.5 }
     expect(pidForMechanism(edited, "Elevator", "Arm")).toBe(edited)
+  })
+
+  it("follows the mechanism type's gear ratio until it is edited", () => {
+    expect(DEFAULT_VALUES.gearRatio).toBe(DEFAULT_GEAR_RATIO.Elevator)
+    expect(gearRatioForMechanism(15, "Elevator", "Arm")).toBe(60)
+    expect(gearRatioForMechanism(60, "Arm", "Flywheel")).toBe(1)
+    expect(gearRatioForMechanism(25, "Elevator", "Flywheel")).toBe(25)
   })
 })

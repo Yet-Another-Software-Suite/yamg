@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { DEFAULT_PID } from "@/lib/default-gains";
+import { DEFAULT_GEAR_RATIO, DEFAULT_PID } from "@/lib/default-gains";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 
@@ -166,7 +166,7 @@ export const DEFAULT_VALUES: FormSchema = {
   maxAcceleration: 1.0,
   maxVelocity: 1.0,
   feedforward: { kS: 0.0, kV: 0.0, kA: 0.0, kG: 0.0 },
-  gearRatio: 15.0,
+  gearRatio: DEFAULT_GEAR_RATIO.Elevator,
   softLimits: {},
   brakeMode: true,
   currentLimits: { stator: 40 },
@@ -185,7 +185,7 @@ export const DEFAULT_VALUES: FormSchema = {
     hardLimitMax: 90,
     hardLimitMin: 0,
     startingPosition: 0,
-    mass: 5,
+    mass: 3,
     massUnit: "kg",
   },
   elevatorParams: {

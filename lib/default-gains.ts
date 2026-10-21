@@ -10,11 +10,31 @@ type PidValues = FormValues["pidValues"];
  */
 export const DEFAULT_PID: Record<FormValues["mechanismType"], PidValues> = {
   Elevator: { kP: 50, kI: 0, kD: 0 },
-  Arm: { kP: 50, kI: 0, kD: 20 },
+  Arm: { kP: 150, kI: 0, kD: 30 },
   Pivot: { kP: 50, kI: 0, kD: 20 },
   Turret: { kP: 50, kI: 0, kD: 20 },
-  Flywheel: { kP: 1, kI: 0, kD: 0 },
+  Flywheel: { kP: 5, kI: 0, kD: 0 },
 };
+
+/**
+ * The gear ratio each mechanism starts with: enough reduction for one motor to lift the default arm,
+ * and none for a flywheel, so it can spin past 3000 RPM.
+ */
+export const DEFAULT_GEAR_RATIO: Record<FormValues["mechanismType"], number> = {
+  Elevator: 15,
+  Arm: 60,
+  Pivot: 15,
+  Turret: 15,
+  Flywheel: 1,
+};
+
+/**
+ * The gear ratio to use after the mechanism type changes from `from` to `to`: that mechanism's
+ * default while the ratio is still the old mechanism's, or the ratio as it is once edited.
+ */
+export function gearRatioForMechanism(gearRatio: number, from: FormValues["mechanismType"], to: FormValues["mechanismType"]): number {
+  return gearRatio === DEFAULT_GEAR_RATIO[from] ? DEFAULT_GEAR_RATIO[to] : gearRatio;
+}
 
 /**
  * The gains to use after the mechanism type changes from `from` to `to`: that mechanism's defaults
