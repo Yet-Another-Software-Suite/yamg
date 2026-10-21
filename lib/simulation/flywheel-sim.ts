@@ -71,7 +71,7 @@ export class FlywheelSim extends ControlsBaseSim {
 
     // Draw spokes to visualize spin
     const spokeCount = 4
-    ctx.strokeStyle = "#0066cc"
+    ctx.strokeStyle = "#2d6fbf"
     ctx.lineWidth = 6
     for (let i = 0; i < spokeCount; i++) {
       const angle = this.position + (i * Math.PI * 2) / spokeCount

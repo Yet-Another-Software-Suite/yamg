@@ -249,14 +249,14 @@ export default function SimulationComponent({ formValues, simType, motorCount }:
           ref={canvasRef}
           width={600}
           height={400}
-          className="border border-gray-300 rounded-md bg-slate-800 w-full h-auto"
+          className="border border-border rounded-sm bg-background w-full h-auto"
         ></canvas>
         <canvas
           ref={chartRef}
           width={600}
           height={400}
           aria-label="The last 15 seconds of the mechanism's position and setpoint, with its stator current"
-          className="border border-gray-300 rounded-md bg-slate-800 w-full h-auto"
+          className="border border-border rounded-sm bg-background w-full h-auto"
         ></canvas>
       </div>
 

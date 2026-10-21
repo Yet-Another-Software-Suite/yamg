@@ -110,10 +110,10 @@ export default function CodeDisplay({ files, activeIndex, language }: CodeDispla
   }, [displayCode])
 
   return (
-    <div className="relative rounded-md overflow-hidden code-container">
+    <div className="relative rounded-sm border border-l-[3px] border-l-sapphire overflow-hidden code-container">
       {hasImports && (
-        <div className="flex justify-between items-center p-2 bg-slate-700 border-b border-slate-600">
-          <span className="text-sm text-slate-300">{`${importCount} imports hidden`}</span>
+        <div className="flex justify-between items-center p-2 bg-secondary border-b border-border">
+          <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground">{`${importCount} imports hidden`}</span>
         </div>
       )}
 

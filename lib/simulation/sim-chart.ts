@@ -25,11 +25,11 @@ export interface ChartUnits {
 
 /** The chart's colors, chosen to read on the sim's dark background. */
 const COLORS = {
-  background: "#1e293b",
+  background: "#17191c",
   grid: "rgba(148, 163, 184, 0.18)",
-  axis: "#cbd5e1",
-  value: "#38bdf8",
-  setpoint: "#fbbf24",
+  axis: "#e9edef",
+  value: "#6bbf2d",
+  setpoint: "#f2af29",
   current: "rgba(248, 113, 113, 0.38)",
   currentEdge: "rgba(248, 113, 113, 0.75)",
   currentLimit: "#f87171",
