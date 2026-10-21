@@ -76,14 +76,14 @@ export function Footer() {
   const label = `YAMG v${VERSION}`
   return (
     <footer className="border-t py-6 md:py-8">
-      <div className="container flex flex-col items-center justify-between gap-4 md:flex-row">
+      <div className="container mx-auto flex flex-col items-center justify-between gap-4 px-4 md:flex-row">
         <div className="flex flex-col items-center gap-4 px-8 md:flex-row md:gap-2 md:px-0">
           <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
             Made with 💚 by nstrike, Rivet, and Yet Another Software Suite
           </p>
         </div>
         <Link
-          href="https://github.com/thenetworkgrinch/yamg"
+          href={REPO_URL}
           target="_blank"
           rel="noreferrer"
           className="flex items-center gap-1 text-sm font-medium transition-colors hover:text-foreground/80"
@@ -93,7 +93,7 @@ export function Footer() {
         </Link>
       </div>
       {/* A download of this build as a SystemCore package, and its version */}
-      <div className="container mt-4 flex flex-col items-center justify-between gap-3 md:flex-row">
+      <div className="container mx-auto mt-4 flex flex-col items-center justify-between gap-3 px-4 md:flex-row">
         {ON_SYSTEMCORE ? (
           <span className="text-xs text-muted-foreground">Served from this SystemCore.</span>
         ) : (
