@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { DEFAULT_PID } from "@/lib/default-gains";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 
@@ -160,7 +161,7 @@ export const DEFAULT_VALUES: FormSchema = {
   motorType: "NEO",
   canId: 1,
   canBus: 0,
-  pidValues: { kP: 1.0, kI: 0.0, kD: 0.0 },
+  pidValues: { ...DEFAULT_PID.Elevator },
   useMotionProfile: false,
   maxAcceleration: 1.0,
   maxVelocity: 1.0,
