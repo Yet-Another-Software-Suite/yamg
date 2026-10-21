@@ -4,12 +4,12 @@
  */
 
 .code-container {
-  background-color: #1e293b; /* Slate 800 */
+  background-color: #17191c; /* YASS graphite */
 }
 
 .line-numbers {
-  background-color: #0f172a; /* Slate 900 */
-  color: #64748b; /* Slate 500 */
+  background-color: #2b2e34; /* YASS graphite, raised */
+  color: #a6a6a6;
 }
 
 /* Remove the highlighted-line class
@@ -20,8 +20,8 @@
 
 code[class*="language-"],
 pre[class*="language-"] {
-  color: #e2e8f0; /* Slate 200 */
-  font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+  color: #e9edef;
+  font-family: var(--font-jetbrains-mono), "JetBrains Mono", Consolas, Monaco, monospace;
   text-align: left;
   white-space: pre;
   word-spacing: normal;

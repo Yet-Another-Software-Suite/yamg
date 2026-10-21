@@ -10,7 +10,14 @@ const config: Config = {
   ],
   theme: {
   	extend: {
+  		fontFamily: {
+  			sans: ['var(--font-inter)', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+  			mono: ['var(--font-jetbrains-mono)', 'JetBrains Mono', 'ui-monospace', 'monospace'],
+  			display: ['var(--font-courier-prime)', 'Courier Prime', 'monospace'],
+  			pixel: ['var(--font-press-start)', '"Press Start 2P"', 'monospace']
+  		},
   		colors: {
+  			sapphire: 'hsl(var(--sapphire))',
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {

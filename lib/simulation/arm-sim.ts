@@ -111,7 +111,7 @@ export class ArmSim extends ControlsBaseSim {
     ctx.fill()
 
     // Draw arm
-    ctx.strokeStyle = "#0066cc"
+    ctx.strokeStyle = "#2d6fbf"
     ctx.lineWidth = 10
     ctx.beginPath()
     ctx.moveTo(originX, originY - 10)
@@ -168,7 +168,7 @@ export class ArmSim extends ControlsBaseSim {
     }
 
     // Draw current angle marker
-    ctx.strokeStyle = "#00cc00"
+    ctx.strokeStyle = "#6bbf2d"
     ctx.lineWidth = 3
     ctx.beginPath()
     ctx.moveTo(x, y)
@@ -176,7 +176,7 @@ export class ArmSim extends ControlsBaseSim {
     ctx.stroke()
 
     // Draw target angle marker
-    ctx.strokeStyle = "#ff6600"
+    ctx.strokeStyle = "#f2af29"
     ctx.lineWidth = 2
     ctx.beginPath()
     ctx.moveTo(x, y)

@@ -119,7 +119,7 @@ export class ElevatorSim extends ControlsBaseSim {
     ctx.fill()
 
     // Draw elevator carriage
-    ctx.fillStyle = "#0066cc"
+    ctx.fillStyle = "#2d6fbf"
     ctx.beginPath()
     ctx.rect(leftMargin - 10, elevatorY, elevatorWidth + 20, elevatorHeight)
     ctx.fill()
@@ -186,7 +186,7 @@ export class ElevatorSim extends ControlsBaseSim {
     const normalizedPosition = (this.position - this.minHeight) / (this.maxHeight - this.minHeight)
     const currentY = baseY - normalizedPosition * maxHeight
 
-    ctx.strokeStyle = "#00cc00"
+    ctx.strokeStyle = "#6bbf2d"
     ctx.lineWidth = 2
     ctx.beginPath()
     ctx.moveTo(x - markerWidth * 3, currentY)
@@ -197,7 +197,7 @@ export class ElevatorSim extends ControlsBaseSim {
     const normalizedTarget = (this.target - this.minHeight) / (this.maxHeight - this.minHeight)
     const targetY = baseY - normalizedTarget * maxHeight
 
-    ctx.strokeStyle = "#ff6600"
+    ctx.strokeStyle = "#f2af29"
     ctx.lineWidth = 2
     ctx.beginPath()
     ctx.moveTo(x - markerWidth * 3, targetY)

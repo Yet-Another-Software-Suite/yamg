@@ -55,7 +55,7 @@ export default function GeneratedCodePanel({
     return (
       <Card className="p-6 text-center">
         <div className="flex justify-center items-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
           <p className="ml-3">Generating code...</p>
         </div>
       </Card>

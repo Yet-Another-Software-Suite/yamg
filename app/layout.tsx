@@ -1,7 +1,14 @@
 import type React from "react"
+import { Courier_Prime, Inter, JetBrains_Mono, Press_Start_2P } from "next/font/google"
 import "@/app/globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Footer } from "@/components/footer"
+
+// The YASS website's fonts.
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
+const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], weight: ["400", "500", "700"], variable: "--font-jetbrains-mono" })
+const courierPrime = Courier_Prime({ subsets: ["latin"], weight: ["400", "700"], variable: "--font-courier-prime" })
+const pressStart = Press_Start_2P({ subsets: ["latin"], weight: "400", variable: "--font-press-start" })
 
 export const metadata = {
   title: "Yet Another Mechanisms Generator (YAMG)",
@@ -14,8 +21,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen bg-background">
+    <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable} ${courierPrime.variable} ${pressStart.variable}`} suppressHydrationWarning>
+      <body className="min-h-screen font-sans antialiased">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} forcedTheme="dark">
           {children}
           <Footer />
