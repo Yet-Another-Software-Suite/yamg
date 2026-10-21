@@ -112,7 +112,7 @@ export default function MechanismForm({ form }: { form: UseFormReturn<any> }) {
 
   return (
     <div className="space-y-6">
-      <Card className="border-l-primary">
+      <Card>
         <CardContent className="pt-6">
           <div className="space-y-4">
             <FormField
