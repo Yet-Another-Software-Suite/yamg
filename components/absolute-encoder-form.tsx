@@ -344,7 +344,7 @@ function CrtEncoderFields({ form, which, values }: { form: Form; which: "encoder
   const connection = encoderConnection(encoder.type ?? "CANcoder", "smartIo", values.motorControllerType)
   return (
     <div className="space-y-4 rounded-lg border p-3">
-      <p className="text-sm font-medium">Encoder {which === "encoderA" ? "A" : "B"}</p>
+      <p className="font-display text-base font-bold uppercase tracking-wide text-primary">Encoder {which === "encoderA" ? "A" : "B"}</p>
       <FormField
         control={form.control}
         name={`${prefix}.type`}
