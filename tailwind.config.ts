@@ -71,8 +71,8 @@ const config: Config = {
   		},
   		borderRadius: {
   			lg: 'var(--radius)',
-  			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)'
+  			md: 'var(--radius)',
+  			sm: 'var(--radius)'
   		},
   		keyframes: {
   			'accordion-down': {
@@ -97,6 +97,10 @@ const config: Config = {
   			'accordion-up': 'accordion-up 0.2s ease-out'
   		}
   	}
+  },
+  // Hover styles apply only on devices that can hover, so a tap on a phone doesn't leave a button highlighted.
+  future: {
+    hoverOnlyWhenSupported: true,
   },
   plugins: [require("tailwindcss-animate")],
 };

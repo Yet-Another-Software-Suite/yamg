@@ -14,7 +14,7 @@ export function SeasonSwitch({ current }: { current: string }) {
   if (ON_SYSTEMCORE) return null
   return (
     <nav aria-label="WPILib season" className="flex justify-center pt-4 md:absolute md:right-4 md:top-4 md:z-10 md:pt-0">
-      <div className="inline-flex rounded-sm border bg-card p-1 font-mono text-xs uppercase tracking-wider">
+      <div className="inline-flex rounded-[calc(var(--radius)+5px)] border bg-card p-1 font-mono text-xs uppercase tracking-wider">
         {SEASONS.map(({ year, href }) =>
           year === current ? (
             <span key={year} aria-current="page" className="rounded-sm bg-primary px-3 py-1 font-bold text-primary-foreground">
