@@ -55,7 +55,7 @@ export default function GeneratedCodePanel({
     return (
       <Card className="p-6 text-center">
         <div className="flex justify-center items-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          <div className="motion-safe:animate-spin motion-reduce:animate-pulse rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
           <p className="ml-3">Generating code...</p>
         </div>
       </Card>
@@ -99,22 +99,22 @@ export default function GeneratedCodePanel({
             size="sm"
             onClick={() => copyToClipboard(files[activeIndex].content)}
           >
-            <ClipboardCopy className="h-4 w-4 mr-1" /> Copy
+            <ClipboardCopy className="h-4 w-4" /> Copy
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={() => downloadFile(files[activeIndex])}
           >
-            <FilePlus2 className="h-4 w-4 mr-1" /> Save File
+            <FilePlus2 className="h-4 w-4" /> Save File
           </Button>
           {onCopyLink && (
             <Button variant="outline" size="sm" onClick={copyLink} title="Copy a link that opens YAMG with this form filled in">
-              <Link className="h-4 w-4 mr-1" /> {linkCopied ? "Link Copied" : "Copy Link"}
+              <Link className="h-4 w-4" /> {linkCopied ? "Link Copied" : "Copy Link"}
             </Button>
           )}
           <Button variant="default" size="sm" onClick={downloadAll}>
-            <Download className="h-4 w-4 mr-1" /> Download All
+            <Download className="h-4 w-4" /> Download All
           </Button>
         </div>
       </div>

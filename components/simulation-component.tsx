@@ -295,11 +295,11 @@ export default function SimulationComponent({ formValues, simType, motorCount }:
 
       <div className="flex justify-center space-x-4">
         <Button onClick={toggleSimulation}>
-          {isRunning ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
+          {isRunning ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           {isRunning ? "Pause" : "Run"}
         </Button>
         <Button onClick={resetSimulation} variant="outline">
-          <RefreshCw className="mr-2 h-4 w-4" />
+          <RefreshCw className="h-4 w-4" />
           Reset
         </Button>
       </div>
